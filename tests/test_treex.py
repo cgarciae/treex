@@ -1,4 +1,4 @@
-from typing import Union
+from typing import List, Union
 from train_mlp import Parameter
 import jax
 import jax.numpy as jnp
@@ -112,3 +112,67 @@ class TestTreex:
         assert mlp_next.linear2.w is not None
         assert mlp_next.linear2.b is not None
         assert mlp_next.linear2.n is not None
+
+    def test_list(self):
+        TreeList = tx.annotation("TreeList", List)
+
+        class LinearList(tx.Treex):
+            params: TreeList
+
+            def __init__(self, din, dout, name="linear"):
+
+                self.din = din
+                self.dout = dout
+                self.params = [
+                    np.random.uniform(size=(din, dout)),
+                    np.random.uniform(size=(dout,)),
+                ]
+                self.name = name
+
+        linear = LinearList(2, 3, name="mlp")
+
+        @jax.jit
+        def idfn(x):
+            return x
+
+        assert not isinstance(linear.params[0], jnp.DeviceArray)
+        assert not isinstance(linear.params[1], jnp.DeviceArray)
+
+        linear = idfn(linear)
+
+        assert isinstance(linear.params[0], jnp.DeviceArray)
+        assert isinstance(linear.params[1], jnp.DeviceArray)
+
+    def test_treelist(self):
+        class MLP(tx.Treex):
+            linears: tx.TreeList[Linear]
+
+            def __init__(self, din, dmid, dout, name="mlp"):
+                self.linears = [
+                    Linear(din, dmid, name="linear1"),
+                    Linear(dmid, dout, name="linear2"),
+                ]
+
+        mlp = MLP(2, 3, 5)
+
+        @jax.jit
+        def idfn(x):
+            return x
+
+        assert not isinstance(mlp.linears[0].w, jnp.DeviceArray)
+        assert not isinstance(mlp.linears[0].b, jnp.DeviceArray)
+        assert not isinstance(mlp.linears[0].n, jnp.DeviceArray)
+
+        assert not isinstance(mlp.linears[1].w, jnp.DeviceArray)
+        assert not isinstance(mlp.linears[1].b, jnp.DeviceArray)
+        assert not isinstance(mlp.linears[1].n, jnp.DeviceArray)
+
+        mlp = idfn(mlp)
+
+        assert isinstance(mlp.linears[0].w, jnp.DeviceArray)
+        assert isinstance(mlp.linears[0].b, jnp.DeviceArray)
+        assert isinstance(mlp.linears[0].n, jnp.DeviceArray)
+
+        assert isinstance(mlp.linears[1].w, jnp.DeviceArray)
+        assert isinstance(mlp.linears[1].b, jnp.DeviceArray)
+        assert isinstance(mlp.linears[1].n, jnp.DeviceArray)

@@ -1,4 +1,5 @@
-from typing import Callable, Dict, Tuple, Type, TypeVar, Any
+from abc import ABC, ABCMeta, abstractmethod
+from typing import Callable, Dict, Generic, List, Tuple, Type, TypeVar, Any
 import jax
 import jax.numpy as jnp
 import jax.tree_util
@@ -9,21 +10,64 @@ class TreePart:
     pass
 
 
-T = TypeVar("T", bound="Treex")
 A = TypeVar("A")
+T = TypeVar("T", bound="Treex")
+S = TypeVar("S", bound="Sliceable")
 
 
-def annotation(names: str, static: Type[A], real: Type = TreePart) -> Type[A]:
+class Box:
+    def __init__(self, value: Type):
+        self.value = value
 
-    _type = type(names, (real,), {})
+    def __getitem__(self, item):
+        return self.value
 
-    return _type
+    def unwrap(self) -> Type:
+        if isinstance(self.value, Box):
+            return self.value.unwrap()
+        else:
+            return self.value
 
 
-class Treex(TreePart):
+def annotation(
+    names: str, static: Type[A], real: Type = TreePart, generic: bool = False
+) -> Type[A]:
+    t = type(names, (real,), {})
+
+    if generic:
+        return Box(Box(t))
+    else:
+        return t
+
+
+class Sliceable(TreePart, ABC):
+    @abstractmethod
+    def slice(self: S, *filters: Type) -> S:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _merge_one(self: S, other: S) -> S:
+        raise NotImplementedError()
+
+
+class _TreeList(List[S], Sliceable):
+    def slice(self, *filters: Type) -> "List[S]":
+        return [x.slice(*filters) for x in self]
+
+    def _merge_one(self, other: List[S]) -> List[S]:
+        return [a._merge_one(b) for a, b in zip(self, other)]
+
+
+TreeList = annotation("TreeList", List, _TreeList, generic=True)[S]
+
+
+class Treex(Sliceable):
     def _parts(self) -> Tuple[Dict[str, Tuple[Type[TreePart], Any]], Dict[str, Any]]:
 
         annotations = getattr(self.__class__, "__annotations__", {})
+        annotations = {
+            k: v.unwrap() if isinstance(v, Box) else v for k, v in annotations.items()
+        }
         fields = vars(self)
 
         tree_parts = {
@@ -61,8 +105,8 @@ class Treex(TreePart):
         tree_parts, not_tree = self._parts()
 
         for k, (cls, v) in tree_parts.items():
-            if issubclass(cls, Treex):
-                v = v.slice(filters)
+            if issubclass(cls, Sliceable):
+                v = cls.slice(v, *filters)
             elif not issubclass(cls, filters):
                 v = None
 
@@ -85,7 +129,7 @@ class Treex(TreePart):
 
             if issubclass(cls, Treex):
                 if isinstance(v1, Treex) and isinstance(v2, Treex):
-                    v = v1._merge_one(v2)
+                    v = cls._merge_one(v1, v2)
                 else:
                     v = v2 if v2 is not None else v1
             else:
