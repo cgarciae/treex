@@ -9,25 +9,15 @@ class TreePart:
     pass
 
 
-class Parameter(jnp.ndarray, TreePart):
-    pass
-
-
-class State(jnp.ndarray, TreePart):
-    pass
-
-
-@jax.tree_util.register_pytree_node_class
-class Nothing:
-    def tree_flatten(self):
-        return (), ()
-
-    @classmethod
-    def tree_unflatten(cls, _aux_data, children):
-        return cls()
-
-
 T = TypeVar("T", bound="Treex")
+A = TypeVar("A")
+
+
+def annotation(names: str, static: Type[A], real: Type = TreePart) -> Type[A]:
+
+    _type = type(names, (real,), {})
+
+    return _type
 
 
 class Treex(TreePart):
@@ -74,7 +64,7 @@ class Treex(TreePart):
             if issubclass(cls, Treex):
                 v = v.slice(filter_cls)
             elif not issubclass(cls, filter_cls):
-                v = Nothing()
+                v = None
 
             setattr(module, k, v)
 
@@ -82,6 +72,9 @@ class Treex(TreePart):
             setattr(module, k, v)
 
         return module
+
+    def __init_subclass__(cls):
+        jax.tree_util.register_pytree_node_class(cls)
 
     def _merge_one(self: T, other: T) -> T:
         module: T = self.__class__.__new__(self.__class__)
@@ -94,9 +87,9 @@ class Treex(TreePart):
                 if isinstance(v1, Treex) and isinstance(v2, Treex):
                     v = v1._merge_one(v2)
                 else:
-                    v = v1 if not isinstance(v1, Nothing) else v2
+                    v = v1 if v1 is not None else v2
             else:
-                v = v1 if not isinstance(v1, Nothing) else v2
+                v = v1 if v1 is not None else v2
 
             setattr(module, k, v)
 

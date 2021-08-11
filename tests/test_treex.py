@@ -1,13 +1,17 @@
+from typing import Union
+from train_mlp import Parameter
 import jax
 import jax.numpy as jnp
 import jax.tree_util
 import numpy as np
-from treex import __version__
-from treex.base import Treex, Nothing, Parameter, State
+import treex as tx
 
 
-@jax.tree_util.register_pytree_node_class
-class Linear(Treex):
+Parameter = tx.annotation("Parameter", np.ndarray)
+State = tx.annotation("State", Union[np.ndarray, int])
+
+
+class Linear(tx.Treex):
     w: Parameter
     b: Parameter
     n: State
@@ -22,8 +26,7 @@ class Linear(Treex):
         self.name = name
 
 
-@jax.tree_util.register_pytree_node_class
-class MLP(Treex):
+class MLP(tx.Treex):
     linear1: Linear
     linear2: Linear
 
@@ -74,24 +77,24 @@ class TestTreex:
         # params
         mlp_params = mlp.slice(Parameter)
 
-        assert not isinstance(mlp_params.linear1.w, Nothing)
-        assert not isinstance(mlp_params.linear1.b, Nothing)
-        assert isinstance(mlp_params.linear1.n, Nothing)
+        assert mlp_params.linear1.w is not None
+        assert mlp_params.linear1.b is not None
+        assert mlp_params.linear1.n is None
 
-        assert not isinstance(mlp_params.linear2.w, Nothing)
-        assert not isinstance(mlp_params.linear2.b, Nothing)
-        assert isinstance(mlp_params.linear2.n, Nothing)
+        assert mlp_params.linear2.w is not None
+        assert mlp_params.linear2.b is not None
+        assert mlp_params.linear2.n is None
 
         # states
         mlp_states = mlp.slice(State)
 
-        assert isinstance(mlp_states.linear1.w, Nothing)
-        assert isinstance(mlp_states.linear1.b, Nothing)
-        assert not isinstance(mlp_states.linear1.n, Nothing)
+        assert mlp_states.linear1.w is None
+        assert mlp_states.linear1.b is None
+        assert mlp_states.linear1.n is not None
 
-        assert isinstance(mlp_states.linear2.w, Nothing)
-        assert isinstance(mlp_states.linear2.b, Nothing)
-        assert not isinstance(mlp_states.linear2.n, Nothing)
+        assert mlp_states.linear2.w is None
+        assert mlp_states.linear2.b is None
+        assert mlp_states.linear2.n is not None
 
     def test_merge(self):
 
@@ -102,10 +105,10 @@ class TestTreex:
 
         mlp_next = mlp_params.merge(mlp_states)
 
-        assert not isinstance(mlp_next.linear1.w, Nothing)
-        assert not isinstance(mlp_next.linear1.b, Nothing)
-        assert not isinstance(mlp_next.linear1.n, Nothing)
+        assert mlp_next.linear1.w is not None
+        assert mlp_next.linear1.b is not None
+        assert mlp_next.linear1.n is not None
 
-        assert not isinstance(mlp_next.linear2.w, Nothing)
-        assert not isinstance(mlp_next.linear2.b, Nothing)
-        assert not isinstance(mlp_next.linear2.n, Nothing)
+        assert mlp_next.linear2.w is not None
+        assert mlp_next.linear2.b is not None
+        assert mlp_next.linear2.n is not None

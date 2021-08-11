@@ -8,6 +8,7 @@ authors = ["Cristian Garcia <cgarcia.e88@gmail.com>"]
 python = "^3.8"
 jax = "^0.2.18"
 jaxlib = "^0.1.70"
+optax = "^0.0.9"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
