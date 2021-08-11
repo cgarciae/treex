@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Type, TypeVar, Any
+from typing import Callable, Dict, Tuple, Type, TypeVar, Any
 import jax
 import jax.numpy as jnp
 import jax.tree_util
@@ -23,7 +23,7 @@ def annotation(names: str, static: Type[A], real: Type = TreePart) -> Type[A]:
 class Treex(TreePart):
     def _parts(self) -> Tuple[Dict[str, Tuple[Type[TreePart], Any]], Dict[str, Any]]:
 
-        annotations = self.__class__.__annotations__
+        annotations = getattr(self.__class__, "__annotations__", {})
         fields = vars(self)
 
         tree_parts = {
@@ -56,14 +56,14 @@ class Treex(TreePart):
 
         return module
 
-    def slice(self: T, filter_cls: Type) -> T:
+    def slice(self: T, *filters: Type) -> T:
         module: T = self.__class__.__new__(self.__class__)
         tree_parts, not_tree = self._parts()
 
         for k, (cls, v) in tree_parts.items():
             if issubclass(cls, Treex):
-                v = v.slice(filter_cls)
-            elif not issubclass(cls, filter_cls):
+                v = v.slice(filters)
+            elif not issubclass(cls, filters):
                 v = None
 
             setattr(module, k, v)
@@ -87,9 +87,9 @@ class Treex(TreePart):
                 if isinstance(v1, Treex) and isinstance(v2, Treex):
                     v = v1._merge_one(v2)
                 else:
-                    v = v1 if v1 is not None else v2
+                    v = v2 if v2 is not None else v1
             else:
-                v = v1 if v1 is not None else v2
+                v = v2 if v2 is not None else v1
 
             setattr(module, k, v)
 
@@ -106,3 +106,11 @@ class Treex(TreePart):
             acc = acc._merge_one(other)
 
         return acc
+
+
+class Initializer(TreePart):
+    def __init__(self, f: Callable[[jnp.ndarray], np.ndarray]):
+        self.f = f
+
+    def __call__(self, x: jnp.ndarray) -> np.ndarray:
+        return self.f(x)
