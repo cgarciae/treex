@@ -20,6 +20,7 @@ __st.markdown(r"""<span id='Treex'> </span>
 * Simple initialization
 * No metaclass magic
 * No apply method
+* No need special versions of `vmap`, `jit`, and friends.
 
 To prove the previous we will start with by creating a very contrived but complete module which will use everything from parameters, states, and random state:""", unsafe_allow_html=True)
 with __st.echo(), streambook.st_stdout('info'):

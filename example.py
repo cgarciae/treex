@@ -8,6 +8,7 @@
 * Simple initialization
 * No metaclass magic
 * No apply method
+* No need special versions of `vmap`, `jit`, and friends.
 
 To prove the previous we will start with by creating a very contrived but complete module which will use everything from parameters, states, and random state:
 """
