@@ -6,6 +6,7 @@
 * Simple initialization
 * No metaclass magic
 * No apply method
+* No need special versions of `vmap`, `jit`, and friends.
 
 To prove the previous we will start with by creating a very contrived but complete module which will use everything from parameters, states, and random state:
 
@@ -137,7 +138,7 @@ Notice the following:
 Why is this important? As we will see later, it is useful keep parameters and state separate as they will crusially flow though different parts of `value_and_grad`.
 
 ### Modules can be merged
-This is just the inver operation to `slice`, `merge` behaves like dict's `update` but returns a new module leaving the original modules intact:
+This is just the inverse operation to `slice`, `merge` behaves like dict's `update` but returns a new module leaving the original modules intact:
 
 
 ```python
