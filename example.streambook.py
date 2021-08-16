@@ -51,7 +51,7 @@ with __st.echo(), streambook.st_stdout('info'):
             self.rng = tx.Initializer(lambda k: k)
 
             # if value is known there is no need for an Initiaizer
-            self.count = jnp.array(0)
+            self.count = jnp.array(1)
 
         def __call__(self, x: np.ndarray) -> np.ndarray:
             assert isinstance(self.count, jnp.ndarray)

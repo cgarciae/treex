@@ -39,7 +39,7 @@ class NoisyStatefulLinear(tx.Module):
         self.rng = tx.Initializer(lambda k: k)
 
         # if value is known there is no need for an Initiaizer
-        self.count = jnp.array(0)
+        self.count = jnp.array(1)
 
     def __call__(self, x: np.ndarray) -> np.ndarray:
         assert isinstance(self.count, jnp.ndarray)
@@ -75,7 +75,7 @@ linear
 
 
 
-    NoisyStatefulLinear(w=Initializer, b=Initializer, count=0, rng=Initializer)
+    NoisyStatefulLinear(w=Initializer, b=Initializer, count=1, rng=Initializer)
 
 
 
@@ -93,7 +93,7 @@ linear
 
 
 
-    NoisyStatefulLinear(w=[[0.91457367]], b=[0.42094743], count=0, rng=[1371681402 3011037117])
+    NoisyStatefulLinear(w=[[0.91457367]], b=[0.42094743], count=1, rng=[1371681402 3011037117])
 
 
 
@@ -110,7 +110,7 @@ doubled
 
 
 
-    NoisyStatefulLinear(w=[[1.8291473]], b=[0.84189487], count=0, rng=[2743362804 1727106938])
+    NoisyStatefulLinear(w=[[1.8291473]], b=[0.84189487], count=2, rng=[2743362804 1727106938])
 
 
 
@@ -127,7 +127,7 @@ print(f"{states=}")
 ```
 
     params=NoisyStatefulLinear(w=[[0.91457367]], b=[0.42094743], count=Nothing, rng=Nothing)
-    states=NoisyStatefulLinear(w=Nothing, b=Nothing, count=0, rng=[1371681402 3011037117])
+    states=NoisyStatefulLinear(w=Nothing, b=Nothing, count=1, rng=[1371681402 3011037117])
 
 
 Notice the following:
@@ -148,7 +148,7 @@ linear
 
 
 
-    NoisyStatefulLinear(w=[[0.91457367]], b=[0.42094743], count=0, rng=[1371681402 3011037117])
+    NoisyStatefulLinear(w=[[0.91457367]], b=[0.42094743], count=1, rng=[1371681402 3011037117])
 
 
 
@@ -181,8 +181,8 @@ model
 
 
 
-    MLP(linear1=NoisyStatefulLinear(w=[[0.95598125 0.4032725 ]], b=[0.5371039  0.10409856], count=0, rng=[1371681402 3011037117]), linear2=NoisyStatefulLinear(w=[[0.7236692]
-     [0.8625636]], b=[0.5354074], count=0, rng=[3818536016 1640990408]))
+    MLP(linear1=NoisyStatefulLinear(w=[[0.95598125 0.4032725 ]], b=[0.5371039  0.10409856], count=1, rng=[1371681402 3011037117]), linear2=NoisyStatefulLinear(w=[[0.7236692]
+     [0.8625636]], b=[0.5354074], count=1, rng=[3818536016 1640990408]))
 
 
 
@@ -298,16 +298,16 @@ for step in range(steps):
 model = params.merge(states)
 ```
 
-    [0] loss = 48.41541290283203
-    [1000] loss = 2.0404598712921143
-    [2000] loss = 5.279519081115723
-    [3000] loss = 1.7624502182006836
-    [4000] loss = 1.2153630256652832
-    [5000] loss = 1.6816675662994385
-    [6000] loss = 1.0331995487213135
-    [7000] loss = 1.3095693588256836
-    [8000] loss = 0.883163571357727
-    [9000] loss = 1.4574873447418213
+    [0] loss = 36.88694763183594
+    [1000] loss = 2.011059045791626
+    [2000] loss = 5.2326812744140625
+    [3000] loss = 1.7426897287368774
+    [4000] loss = 1.2130391597747803
+    [5000] loss = 1.6681632995605469
+    [6000] loss = 1.029949426651001
+    [7000] loss = 1.301844835281372
+    [8000] loss = 0.878564715385437
+    [9000] loss = 1.4557385444641113
 
 
 Now lets generate some test data and see how our model performed:
