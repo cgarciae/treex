@@ -1,32 +1,54 @@
+import typing as tp
 from abc import ABC, ABCMeta, abstractmethod
-from typing import Callable, Dict, Generic, List, Tuple, Type, TypeVar, Any
+from typing import Any, Callable, Dict, Generic, List, Tuple, Type, TypeVar, Union
+
 import jax
 import jax.numpy as jnp
 import jax.tree_util
 import numpy as np
 
 
+A = TypeVar("A")
+T = TypeVar("T", bound="Module")
+S = TypeVar("S", bound="Sliceable")
+
+
 class TreePart:
     pass
 
 
-A = TypeVar("A")
-T = TypeVar("T", bound="Treex")
-S = TypeVar("S", bound="Sliceable")
+@jax.tree_util.register_pytree_node_class
+class Nothing:
+    def tree_flatten(self):
+        return (), None
+
+    @classmethod
+    def tree_unflatten(cls, _aux_data, _children):
+        return cls()
+
+    def __repr__(self) -> str:
+        return "Nothing"
 
 
-class Box:
-    def __init__(self, value: Type):
-        self.value = value
+class Sliceable(TreePart, ABC):
+    @abstractmethod
+    def slice(self: S, *filters: Type) -> S:
+        raise NotImplementedError()
 
-    def __getitem__(self, item):
-        return self.value
+    @abstractmethod
+    def _merge_one(self: S, other: S) -> S:
+        raise NotImplementedError()
 
-    def unwrap(self) -> Type:
-        if isinstance(self.value, Box):
-            return self.value.unwrap()
-        else:
-            return self.value
+
+class Initializer(TreePart):
+    def __init__(self, f: Callable[[jnp.ndarray], np.ndarray]):
+        self.f = f
+
+    def __call__(self, x: jnp.ndarray) -> np.ndarray:
+        return self.f(x)
+
+    def __repr__(self) -> str:
+        return "Initializer"
 
 
 def annotation(
@@ -40,28 +62,23 @@ def annotation(
         return t
 
 
-class Sliceable(TreePart, ABC):
-    @abstractmethod
-    def slice(self: S, *filters: Type) -> S:
-        raise NotImplementedError()
+class Module(Sliceable):
+    def init(self: T, key: Union[int, jnp.ndarray]) -> T:
+        if isinstance(key, int):
+            key = jax.random.PRNGKey(key)
 
-    @abstractmethod
-    def _merge_one(self: S, other: S) -> S:
-        raise NotImplementedError()
+        def init_fn(x):
+            nonlocal key
+            key = tp.cast(jnp.ndarray, key)
 
+            if isinstance(x, Initializer):
+                key, next_key = jax.random.split(key, 2)
+                x = x(next_key)
 
-class _TreeList(List[S], Sliceable):
-    def slice(self, *filters: Type) -> "List[S]":
-        return [x.slice(*filters) for x in self]
+            return x
 
-    def _merge_one(self, other: List[S]) -> List[S]:
-        return [a._merge_one(b) for a, b in zip(self, other)]
+        return jax.tree_map(init_fn, self)
 
-
-TreeList = annotation("TreeList", List, _TreeList, generic=True)[S]
-
-
-class Treex(Sliceable):
     def _parts(self) -> Tuple[Dict[str, Tuple[Type[TreePart], Any]], Dict[str, Any]]:
 
         annotations = getattr(self.__class__, "__annotations__", {})
@@ -100,6 +117,9 @@ class Treex(Sliceable):
 
         return module
 
+    def __init_subclass__(cls):
+        jax.tree_util.register_pytree_node_class(cls)
+
     def slice(self: T, *filters: Type) -> T:
         module: T = self.__class__.__new__(self.__class__)
         tree_parts, not_tree = self._parts()
@@ -108,7 +128,7 @@ class Treex(Sliceable):
             if issubclass(cls, Sliceable):
                 v = cls.slice(v, *filters)
             elif not issubclass(cls, filters):
-                v = None
+                v = Nothing()
 
             setattr(module, k, v)
 
@@ -117,9 +137,6 @@ class Treex(Sliceable):
 
         return module
 
-    def __init_subclass__(cls):
-        jax.tree_util.register_pytree_node_class(cls)
-
     def _merge_one(self: T, other: T) -> T:
         module: T = self.__class__.__new__(self.__class__)
         tree_parts, not_tree = self._parts()
@@ -127,13 +144,14 @@ class Treex(Sliceable):
         for k, (cls, v1) in tree_parts.items():
             v2 = getattr(other, k)
 
-            if issubclass(cls, Treex):
-                if isinstance(v1, Treex) and isinstance(v2, Treex):
-                    v = cls._merge_one(v1, v2)
-                else:
-                    v = v2 if v2 is not None else v1
+            if (
+                issubclass(cls, Module)
+                and isinstance(v1, Module)
+                and isinstance(v2, Module)
+            ):
+                v = cls._merge_one(v1, v2)
             else:
-                v = v2 if v2 is not None else v1
+                v = v2 if not isinstance(v2, Nothing) else v1
 
             setattr(module, k, v)
 
@@ -152,9 +170,32 @@ class Treex(Sliceable):
         return acc
 
 
-class Initializer(TreePart):
-    def __init__(self, f: Callable[[jnp.ndarray], np.ndarray]):
-        self.f = f
+### utils
 
-    def __call__(self, x: jnp.ndarray) -> np.ndarray:
-        return self.f(x)
+
+class Box:
+    def __init__(self, value: Type):
+        self.value = value
+
+    def __getitem__(self, item):
+        return self.value
+
+    def unwrap(self) -> Type:
+        if isinstance(self.value, Box):
+            return self.value.unwrap()
+        else:
+            return self.value
+
+
+class _TreeList(List[S], Sliceable):
+    def slice(self, *filters: Type) -> "List[S]":
+        return [x.slice(*filters) for x in self]
+
+    def _merge_one(self, other: List[S]) -> List[S]:
+        return [a._merge_one(b) for a, b in zip(self, other)]
+
+
+Parameter = annotation("Parameter", tp.Union[np.ndarray, Initializer])
+State = annotation("State", tp.Union[np.ndarray, Initializer])
+Rng = annotation("Rng", State, State)
+ModuleList = annotation("ModuleList", List, _TreeList, generic=True)[S]
