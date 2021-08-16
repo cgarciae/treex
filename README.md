@@ -1,4 +1,4 @@
-# Treex Intro
+# Treex
 
 **Main features**:
 * Modules contain their parameters
@@ -7,7 +7,7 @@
 * No metaclass magic
 * No apply method
 
-To proove the previous we will start with by creating a very contrived but complete module which will use everything from parameters, states, and random state:
+To prove the previous we will start with by creating a very contrived but complete module which will use everything from parameters, states, and random state:
 
 
 ```python
@@ -218,7 +218,7 @@ plt.scatter(data[0], data[1])
 
 
 
-    <matplotlib.collections.PathCollection at 0x7ff0ac399ca0>
+    <matplotlib.collections.PathCollection at 0x7f39d4234ca0>
 
 
 

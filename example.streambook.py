@@ -2,7 +2,7 @@
 import streamlit as __st
 import streambook
 __toc = streambook.TOCSidebar()
-__toc._add(streambook.H1('Treex Intro'))
+__toc._add(streambook.H1('Treex'))
 __toc._add(streambook.H3('Initialization'))
 __toc._add(streambook.H3('Modules are Pytrees'))
 __toc._add(streambook.H3('Modules can be sliced'))
@@ -11,8 +11,8 @@ __toc._add(streambook.H3('Modules compose'))
 __toc._add(streambook.H3('Full Example'))
 
 __toc.generate()
-__st.markdown(r"""<span id='Treex Intro'> </span>
-# Treex Intro
+__st.markdown(r"""<span id='Treex'> </span>
+# Treex
 
 **Main features**:
 * Modules contain their parameters
@@ -21,7 +21,7 @@ __st.markdown(r"""<span id='Treex Intro'> </span>
 * No metaclass magic
 * No apply method
 
-To proove the previous we will start with by creating a very contrived but complete module which will use everything from parameters, states, and random state:""", unsafe_allow_html=True)
+To prove the previous we will start with by creating a very contrived but complete module which will use everything from parameters, states, and random state:""", unsafe_allow_html=True)
 with __st.echo(), streambook.st_stdout('info'):
     from typing import Tuple
     import jax.numpy as jnp

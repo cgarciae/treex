@@ -1,6 +1,6 @@
 # %% [markdown]
 """
-# Treex Intro
+# Treex
 
 **Main features**:
 * Modules contain their parameters
@@ -9,7 +9,7 @@
 * No metaclass magic
 * No apply method
 
-To proove the previous we will start with by creating a very contrived but complete module which will use everything from parameters, states, and random state:
+To prove the previous we will start with by creating a very contrived but complete module which will use everything from parameters, states, and random state:
 """
 
 # %%
