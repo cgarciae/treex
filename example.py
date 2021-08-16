@@ -179,6 +179,7 @@ data = get_data(1000)
 
 fig = plt.figure()  # __st
 plt.scatter(data[0], data[1])
+plt.show()
 fig  # __st
 
 # %% [markdown]
@@ -277,6 +278,7 @@ fig = plt.figure()  # __st
 plt.scatter(data[0], data[1], label="data", color="k")
 plt.plot(X_test, y_pred, label="prediction")
 plt.legend()
+plt.show()
 fig  # __st
 
 # %% [markdown]

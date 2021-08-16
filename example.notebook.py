@@ -178,6 +178,7 @@ def get_batch(
 data = get_data(1000)
 
 plt.scatter(data[0], data[1])
+plt.show()
 
 # %% [markdown]
 """
@@ -274,6 +275,7 @@ y_pred = model(X_test)
 plt.scatter(data[0], data[1], label="data", color="k")
 plt.plot(X_test, y_pred, label="prediction")
 plt.legend()
+plt.show()
 
 # %% [markdown]
 """

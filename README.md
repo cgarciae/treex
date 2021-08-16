@@ -213,18 +213,12 @@ def get_batch(
 data = get_data(1000)
 
 plt.scatter(data[0], data[1])
+plt.show()
 ```
 
 
-
-
-    <matplotlib.collections.PathCollection at 0x7f7a347edca0>
-
-
-
-
     
-![png](README_files/README_13_1.png)
+![png](README_files/README_13_0.png)
     
 
 
@@ -328,18 +322,12 @@ y_pred = model(X_test)
 plt.scatter(data[0], data[1], label="data", color="k")
 plt.plot(X_test, y_pred, label="prediction")
 plt.legend()
+plt.show()
 ```
 
 
-
-
-    <matplotlib.legend.Legend at 0x7f7a343eb7c0>
-
-
-
-
     
-![png](README_files/README_23_1.png)
+![png](README_files/README_23_0.png)
     
 
 
