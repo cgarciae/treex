@@ -218,7 +218,7 @@ plt.scatter(data[0], data[1])
 
 
 
-    <matplotlib.collections.PathCollection at 0x7f39d4234ca0>
+    <matplotlib.collections.PathCollection at 0x7f7a347edca0>
 
 
 
@@ -325,20 +325,15 @@ import matplotlib.pyplot as plt
 X_test = np.linspace(data[0].min(), data[0].max(), 100)[:, None]
 y_pred = model(X_test)
 
-fig = plt.figure()
 plt.scatter(data[0], data[1], label="data", color="k")
 plt.plot(X_test, y_pred, label="prediction")
 plt.legend()
-
-fig
 ```
 
 
 
 
-    
-![png](README_files/README_23_0.png)
-    
+    <matplotlib.legend.Legend at 0x7f7a343eb7c0>
 
 
 

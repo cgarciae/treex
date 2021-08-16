@@ -233,11 +233,10 @@ with __st.echo(), streambook.st_stdout('info'):
     X_test = np.linspace(data[0].min(), data[0].max(), 100)[:, None]
     y_pred = model(X_test)
 
-    fig = plt.figure()
+    fig = plt.figure()  # __st
     plt.scatter(data[0], data[1], label="data", color="k")
     plt.plot(X_test, y_pred, label="prediction")
     plt.legend()
-
-    fig
+    fig  # __st
 __st.markdown(r"""As you can see the model learned the general trend but because of the `NoisyStatefulLinear` modules we have a bit of noise in the predictions.""", unsafe_allow_html=True)
 
