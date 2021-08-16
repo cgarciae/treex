@@ -22,7 +22,7 @@ __st.markdown(r"""<span id='Treex'> </span>
 * No apply method
 * No need special versions of `vmap`, `jit`, and friends.
 
-To prove the previous we will start with by creating a very contrived but complete module which will use everything from parameters, states, and random state:""", unsafe_allow_html=True)
+We will showcase each of the above features by creating a very contrived but complete module that will use everything from parameters, states, and random states:""", unsafe_allow_html=True)
 with __st.echo(), streambook.st_stdout('info'):
     from typing import Tuple
     import jax.numpy as jnp
@@ -82,7 +82,7 @@ with __st.echo(), streambook.st_stdout('info'):
     linear
 __st.markdown(r"""<span id='Initialization'> </span>
 ### Initialization
-As advertised, initialization is easy, the only thing you need to do is to call `init` on your module with a random key:""", unsafe_allow_html=True)
+Initialization is straightforward. The only thing you need to do is to call `init` on your module with a random key:""", unsafe_allow_html=True)
 with __st.echo(), streambook.st_stdout('info'):
     import jax
 
@@ -90,14 +90,14 @@ with __st.echo(), streambook.st_stdout('info'):
     linear
 __st.markdown(r"""<span id='Modules are Pytrees'> </span>
 ### Modules are Pytrees
-Its fundamentally important that modules are also Pytrees, we can check that they are by using `tree_map` with an arbitrary function:""", unsafe_allow_html=True)
+Modules must also be Pytrees. We can check that they are by using `tree_map` with an arbitrary function:""", unsafe_allow_html=True)
 with __st.echo(), streambook.st_stdout('info'):
     # its a pytree alright
     doubled = jax.tree_map(lambda x: 2 * x, linear)
     doubled
 __st.markdown(r"""<span id='Modules can be sliced'> </span>
 ### Modules can be sliced
-An important feature of this Module system is that it can be sliced based on the type of its parameters, the `slice` method does exactly that:""", unsafe_allow_html=True)
+An essential feature for multiple workflows is slicing. This Module system  provides the capability of slicing based on the type of its parameters, and the `slice` method does exactly that:""", unsafe_allow_html=True)
 with __st.echo(), streambook.st_stdout('info'):
     params = linear.slice(tx.Parameter)
     states = linear.slice(tx.State)
@@ -106,10 +106,10 @@ with __st.echo(), streambook.st_stdout('info'):
     print(f"{states=}")
 __st.markdown(r"""<span id='Modules can be merged'> </span>
 Notice the following:
-* Both `params` and `states` are `NoisyStatefulLinear` objects, their type doesn't change after being sliced.
+* Both `params` and `states` are `NoisyStatefulLinear` objects, their type does not change after being sliced.
 * The fields that are filtered out by the `slice` on each field get a special value of type `tx.Nothing`.
 
-Why is this important? As we will see later, it is useful keep parameters and state separate as they will crusially flow though different parts of `value_and_grad`.
+Why is this important? As we will see later, keeping parameters and state separate is helpful as they will crucially flow through different parts of `value_and_grad`.
 
 ### Modules can be merged
 This is just the inverse operation to `slice`, `merge` behaves like dict's `update` but returns a new module leaving the original modules intact:""", unsafe_allow_html=True)
@@ -118,7 +118,7 @@ with __st.echo(), streambook.st_stdout('info'):
     linear
 __st.markdown(r"""<span id='Modules compose'> </span>
 ### Modules compose
-As you'd expect, you can have modules inside ther modules, same as previously the key is to annotate the class fields. Here we will create an `MLP` class that uses two `NoisyStatefulLinear` modules:""", unsafe_allow_html=True)
+Treex architecture easily allows you to have modules inside their modules, the same as previously. Here we will create an `MLP` class that uses two `NoisyStatefulLinear` modules: The key is to annotate the class fields.""", unsafe_allow_html=True)
 with __st.echo(), streambook.st_stdout('info'):
     class MLP(tx.Module):
         linear1: NoisyStatefulLinear
@@ -168,7 +168,7 @@ with __st.echo(), streambook.st_stdout('info'):
     plt.scatter(data[0], data[1])
     plt.show()
     fig  # __st
-__st.markdown(r"""Now we will be reusing the previous MLP model, and we will create an optax optimizer that will be used to train the model:""", unsafe_allow_html=True)
+__st.markdown(r"""Now we will be reusing the previous MLP model, and we will create an optax optimizer that is used to train the model:""", unsafe_allow_html=True)
 with __st.echo(), streambook.st_stdout('info'):
     import optax
 
@@ -178,7 +178,7 @@ with __st.echo(), streambook.st_stdout('info'):
     states = model.slice(tx.State)
 
     opt_state = optimizer.init(params)
-__st.markdown(r"""Notice that we are already splitting the model into `params` and `states` since we need to pass the `params` only to the optimizer. Next we will create the loss function, it will take the model parts and the data parts and return the loss plus the new states:""", unsafe_allow_html=True)
+__st.markdown(r"""Notice that we are already splitting the model into `params` and `states` since we only need to pass the `params` to the optimizer. Next, we will create the loss function, it will take the model parts and the data parts and return the loss plus the new states:""", unsafe_allow_html=True)
 with __st.echo(), streambook.st_stdout('info'):
     from functools import partial
 
@@ -199,11 +199,11 @@ with __st.echo(), streambook.st_stdout('info'):
         states = model.slice(tx.State)
 
         return loss, states
-__st.markdown(r"""Notice that the first thing we are doing is merging the `params` and `states` into the complete model since we need everything in place to perform the forward pass. Also, we return the updated states from the model, this is needed because JAX functional API requires us to be explicit about state management.
+__st.markdown(r"""Notice that we are merging the `params` and `states` into the complete model since we need everything in place to perform the forward pass. Also, we return the updated states from the model. The above steps are required because JAX functional API requires us to be explicit about state management.
 
-**Note**: inside `loss_fn` (which is wrapped by `value_and_grad`) module can behave like a regular mutable python object, however, every time its treated as pytree a new reference will be created as happens in `jit`, `grad`, `vmap`, etc. Its important to keep this into account when using functions like `vmap` inside a module as certain book keeping will be needed to manage state correctly.
+**Note**: inside `loss_fn` (wrapped by `value_and_grad`) module can behave like a regular mutable Python object. However, every time it is treated as a pytree a new reference will be created in `jit`, `grad`, `vmap`, etc. It is essential to consider this when using functions like `vmap` inside a module, as JAX will need specific bookkeeping to manage the state correctly.
 
-Next we will implement the `update` function, it will look indistinguishable from your standard Haiku update which also separates weights into `params` and `states`: """, unsafe_allow_html=True)
+Next, we will implement the `update` function, it will look indistinguishable from your standard Haiku update, which also separates weights into `params` and `states`: """, unsafe_allow_html=True)
 with __st.echo(), streambook.st_stdout('info'):
     @jax.jit
     def update(params: MLP, states: MLP, opt_state, x, y):
@@ -214,7 +214,7 @@ with __st.echo(), streambook.st_stdout('info'):
         params = optax.apply_updates(params, updates)
 
         return params, states, opt_state, loss
-__st.markdown(r"""Finally we create a simple training loop that perform a few thousand updates and merge `params` and `states` back into a single `model` at the end:""", unsafe_allow_html=True)
+__st.markdown(r"""Finally, we create a simple training loop that performs a few thousand updates and merge `params` and `states` back into a single `model` at the end:""", unsafe_allow_html=True)
 with __st.echo(), streambook.st_stdout('info'):
     steps = 10_000
 
@@ -241,5 +241,5 @@ with __st.echo(), streambook.st_stdout('info'):
     plt.legend()
     plt.show()
     fig  # __st
-__st.markdown(r"""As you can see the model learned the general trend but because of the `NoisyStatefulLinear` modules we have a bit of noise in the predictions.""", unsafe_allow_html=True)
+__st.markdown(r"""We can see that the model has learned the general trend, but because of the `NoisyStatefulLinear` modules we have a bit of noise in the predictions.""", unsafe_allow_html=True)
 
