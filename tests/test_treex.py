@@ -7,8 +7,8 @@ import numpy as np
 import treex as tx
 
 
-Parameter = tx.annotation("Parameter", np.ndarray)
-State = tx.annotation("State", Union[np.ndarray, int])
+Parameter = tx.annotation(np.ndarray, tx.Parameter)
+State = tx.annotation(Union[np.ndarray, int], tx.State)
 
 
 class Linear(tx.Module):
@@ -41,6 +41,27 @@ class TestTreex:
         mlp = MLP(2, 3, 5)
 
         flat = jax.tree_leaves(mlp)
+
+        assert len(flat) == 6
+
+    def test_flatten_slice(self):
+
+        mlp = MLP(2, 3, 5).slice(State)
+
+        flat = jax.tree_leaves(mlp)
+
+        assert len(flat) == 2
+
+    def test_flatten_slice_merging(self):
+
+        mlp = MLP(2, 3, 5).slice(State)
+
+        is_merging_old = tx.LOCAL.is_merging
+        try:
+            tx.LOCAL.is_merging = True
+            flat = jax.tree_leaves(mlp)
+        finally:
+            tx.LOCAL.is_merging = is_merging_old
 
         assert len(flat) == 6
 
@@ -114,10 +135,8 @@ class TestTreex:
         assert not isinstance(mlp_next.linear2.n, Nothing)
 
     def test_list(self):
-        ModuleList = tx.annotation("ModuleList", List)
-
         class LinearList(tx.Module):
-            params: ModuleList
+            params: tx.List[Parameter]
 
             def __init__(self, din, dout, name="linear"):
 
