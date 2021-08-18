@@ -1,335 +1,173 @@
 # Treex
 
-**Main features**:
-* Modules contain their parameters
-* Easy transfer learning
-* Simple initialization
-* No metaclass magic
-* No apply method
-* No need special versions of `vmap`, `jit`, and friends.
+### Simple Python objects
+```python
+class Linear(tx.Module): # Module class is very simple, doesn't use MetaClass magic
+    w: tx.Parameter # just use simple annotations to define the structure
+    b: tx.Parameter 
 
-We will showcase each of the above features by creating a very contrived but complete module that will use everything from parameters, states, and random states:
+    def __init__(self, din, dout):
+        # modules contain their parameters directly!
+        # use an Initializer for lazy initialization
+        self.w = tx.Initializer(lambda key: jax.random.uniform(key, shape=(din, dout)))
+        # or just set their value directly
+        self.b = jnp.zeros(shape=(dout,))
 
+    def __call__(self, x):
+        return jnp.dot(x, self.w) + self.b
+
+linear = Linear(3, 5).init(42) # initialization is super easy
+y = linear(x) # you can call modules directly
+```
+
+### Pytorch-like APIs
 
 ```python
-from typing import Tuple
-import jax.numpy as jnp
-import numpy as np
-
 import treex as tx
 
-
-class NoisyStatefulLinear(tx.Module):
-    # tree parts are defined by treex annotations
-    w: tx.Parameter
-    b: tx.Parameter
-    count: tx.State
-    rng: tx.Rng
-
-    # other annotations are possible but ignored by type
-    name: str
-
-    def __init__(self, din, dout, name="noisy_stateful_linear"):
-        self.name = name
-
-        # Initializers only expect RNG key
-        self.w = tx.Initializer(lambda k: jax.random.uniform(k, shape=(din, dout)))
-        self.b = tx.Initializer(lambda k: jax.random.uniform(k, shape=(dout,)))
-
-        # random state is JUST state, we can keep it locally
-        self.rng = tx.Initializer(lambda k: k)
-
-        # if value is known there is no need for an Initiaizer
-        self.count = jnp.array(1)
-
-    def __call__(self, x: np.ndarray) -> np.ndarray:
-        assert isinstance(self.count, jnp.ndarray)
-        assert isinstance(self.rng, jnp.ndarray)
-
-        # state can easily be updated
-        self.count = self.count + 1
-
-        # random state is no different :)
-        key, self.rng = jax.random.split(self.rng, 2)
-
-        # your typical linear operation
-        y = jnp.dot(x, self.w) + self.b
-
-        # add noise for fun
-        state_noise = 1.0 / self.count
-        random_noise = 0.8 * jax.random.normal(key, shape=y.shape)
-
-        return y + state_noise + random_noise
-
-    def __repr__(self) -> str:
-        return f"NoisyStatefulLinear(w={self.w}, b={self.b}, count={self.count}, rng={self.rng})"
-
-
-linear = NoisyStatefulLinear(1, 1)
-
-linear
-```
-
-    WARNING:absl:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
-
-
-
-
-
-    NoisyStatefulLinear(w=Initializer, b=Initializer, count=1, rng=Initializer)
-
-
-
-### Initialization
-Initialization is straightforward. The only thing you need to do is to call `init` on your module with a random key:
-
-
-```python
-import jax
-
-linear = linear.init(key=jax.random.PRNGKey(42))
-linear
-```
-
-
-
-
-    NoisyStatefulLinear(w=[[0.91457367]], b=[0.42094743], count=1, rng=[1371681402 3011037117])
-
-
-
-### Modules are Pytrees
-Modules must also be Pytrees. We can check that they are by using `tree_map` with an arbitrary function:
-
-
-```python
-# its a pytree alright
-doubled = jax.tree_map(lambda x: 2 * x, linear)
-doubled
-```
-
-
-
-
-    NoisyStatefulLinear(w=[[1.8291473]], b=[0.84189487], count=2, rng=[2743362804 1727106938])
-
-
-
-### Modules can be sliced
-An essential feature for multiple workflows is slicing. This Module system  provides the capability of slicing based on the type of its parameters, and the `slice` method does exactly that:
-
-
-```python
-params = linear.slice(tx.Parameter)
-states = linear.slice(tx.State)
-
-print(f"{params=}")
-print(f"{states=}")
-```
-
-    params=NoisyStatefulLinear(w=[[0.91457367]], b=[0.42094743], count=Nothing, rng=Nothing)
-    states=NoisyStatefulLinear(w=Nothing, b=Nothing, count=1, rng=[1371681402 3011037117])
-
-
-Notice the following:
-* Both `params` and `states` are `NoisyStatefulLinear` objects, their type does not change after being sliced.
-* The fields that are filtered out by the `slice` on each field get a special value of type `tx.Nothing`.
-
-Why is this important? As we will see later, keeping parameters and state separate is helpful as they will crucially flow through different parts of `value_and_grad`.
-
-### Modules can be merged
-This is just the inverse operation to `slice`, `merge` behaves like dict's `update` but returns a new module leaving the original modules intact:
-
-
-```python
-linear = params.merge(states)
-linear
-```
-
-
-
-
-    NoisyStatefulLinear(w=[[0.91457367]], b=[0.42094743], count=1, rng=[1371681402 3011037117])
-
-
-
-### Modules compose
-Treex architecture easily allows you to have modules inside their modules, the same as previously. Here we will create an `MLP` class that uses two `NoisyStatefulLinear` modules: The key is to annotate the class fields.
-
-
-```python
 class MLP(tx.Module):
-    linear1: NoisyStatefulLinear
-    linear2: NoisyStatefulLinear
+    linear1: Linear
+    linear2: Linear
 
-    def __init__(self, din, dmid, dout):
-        self.linear1 = NoisyStatefulLinear(din, dmid, name="linear1")
-        self.linear2 = NoisyStatefulLinear(dmid, dout, name="linear2")
+    def __init__(din, dmid, dout):
+        self.linear1 = Linear(din, dmid)
+        self.linear2 = Linear(dmid, dout)
 
-    def __call__(self, x: np.ndarray) -> np.ndarray:
+    def __call__(self, x):
         x = jax.nn.relu(self.linear1(x))
         x = self.linear2(x)
         return x
-
-    def __repr__(self) -> str:
-        return f"MLP(linear1={self.linear1}, linear2={self.linear2})"
-
-
-model = MLP(din=1, dmid=2, dout=1).init(key=42)
-model
 ```
 
+### Modules are Pytrees
+```python
+@jax.grad # no need for special versions of `jit`, `grad`, `vmap`, etc.
+def loss_fn(model: MLP, x, y):  # as with any pytree Modules can be passed through `grad`
+    y_pred = model(x) # just call the modules, no need for `apply`
+    return jnp.mean((y_pred - y) ** 2)
+```
 
+### Simple State Management
+```python
+class Average(tx.Module):
+    count: tx.State
+    total: tx.State
 
+    def __init__(self):
+        self.count = jnp.array(0)
+        self.total = jnp.array(0.0)
 
-    MLP(linear1=NoisyStatefulLinear(w=[[0.95598125 0.4032725 ]], b=[0.5371039  0.10409856], count=1, rng=[1371681402 3011037117]), linear2=NoisyStatefulLinear(w=[[0.7236692]
-     [0.8625636]], b=[0.5354074], count=1, rng=[3818536016 1640990408]))
+    def __call__(self, x):
+        self.count += np.prod(x.shape)
+        self.total += jnp.sum(x)
 
+        return self.total / self.count
+```
+
+```python
+class Dropout(tx.Module):
+    rng: tx.Rng
+
+    def __init__(self, rate: float):
+        self.rate = rate
+        self.rng = tx.Initializer(lambda key: key) # its just a PRNGKey
+
+    def __call__(self, x):
+        # RNG is just State, update in place as well
+        key, self.rng = jax.random.split(self.rng)
+        mask = jax.random.bernoulli(key, self.rate, x.shape)
+        ...
+```
+
+### Slice and Merge API
+```python
+params: MLP = model.slice(tx.Parameter)
+states: MLP = model.slice(tx.State)
+
+@partial(jax.value_and_grad) # no need for special versions of `jit`, `grad`, `vmap`, etc.
+def loss_fn(params, states, x, y):  # will only differentiate w.r.t. params
+    model = params.merge(states) # merge parameters and states back into the complete model
+    ...
+
+optimizer = optax.adam(1e-3)
+opt_state = optimizer.init(params) # only params from the optimizer
+```
+
+### Simple "parameter surgery"
+```python
+class VAE(tx.Module):
+    encoder: Encoder
+    decoder: Decoder
+    ...
+
+vae = VAE(...)
+
+# train VAE....
+
+# extract decoder to generate samples
+decoder = vae.decoder
+samples = decoder(z)
+```
 
 
 ### Full Example
-Using the previous `model` we will show how to train it using the proposed Module system. First lets get some data:
-
 
 ```python
+import jax
+import jax.numpy as jnp
+import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.pyplot as plt
-
-np.random.seed(0)
-
-
-def get_data(dataset_size: int) -> Tuple[np.ndarray, np.ndarray]:
-    x = np.random.normal(size=(dataset_size, 1))
-    y = 5 * x - 2 + 0.4 * np.random.normal(size=(dataset_size, 1))
-    return x, y
-
-
-def get_batch(
-    data: Tuple[np.ndarray, np.ndarray], batch_size: int
-) -> Tuple[np.ndarray, np.ndarray]:
-    idx = np.random.choice(len(data[0]), batch_size)
-    return jax.tree_map(lambda x: x[idx], data)
-
-
-data = get_data(1000)
-
-plt.scatter(data[0], data[1])
-plt.show()
-```
-
-
-    
-![png](README_files/README_13_0.png)
-    
-
-
-Now we will be reusing the previous MLP model, and we will create an optax optimizer that is used to train the model:
-
-
-```python
 import optax
+import treex as tx
 
-optimizer = optax.adam(1e-2)
-
-params = model.slice(tx.Parameter)
-states = model.slice(tx.State)
-
-opt_state = optimizer.init(params)
-```
-
-Notice that we are already splitting the model into `params` and `states` since we only need to pass the `params` to the optimizer. Next, we will create the loss function, it will take the model parts and the data parts and return the loss plus the new states:
+x = np.random.uniform(size=(500, 1))
+y = 1.4 * x - 0.3 + np.random.normal(scale=0.1, size=(500, 1))
 
 
-```python
-from functools import partial
+class Linear(tx.Module):
+    w: tx.Parameter
+    b: tx.Parameter
+
+    def __init__(self, din, dout):
+        self.w = tx.Initializer(lambda key: jax.random.uniform(key, shape=(din, dout)))
+        self.b = jnp.zeros(shape=(dout,))
+
+    def __call__(self, x):
+        return jnp.dot(x, self.w) + self.b
 
 
-@partial(jax.value_and_grad, has_aux=True)
-def loss_fn(params: MLP, states: MLP, x, y):
+model = Linear(1, 1).init(42)
+optimizer = optax.adam(0.001)
 
-    # merge params and states to get a full model
-    model: MLP = params.merge(states)
-
-    # apply model
-    pred_y = model(x)
-
-    # MSE loss
-    loss = jnp.mean((y - pred_y) ** 2)
-
-    # new states
-    states = model.slice(tx.State)
-
-    return loss, states
-```
-
-Notice that we are merging the `params` and `states` into the complete model since we need everything in place to perform the forward pass. Also, we return the updated states from the model. The above steps are required because JAX functional API requires us to be explicit about state management.
-
-**Note**: inside `loss_fn` (wrapped by `value_and_grad`) module can behave like a regular mutable Python object. However, every time it is treated as a pytree a new reference will be created in `jit`, `grad`, `vmap`, etc. It is essential to consider this when using functions like `vmap` inside a module, as JAX will need specific bookkeeping to manage the state correctly.
-
-Next, we will implement the `update` function, it will look indistinguishable from your standard Haiku update, which also separates weights into `params` and `states`: 
+opt_state = optimizer.init(model)
 
 
-```python
+@jax.value_and_grad
+def loss_fn(model, x, y):
+    pred = model(x)
+    return jnp.mean((pred - y) ** 2)
+
+
 @jax.jit
-def update(params: MLP, states: MLP, opt_state, x, y):
-    (loss, states), grads = loss_fn(params, states, x, y)
-    updates, opt_state = optimizer.update(grads, opt_state, params)
+def train_step(model, x, y, opt_state):
+    loss, grads = loss_fn(model, x, y)
+    updates, opt_state = optimizer.update(grads, opt_state, model)
+    model = optax.apply_updates(model, updates)
 
-    # use regular optax
-    params = optax.apply_updates(params, updates)
-
-    return params, states, opt_state, loss
-```
-
-Finally, we create a simple training loop that performs a few thousand updates and merge `params` and `states` back into a single `model` at the end:
+    return loss, model, opt_state
 
 
-```python
-steps = 10_000
-
-for step in range(steps):
-    x, y = get_batch(data, batch_size=32)
-
-    params, states, opt_state, loss = update(params, states, opt_state, x, y)
-
-    if step % 1000 == 0:
-        print(f"[{step}] loss = {loss}")
-
-# get the final model
-model = params.merge(states)
-```
-
-    [0] loss = 36.88694763183594
-    [1000] loss = 2.011059045791626
-    [2000] loss = 5.2326812744140625
-    [3000] loss = 1.7426897287368774
-    [4000] loss = 1.2130391597747803
-    [5000] loss = 1.6681632995605469
-    [6000] loss = 1.029949426651001
-    [7000] loss = 1.301844835281372
-    [8000] loss = 0.878564715385437
-    [9000] loss = 1.4557385444641113
+for step in range(1000):
+    loss, model, opt_state = train_step(model, x, y, opt_state)
+    if step % 100 == 0:
+        print(f"loss: {loss:.4f}")
 
 
-Now lets generate some test data and see how our model performed:
-
-
-```python
-import matplotlib.pyplot as plt
-
-X_test = np.linspace(data[0].min(), data[0].max(), 100)[:, None]
+X_test = np.linspace(x.min(), x.max(), 100)[:, None]
 y_pred = model(X_test)
 
-plt.scatter(data[0], data[1], label="data", color="k")
-plt.plot(X_test, y_pred, label="prediction")
+plt.scatter(x, y, c="k", label="data")
+plt.plot(X_test, y_pred, c="b", linewidth=2, label="prediction")
 plt.legend()
 plt.show()
 ```
-
-
-    
-![png](README_files/README_23_0.png)
-    
-
-
-We can see that the model has learned the general trend, but because of the `NoisyStatefulLinear` modules we have a bit of noise in the predictions.
