@@ -1,7 +1,7 @@
 import threading
 import typing as tp
-from abc import ABC, ABCMeta, abstractmethod
-from typing import Any, Callable, Dict, Generic, List, Tuple, Type, TypeVar, Union
+from abc import ABC, abstractmethod
+
 
 import jax
 import jax.numpy as jnp
@@ -12,19 +12,20 @@ import numpy as np
 class Context(threading.local):
     is_slicing: bool = False
     is_merging: bool = False
+    is_initializing: bool = False
 
 
 LOCAL: Context = Context()
 
 
 class Box:
-    def __init__(self, value: Type):
+    def __init__(self, value: tp.Type):
         self.value = value
 
-    def __getitem__(self, item):
+    def __getitem__(self, *items):
         return self.value
 
-    def unwrap(self) -> Type:
+    def unwrap(self) -> tp.Type:
         if isinstance(self.value, Box):
             return self.value.unwrap()
         else:
@@ -33,22 +34,31 @@ class Box:
 
 class IdentityGetter:
     def __getitem__(self, item):
-        return item
+        if isinstance(item, tuple):
+            return item[-1]
+        else:
+            return item
 
 
 IDENTITY_GETTER = IdentityGetter()
 
 
-A = TypeVar("A")
-T = TypeVar("T", bound="Module")
-S = TypeVar("S", bound="Sliceable")
+A = tp.TypeVar("A")
+B = tp.TypeVar("B")
+T = tp.TypeVar("T", bound="Module")
+S = tp.TypeVar("S", bound="Sliceable")
+
+
+class _Optional:
+    def __getitem__(self, item: T) -> tp.Type[tp.Optional[T]]:
+        return None
 
 
 class TreePart:
     pass
 
 
-def annotation(static: Type[A], real: Any, generic: bool = False) -> Type[A]:
+def annotation(static: tp.Type[A], real: tp.Any, generic: bool = False) -> tp.Type[A]:
 
     if generic:
         return Box(real)
@@ -72,10 +82,14 @@ class ModuleContainer(TreePart):
     pass
 
 
+# simple types
 Parameter = annotation(tp.Union[np.ndarray, "Initializer"], _Parameter)
 State = annotation(tp.Union[np.ndarray, "Initializer"], _State)
 Rng = annotation(tp.Union[np.ndarray, "Initializer"], _Rng)
+
+# composite types
 List = annotation(tp.List[A], IDENTITY_GETTER, generic=True)[A]
+Dict = annotation(tp.Dict[A, B], IDENTITY_GETTER, generic=True)[A, B]
 ModuleList = annotation(tp.List[T], Box(ModuleContainer), generic=True)[T]
 
 
@@ -110,7 +124,7 @@ class Nothing:
 
 
 class Initializer:
-    def __init__(self, f: Callable[[jnp.ndarray], np.ndarray]):
+    def __init__(self, f: tp.Callable[[jnp.ndarray], tp.Any]):
         self.f = f
 
     def __call__(self, x: jnp.ndarray) -> np.ndarray:
@@ -121,7 +135,9 @@ class Initializer:
 
 
 class Module:
-    def init(self: T, key: Union[int, jnp.ndarray]) -> T:
+    _initialized = False
+
+    def init(self: T, key: tp.Union[int, jnp.ndarray]) -> T:
         if isinstance(key, int):
             key = jax.random.PRNGKey(key)
 
@@ -135,7 +151,18 @@ class Module:
 
             return x
 
-        return jax.tree_map(init_fn, self)
+        old_initializing = LOCAL.is_initializing
+        LOCAL.is_initializing = True
+
+        try:
+            module = jax.tree_map(init_fn, self)
+        finally:
+            LOCAL.is_initializing = old_initializing
+
+        return module
+
+    def post_init(self):
+        pass
 
     def tree_flatten(self):
         annotations = getattr(self.__class__, "__annotations__", {})
@@ -171,6 +198,10 @@ class Module:
         for i, k in enumerate(aux_data["tree"]):
             setattr(module, k, children[i])
 
+        if LOCAL.is_initializing and not module._initialized:
+            module.post_init()
+            module._initialized = True
+
         return module
 
     def __init_subclass__(cls):
@@ -179,7 +210,7 @@ class Module:
     def copy(self: T) -> T:
         return jax.tree_map(lambda x: x, self)
 
-    def slice(self: T, *filters: Type) -> T:
+    def slice(self: T, *filters: tp.Type) -> T:
         flat: tp.List[ValueAnnotation]
 
         old_slicing = LOCAL.is_slicing

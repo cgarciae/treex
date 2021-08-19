@@ -47,7 +47,7 @@ def loss_fn(model: MLP, x, y):  # as with any pytree Modules can be passed throu
     return jnp.mean((y_pred - y) ** 2)
 ```
 
-### Simple State Management
+### Easy State Management
 ```python
 class Average(tx.Module):
     count: tx.State
@@ -93,7 +93,7 @@ optimizer = optax.adam(1e-3)
 opt_state = optimizer.init(params) # only params from the optimizer
 ```
 
-### Simple "parameter surgery"
+### Trivial Parameter Surgery
 ```python
 class VAE(tx.Module):
     encoder: Encoder

@@ -195,3 +195,18 @@ class TestTreex:
         assert isinstance(mlp.linears[1].w, jnp.DeviceArray)
         assert isinstance(mlp.linears[1].b, jnp.DeviceArray)
         assert isinstance(mlp.linears[1].n, jnp.DeviceArray)
+
+    def test_idenpotent_init(self):
+        n = 0
+
+        class A(tx.Module):
+            def post_init(self):
+                nonlocal n
+                n = n + 1
+
+        module = A()
+
+        module = module.init(42)
+        module = module.init(42)
+
+        assert n == 1

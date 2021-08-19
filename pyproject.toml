@@ -10,6 +10,7 @@ jax = "^0.2.18"
 jaxlib = "^0.1.70"
 optax = "^0.0.9"
 matplotlib = "^3.4.3"
+flax = "^0.3.4"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
