@@ -1,6 +1,7 @@
 import threading
 import typing as tp
 from abc import ABC, abstractmethod
+from treex import types
 
 
 import jax
@@ -17,96 +18,15 @@ class Context(threading.local):
 
 LOCAL: Context = Context()
 
-
-class Box:
-    def __init__(self, value: tp.Type):
-        self.value = value
-
-    def __getitem__(self, *items):
-        return self.value
-
-    def unwrap(self) -> tp.Type:
-        if isinstance(self.value, Box):
-            return self.value.unwrap()
-        else:
-            return self.value
-
-
-class IdentityGetter:
-    def __getitem__(self, item):
-        if isinstance(item, tuple):
-            return item[-1]
-        else:
-            return item
-
-
-IDENTITY_GETTER = IdentityGetter()
-
-
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
 T = tp.TypeVar("T", bound="Module")
-S = tp.TypeVar("S", bound="Sliceable")
-
-
-class _Optional:
-    def __getitem__(self, item: T) -> tp.Type[tp.Optional[T]]:
-        return None
-
-
-class TreePart:
-    pass
-
-
-def annotation(static: tp.Type[A], real: tp.Any, generic: bool = False) -> tp.Type[A]:
-
-    if generic:
-        return Box(real)
-    else:
-        return real
-
-
-class _Parameter(TreePart):
-    pass
-
-
-class _State(TreePart):
-    pass
-
-
-class _Rng(_State):
-    pass
-
-
-class ModuleContainer(TreePart):
-    pass
-
-
-# simple types
-Parameter = annotation(tp.Union[np.ndarray, "Initializer"], _Parameter)
-State = annotation(tp.Union[np.ndarray, "Initializer"], _State)
-Rng = annotation(tp.Union[np.ndarray, "Initializer"], _Rng)
-
-# composite types
-List = annotation(tp.List[A], IDENTITY_GETTER, generic=True)[A]
-Dict = annotation(tp.Dict[A, B], IDENTITY_GETTER, generic=True)[A, B]
-ModuleList = annotation(tp.List[T], Box(ModuleContainer), generic=True)[T]
-
-
-class ValueAnnotation:
-    def __init__(self, value, annotation):
-        self.value = value
-        self.annotation = annotation
-
-
-class Dummy:
-    pass
 
 
 @jax.tree_util.register_pytree_node_class
 class Nothing:
     def tree_flatten(self):
-        children = (Dummy(),) if LOCAL.is_merging else ()
+        children = (types.Dummy(),) if LOCAL.is_merging else ()
         return children, None
 
     @classmethod
@@ -114,24 +34,13 @@ class Nothing:
         if LOCAL.is_merging:
             value = children[0]
 
-            if not isinstance(value, Dummy):
+            if not isinstance(value, types.Dummy):
                 return value
 
         return cls()
 
     def __repr__(self) -> str:
         return "Nothing"
-
-
-class Initializer:
-    def __init__(self, f: tp.Callable[[jnp.ndarray], tp.Any]):
-        self.f = f
-
-    def __call__(self, x: jnp.ndarray) -> np.ndarray:
-        return self.f(x)
-
-    def __repr__(self) -> str:
-        return "Initializer"
 
 
 class Module:
@@ -145,7 +54,7 @@ class Module:
             nonlocal key
             key = tp.cast(jnp.ndarray, key)
 
-            if isinstance(x, Initializer):
+            if isinstance(x, types.Initializer):
                 key, next_key = jax.random.split(key, 2)
                 x = x(next_key)
 
@@ -176,10 +85,10 @@ class Module:
 
             if isinstance(value, Module):
                 tree[name] = value
-            elif annotation is not None and issubclass(annotation, TreePart):
+            elif annotation is not None and issubclass(annotation, types.TreePart):
                 if LOCAL.is_slicing:
                     tree[name] = jax.tree_map(
-                        lambda x: ValueAnnotation(x, annotation), value
+                        lambda x: types.ValueAnnotation(x, annotation), value
                     )
                 else:
                     tree[name] = value
@@ -211,7 +120,7 @@ class Module:
         return jax.tree_map(lambda x: x, self)
 
     def slice(self: T, *filters: tp.Type) -> T:
-        flat: tp.List[ValueAnnotation]
+        flat: tp.List[types.ValueAnnotation]
 
         old_slicing = LOCAL.is_slicing
         LOCAL.is_slicing = True
@@ -239,7 +148,7 @@ class Module:
         def merge_fn(*xs):
             acc, *xs = xs
             for x in xs:
-                if not isinstance(x, Dummy):
+                if not isinstance(x, types.Dummy):
                     acc = x
             return acc
 
@@ -251,6 +160,3 @@ class Module:
             LOCAL.is_merging = old_merging
 
         return module
-
-
-### utils

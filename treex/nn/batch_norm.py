@@ -4,10 +4,11 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from treex import base
+from treex.module import Module
+from treex import types
 
 
-class BatchNorm(base.Module):
+class BatchNorm(Module):
     """
     A flax_module transformation applied over the last dimension of the input.
 
@@ -15,8 +16,8 @@ class BatchNorm(base.Module):
     arguments accept the same flax artifacts.
     """
 
-    params: base.Dict[str, base.Parameter]
-    batch_stats: base.Dict[str, base.State]  # should State be renamed to BatchStat?
+    params: types.Dict[str, types.Parameter]
+    batch_stats: types.Dict[str, types.State]  # should State be renamed to BatchStat?
 
     def __init__(
         self,
@@ -76,7 +77,7 @@ class BatchNorm(base.Module):
             axis_name=axis_name,
             axis_index_groups=axis_index_groups,
         )
-        self.params = base.Initializer(
+        self.params = types.Initializer(
             lambda key: self._flax_init(key, features_in, axis)
         )
         self.batch_stats = None

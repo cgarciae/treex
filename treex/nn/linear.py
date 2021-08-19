@@ -4,10 +4,11 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from treex import base
+from treex.module import Module
+from treex import types
 
 
-class Linear(base.Module):
+class Linear(Module):
     """
     A flax_module transformation applied over the last dimension of the input.
 
@@ -15,7 +16,7 @@ class Linear(base.Module):
     arguments accept the same flax artifacts.
     """
 
-    params: base.Dict[str, base.Parameter]
+    params: types.Dict[str, types.Parameter]
 
     def __init__(
         self,
@@ -52,7 +53,7 @@ class Linear(base.Module):
             kernel_init=kernel_init,
             bias_init=bias_init,
         )
-        self.params = base.Initializer(lambda key: self._flax_init(key, features_in))
+        self.params = types.Initializer(lambda key: self._flax_init(key, features_in))
 
     def post_init(self):
         assert isinstance(self.params, tp.Mapping)

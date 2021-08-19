@@ -1,4 +1,3 @@
-from treex.base import Nothing
 from typing import List, Union
 import jax
 import jax.numpy as jnp
@@ -98,24 +97,24 @@ class TestTreex:
         # params
         mlp_params = mlp.slice(Parameter)
 
-        assert not isinstance(mlp_params.linear1.w, Nothing)
-        assert not isinstance(mlp_params.linear1.b, Nothing)
-        assert isinstance(mlp_params.linear1.n, Nothing)
+        assert not isinstance(mlp_params.linear1.w, tx.Nothing)
+        assert not isinstance(mlp_params.linear1.b, tx.Nothing)
+        assert isinstance(mlp_params.linear1.n, tx.Nothing)
 
-        assert not isinstance(mlp_params.linear2.w, Nothing)
-        assert not isinstance(mlp_params.linear2.b, Nothing)
-        assert isinstance(mlp_params.linear2.n, Nothing)
+        assert not isinstance(mlp_params.linear2.w, tx.Nothing)
+        assert not isinstance(mlp_params.linear2.b, tx.Nothing)
+        assert isinstance(mlp_params.linear2.n, tx.Nothing)
 
         # states
         mlp_states = mlp.slice(State)
 
-        assert isinstance(mlp_states.linear1.w, Nothing)
-        assert isinstance(mlp_states.linear1.b, Nothing)
-        assert not isinstance(mlp_states.linear1.n, Nothing)
+        assert isinstance(mlp_states.linear1.w, tx.Nothing)
+        assert isinstance(mlp_states.linear1.b, tx.Nothing)
+        assert not isinstance(mlp_states.linear1.n, tx.Nothing)
 
-        assert isinstance(mlp_states.linear2.w, Nothing)
-        assert isinstance(mlp_states.linear2.b, Nothing)
-        assert not isinstance(mlp_states.linear2.n, Nothing)
+        assert isinstance(mlp_states.linear2.w, tx.Nothing)
+        assert isinstance(mlp_states.linear2.b, tx.Nothing)
+        assert not isinstance(mlp_states.linear2.n, tx.Nothing)
 
     def test_merge(self):
 
@@ -126,13 +125,13 @@ class TestTreex:
 
         mlp_next = mlp_params.merge(mlp_states)
 
-        assert not isinstance(mlp_next.linear1.w, Nothing)
-        assert not isinstance(mlp_next.linear1.b, Nothing)
-        assert not isinstance(mlp_next.linear1.n, Nothing)
+        assert not isinstance(mlp_next.linear1.w, tx.Nothing)
+        assert not isinstance(mlp_next.linear1.b, tx.Nothing)
+        assert not isinstance(mlp_next.linear1.n, tx.Nothing)
 
-        assert not isinstance(mlp_next.linear2.w, Nothing)
-        assert not isinstance(mlp_next.linear2.b, Nothing)
-        assert not isinstance(mlp_next.linear2.n, Nothing)
+        assert not isinstance(mlp_next.linear2.w, tx.Nothing)
+        assert not isinstance(mlp_next.linear2.b, tx.Nothing)
+        assert not isinstance(mlp_next.linear2.n, tx.Nothing)
 
     def test_list(self):
         class LinearList(tx.Module):
