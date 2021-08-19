@@ -80,17 +80,38 @@ class Dropout(tx.Module):
 ```
 
 ### Slice and Merge API
+The `slice` method allows you to select a subtree by filtering based on a type, all leaves that are not a subclass of such type are set to a special `Nothing` value.
+```python
+class MyModule(tx.Module):
+    a: tx.Parameter = 1
+    b: tx.State = 2
+    ...
+
+module = MyModule(...)
+
+module.slice(tx.Parameter) # MyModule(a=1, b=Nothing)
+module.slice(tx.State)     # MyModule(a=Nothing, b=2)
+```
+`Nothing` much like `None` is an empty pytree so it gets ignored by tree operations:
+
+```python
+jax.tree_leaves(module.Slice(tx.Parameter)) # [1]
+jax.tree_leaves(module.Slice(tx.State))     # [2]
+```
+
+A typical use case is to pass a `Parameter` slice as first argument through `grad` or `value_and_grad` so they are differentiated and another `State` slice as a separate argument so they are not differentiated. Inside the function you can use `merge` to combine these slices to get a complete functional module:
+
 ```python
 params: MLP = model.slice(tx.Parameter)
 states: MLP = model.slice(tx.State)
 
-@partial(jax.value_and_grad) # no need for special versions of `jit`, `grad`, `vmap`, etc.
+@partial(jax.grad) # no need for special versions of `jit`, `grad`, `vmap`, etc.
 def loss_fn(params, states, x, y):  # will only differentiate w.r.t. params
     model = params.merge(states) # merge parameters and states back into the complete model
     ...
 
 optimizer = optax.adam(1e-3)
-opt_state = optimizer.init(params) # only params from the optimizer
+opt_state = optimizer.init(params) # optimizer only needs params
 ```
 
 ### Trivial Parameter Surgery
