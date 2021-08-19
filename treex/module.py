@@ -14,6 +14,7 @@ class Context(threading.local):
     is_slicing: bool = False
     is_merging: bool = False
     is_initializing: bool = False
+    training: tp.Optional[bool] = None
 
 
 LOCAL: Context = Context()
@@ -45,6 +46,15 @@ class Nothing:
 
 class Module:
     _initialized = False
+    _training = True
+
+    @property
+    def initialized(self) -> bool:
+        return self._initialized
+
+    @property
+    def training(self) -> bool:
+        return self._training
 
     def init(self: T, key: tp.Union[int, jnp.ndarray]) -> T:
         if isinstance(key, int):
@@ -111,6 +121,9 @@ class Module:
             module.post_init()
             module._initialized = True
 
+        if LOCAL.training is not None:
+            module._training = LOCAL.training
+
         return module
 
     def __init_subclass__(cls):
@@ -118,6 +131,17 @@ class Module:
 
     def copy(self: T) -> T:
         return jax.tree_map(lambda x: x, self)
+
+    def train(self: T, mode: bool) -> T:
+        old_training = LOCAL.training
+        LOCAL.training = mode
+
+        try:
+            module = self.copy()  # trigger flatten / unflatten
+        finally:
+            LOCAL.training = old_training
+
+        return module
 
     def slice(self: T, *filters: tp.Type) -> T:
         flat: tp.List[types.ValueAnnotation]
