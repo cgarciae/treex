@@ -242,3 +242,14 @@ class TestTreex:
         assert mlp.training
         assert mlp.linear1.training
         assert mlp.linear2.training
+
+    def test_multiple_initializers(self):
+        class MLP(tx.Module):
+            linear1: tx.nn.Linear
+            linear2: tx.nn.Linear
+
+            def __init__(self, din, dmid, dout, name="mlp"):
+                self.linear1 = tx.nn.Linear(din, dmid)
+                self.linear2 = tx.nn.Linear(dmid, dout)
+
+        mlp = MLP(2, 3, 5).init(42)

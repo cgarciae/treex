@@ -57,15 +57,23 @@ class Module:
         return self._training
 
     def init(self: T, key: tp.Union[int, jnp.ndarray]) -> T:
+        first = True
+
         if isinstance(key, int):
             key = jax.random.PRNGKey(key)
 
         def init_fn(x):
-            nonlocal key
+            nonlocal key, first
+
             key = tp.cast(jnp.ndarray, key)
 
             if isinstance(x, types.Initializer):
-                key, next_key = jax.random.split(key, 2)
+                if first:
+                    next_key = key
+                    first = False
+                else:
+                    key, next_key = jax.random.split(key, 2)
+
                 x = x(next_key)
 
             return x
@@ -105,17 +113,27 @@ class Module:
             else:
                 not_tree[name] = value
 
-        return tuple(tree.values()), dict(tree=tree.keys(), not_tree=not_tree)
+        return tuple(tree.values()), dict(
+            tree=tree.keys(),
+            not_tree=not_tree,
+            props=dict(
+                _initialized=self._initialized,
+                _training=self._training,
+            ),
+        )
 
     @classmethod
     def tree_unflatten(cls, aux_data, children):
         module = cls.__new__(cls)
 
+        for i, k in enumerate(aux_data["tree"]):
+            setattr(module, k, children[i])
+
         for k, v in aux_data["not_tree"].items():
             setattr(module, k, v)
 
-        for i, k in enumerate(aux_data["tree"]):
-            setattr(module, k, children[i])
+        for k, v in aux_data["props"].items():
+            setattr(module, k, v)
 
         if LOCAL.is_initializing and not module._initialized:
             module.post_init()

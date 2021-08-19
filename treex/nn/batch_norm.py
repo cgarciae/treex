@@ -22,7 +22,6 @@ class BatchNorm(Module):
     def __init__(
         self,
         features_in: int,
-        use_running_average: tp.Optional[bool] = None,
         axis: int = -1,
         momentum: float = 0.99,
         epsilon: float = 1e-5,
@@ -65,7 +64,7 @@ class BatchNorm(Module):
                 for more details.
         """
         self.module = flax_module.BatchNorm(
-            use_running_average=use_running_average,
+            use_running_average=None,
             axis=axis,
             momentum=momentum,
             epsilon=epsilon,
@@ -95,22 +94,39 @@ class BatchNorm(Module):
     def __call__(
         self, x: np.ndarray, use_running_average: tp.Optional[bool] = None
     ) -> jnp.ndarray:
+        """Normalizes the input using batch statistics.
+
+        Arguments:
+            x: the input to be normalized.
+            use_running_average: if true, the statistics stored in batch_stats
+                will be used instead of computing the batch statistics on the input.
+
+        Returns:
+            Normalized inputs (the same shape as inputs).
+        """
         variables = dict(
             params=self.params,
             batch_stats=self.batch_stats,
         )
-        mutable = not use_running_average or not self.module.use_running_average
+        # use_running_average = True means batch_stats will not be mutated
+        # self.training = True means batch_stats will be mutated
+        mutable = (
+            not use_running_average
+            if use_running_average is not None
+            else self.training
+        )
 
         # call apply
         output, variables = self.module.apply(
             variables,
             x,
             mutable=["batch_stats"] if mutable else [],
-            use_running_average=use_running_average,
+            use_running_average=not mutable,
         )
 
         # update batch_stats
-        self.batch_stats = variables["batch_stats"]
+        if "batch_stats" in variables:
+            self.batch_stats = variables["batch_stats"]
 
         return tp.cast(jnp.ndarray, output)
 
