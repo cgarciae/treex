@@ -1,3 +1,4 @@
+from functools import partial
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -8,7 +9,7 @@ import treex as tx
 x = np.random.uniform(size=(500, 1))
 y = 1.4 * x - 0.3 + np.random.normal(scale=0.1, size=(500, 1))
 
-
+# treex already defines tx.Linear but we can define our own
 class Linear(tx.Module):
     w: tx.Parameter
     b: tx.Parameter
@@ -22,22 +23,30 @@ class Linear(tx.Module):
 
 
 model = Linear(1, 1).init(42)
-optimizer = optax.adam(0.001)
+optimizer = optax.adam(0.01)
 
-opt_state = optimizer.init(model)
+opt_state = optimizer.init(model.slice(tx.Parameter))
 
 
-@jax.value_and_grad
-def loss_fn(model, x, y):
-    pred = model(x)
-    return jnp.mean((pred - y) ** 2)
+@partial(jax.value_and_grad, has_aux=True)
+def loss_fn(params, model, x, y):
+    model = model.merge(params)
+
+    y_pred = model(x)
+    loss = jnp.mean((y_pred - y) ** 2)
+
+    return loss, model
 
 
 @jax.jit
 def train_step(model, x, y, opt_state):
-    loss, grads = loss_fn(model, x, y)
+    params = model.slice(tx.Parameter)
+    (loss, model), grads = loss_fn(params, model, x, y)
+
     updates, opt_state = optimizer.update(grads, opt_state, model)
-    model = optax.apply_updates(model, updates)
+    new_params = optax.apply_updates(model, updates)
+
+    model = model.merge(new_params)
 
     return loss, model, opt_state
 
@@ -47,6 +56,7 @@ for step in range(1000):
     if step % 100 == 0:
         print(f"loss: {loss:.4f}")
 
+model = model.train(False)
 
 X_test = np.linspace(x.min(), x.max(), 100)[:, None]
 y_pred = model(X_test)

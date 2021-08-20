@@ -1,14 +1,13 @@
 # Treex
 
-### Simple Python objects
+### Parameter Declaration
 ```python
-class Linear(tx.Module): # Module class is very simple, doesn't use MetaClass magic
-    w: tx.Parameter # just use simple annotations to define the structure
-    b: tx.Parameter 
+class Linear(tx.Module):
+    w: tx.Parameter # treex uses annotations to define structure
+    b: tx.Parameter # modules contain their parameters directly
 
     def __init__(self, din, dout):
-        # modules contain their parameters directly!
-        # use an Initializer for lazy initialization
+        # you can use an Initializer for lazy initialization
         self.w = tx.Initializer(lambda key: jax.random.uniform(key, shape=(din, dout)))
         # or just set their value directly
         self.b = jnp.zeros(shape=(dout,))
@@ -16,27 +15,29 @@ class Linear(tx.Module): # Module class is very simple, doesn't use MetaClass ma
     def __call__(self, x):
         return jnp.dot(x, self.w) + self.b
 
-linear = Linear(3, 5).init(42) # initialization is super easy
+linear = Linear(3, 5).init(42) # pass an int or PRNGKey to initialize
 y = linear(x) # you can call modules directly
 ```
 
-### Pytorch-like APIs
+### Module Composition
 
 ```python
 import treex as tx
 
 class MLP(tx.Module):
-    linear1: Linear
-    linear2: Linear
+    linear1: tx.Linear
+    linear2: tx.Linear
 
     def __init__(din, dmid, dout):
-        self.linear1 = Linear(din, dmid)
-        self.linear2 = Linear(dmid, dout)
+        self.linear1 = tx.Linear(din, dmid)
+        self.linear2 = tx.Linear(dmid, dout)
 
     def __call__(self, x):
         x = jax.nn.relu(self.linear1(x))
         x = self.linear2(x)
         return x
+
+mlp = MLP(3, 5, 2).init(42)
 ```
 
 ### Modules are Pytrees
@@ -47,37 +48,6 @@ def loss_fn(model: MLP, x, y):  # as with any pytree Modules can be passed throu
     return jnp.mean((y_pred - y) ** 2)
 ```
 
-### State Management
-```python
-class Average(tx.Module):
-    count: tx.State
-    total: tx.State
-
-    def __init__(self):
-        self.count = jnp.array(0)
-        self.total = jnp.array(0.0)
-
-    def __call__(self, x):
-        self.count += np.prod(x.shape)
-        self.total += jnp.sum(x)
-
-        return self.total / self.count
-```
-
-```python
-class Dropout(tx.Module):
-    rng: tx.Rng
-
-    def __init__(self, rate: float):
-        self.rate = rate
-        self.rng = tx.Initializer(lambda key: key) # its just a PRNGKey
-
-    def __call__(self, x):
-        # RNG is just State, update in place as well
-        key, self.rng = jax.random.split(self.rng)
-        mask = jax.random.bernoulli(key, self.rate, x.shape)
-        ...
-```
 
 ### Slice and Merge API
 The `slice` method allows you to select a subtree by filtering based on a type, all leaves that are not a subclass of such type are set to a special `Nothing` value.
@@ -118,6 +88,39 @@ optimizer = optax.adam(1e-3)
 opt_state = optimizer.init(params) # only needs params
 ```
 
+### State Management
+```python
+class Average(tx.Module):
+    count: tx.State
+    total: tx.State
+
+    def __init__(self):
+        self.count = jnp.array(0)
+        self.total = jnp.array(0.0)
+
+    def __call__(self, x):
+        self.count += np.prod(x.shape)
+        self.total += jnp.sum(x)
+
+        return self.total / self.count
+```
+
+```python
+class Dropout(tx.Module):
+    rng: tx.Rng
+
+    def __init__(self, rate: float):
+        self.rate = rate
+        self.rng = tx.Initializer(lambda key: key) # its just a PRNGKey
+
+    def __call__(self, x):
+        # RNG is just State, update in place as well
+        key, self.rng = jax.random.split(self.rng)
+        mask = jax.random.bernoulli(key, self.rate, x.shape)
+        ...
+```
+
+
 ### Training State
 ```python
 class MLP(tx.Module):
@@ -152,7 +155,8 @@ class VAE(tx.Module):
 
 vae = VAE(...)
 
-# train VAE....
+# train VAE
+...
 
 # extract decoder to generate samples
 decoder = vae.decoder
@@ -163,6 +167,7 @@ samples = decoder(z)
 ### Full Example
 
 ```python
+from functools import partial
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -173,7 +178,7 @@ import treex as tx
 x = np.random.uniform(size=(500, 1))
 y = 1.4 * x - 0.3 + np.random.normal(scale=0.1, size=(500, 1))
 
-
+# treex already defines tx.Linear but we can define our own
 class Linear(tx.Module):
     w: tx.Parameter
     b: tx.Parameter
@@ -187,22 +192,30 @@ class Linear(tx.Module):
 
 
 model = Linear(1, 1).init(42)
-optimizer = optax.adam(0.001)
+optimizer = optax.adam(0.01)
 
-opt_state = optimizer.init(model)
+opt_state = optimizer.init(model.slice(tx.Parameter))
 
 
-@jax.value_and_grad
-def loss_fn(model, x, y):
-    pred = model(x)
-    return jnp.mean((pred - y) ** 2)
+@partial(jax.value_and_grad, has_aux=True)
+def loss_fn(params, model, x, y):
+    model = model.merge(params)
+
+    y_pred = model(x)
+    loss = jnp.mean((y_pred - y) ** 2)
+
+    return loss, model
 
 
 @jax.jit
 def train_step(model, x, y, opt_state):
-    loss, grads = loss_fn(model, x, y)
+    params = model.slice(tx.Parameter)
+    (loss, model), grads = loss_fn(params, model, x, y)
+
     updates, opt_state = optimizer.update(grads, opt_state, model)
-    model = optax.apply_updates(model, updates)
+    new_params = optax.apply_updates(model, updates)
+
+    model = model.merge(new_params)
 
     return loss, model, opt_state
 
@@ -212,6 +225,7 @@ for step in range(1000):
     if step % 100 == 0:
         print(f"loss: {loss:.4f}")
 
+model = model.train(False)
 
 X_test = np.linspace(x.min(), x.max(), 100)[:, None]
 y_pred = model(X_test)
