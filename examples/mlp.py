@@ -22,17 +22,13 @@ class MLP(tx.Module):
         self.linear2 = tx.Linear(dmid, dout)
 
     def __call__(self, x):
-        x = tx.sequence(
-            self.linear1,
-            # self.batch_norm1,
-            jax.nn.relu,
-        )(x)
+        x = jax.nn.relu(self.linear1(x))
         x = self.linear2(x)
         return x
 
 
 model = MLP(1, 32, 1).init(42)
-optimizer = optax.adam(0.00005)
+optimizer = optax.adam(0.001)
 
 opt_state = optimizer.init(model.slice(tx.Parameter))
 
@@ -52,14 +48,14 @@ def train_step(model, x, y, opt_state):
     (loss, model), grads = loss_fn(params, model, x, y)
 
     updates, opt_state = optimizer.update(grads, opt_state, params)
-    params = optax.apply_updates(params, updates)
+    new_params = optax.apply_updates(params, updates)
 
-    model = model.merge(params)
+    model = model.merge(new_params)
 
     return loss, model, opt_state
 
 
-for step in range(20000):
+for step in range(10_000):
     idx = np.random.choice(len(x), size=64, replace=False)
     loss, model, opt_state = train_step(model, x[idx], y[idx], opt_state)
     if step % 500 == 0:
