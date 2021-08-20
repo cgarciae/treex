@@ -1,4 +1,5 @@
 from functools import partial
+from treex.nn import dropout
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -14,22 +15,22 @@ y = 1.4 * x ** 2 - 0.3 + np.random.normal(scale=0.1, size=(500, 1))
 
 class MLP(tx.Module):
     linear1: tx.Linear
+    dropout1: tx.Dropout
     linear2: tx.Linear
 
-    def __init__(self, din, dmid, dout):
+    def __init__(self, din, dmid, dout, dropout: float = 0.5):
         self.linear1 = tx.Linear(din, dmid)
-        self.batch_norm1 = tx.BatchNorm(dmid)
+        self.dropout1 = tx.Dropout(dropout)
         self.linear2 = tx.Linear(dmid, dout)
 
     def __call__(self, x):
-        x = jax.nn.relu(self.linear1(x))
+        x = jax.nn.relu(self.dropout1(self.linear1(x)))
         x = self.linear2(x)
         return x
 
 
-model = MLP(1, 32, 1).init(42)
+model = MLP(1, 32, 1, dropout=0.1).init(42)
 optimizer = optax.adam(0.001)
-
 opt_state = optimizer.init(model.slice(tx.Parameter))
 
 
@@ -55,7 +56,7 @@ def train_step(model, x, y, opt_state):
     return loss, model, opt_state
 
 
-for step in range(10_000):
+for step in range(20_000):
     idx = np.random.choice(len(x), size=64, replace=False)
     loss, model, opt_state = train_step(model, x[idx], y[idx], opt_state)
     if step % 500 == 0:

@@ -9,11 +9,16 @@ from treex import types
 
 
 class BatchNorm(Module):
-    """
-    A flax_module transformation applied over the last dimension of the input.
+    """BatchNorm Module.
 
     `BatchNorm` is implemented as a wrapper over `flax.linen.BatchNorm`, its constructor
-    arguments accept the same flax artifacts.
+    arguments accept almost the same arguments including any Flax artifacts such as initializers.
+    Main differences:
+
+    * `use_running_average` is not a constructor argument, but remains a `__call__` argument.
+    * `self.training` state is used to indicate how BatchNorm should behave, interally
+    `use_running_average = not self.training` is used unless `use_running_average` is explicitly
+    passed via `__call__`.
     """
 
     params: types.Dict[str, types.Parameter]
@@ -117,7 +122,7 @@ class BatchNorm(Module):
         )
         # use_running_average = True means batch_stats will not be mutated
         # self.training = True means batch_stats will be mutated
-        mutable = (
+        training = (
             not use_running_average
             if use_running_average is not None
             else self.training
@@ -127,8 +132,8 @@ class BatchNorm(Module):
         output, variables = self.module.apply(
             variables,
             x,
-            mutable=["batch_stats"] if mutable else [],
-            use_running_average=not mutable,
+            mutable=["batch_stats"] if training else [],
+            use_running_average=not training,
         )
 
         # update batch_stats
