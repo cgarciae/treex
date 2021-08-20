@@ -47,7 +47,7 @@ def loss_fn(model: MLP, x, y):  # as with any pytree Modules can be passed throu
     return jnp.mean((y_pred - y) ** 2)
 ```
 
-### Easy State Management
+### State Management
 ```python
 class Average(tx.Module):
     count: tx.State
@@ -99,22 +99,51 @@ jax.tree_leaves(module.Slice(tx.Parameter)) # [1]
 jax.tree_leaves(module.Slice(tx.State))     # [2]
 ```
 
-A typical use case is to pass a `Parameter` slice as first argument through `grad` or `value_and_grad` so they are differentiated and another `State` slice as a separate argument so they are not differentiated. Inside the function you can use `merge` to combine these slices to get a complete functional module:
+A typical use case is to define `params` as a `Parameter` slice and pass it as the first argument to `grad` so that the gradient is computed only that subset and immediately merge them back to the `model` before performing any computation:
 
-```python
-params: MLP = model.slice(tx.Parameter)
-states: MLP = model.slice(tx.State)
+```python~
+# we take `params` as a Parameter slice from model
+# but model itself is left untouched
+params = model.slice(tx.Parameter)
 
-@partial(jax.grad) # no need for special versions of `jit`, `grad`, `vmap`, etc.
-def loss_fn(params, states, x, y):  # will only differentiate w.r.t. params
-    model = params.merge(states) # merge parameters and states back into the complete model
+@jax.grad # no need for special versions of `jit`, `grad`, `vmap`, etc.
+def loss_fn(params, model, x, y):
+    # merge traced arrays by `grad` from `params`
+    model = model.merge(params)
     ...
 
+grads = loss_fn(params, model, x, y) 
+
 optimizer = optax.adam(1e-3)
-opt_state = optimizer.init(params) # optimizer only needs params
+opt_state = optimizer.init(params) # only needs params
 ```
 
-### Trivial Parameter Surgery
+### Training State
+```python
+class MLP(tx.Module):
+    linear1: Linear
+    linear2: Linear
+    ...
+
+model = MLP(...)
+
+model.training # True
+model.linear1.training # True
+
+model = model.train(False) # model is now in evaluation mode
+
+model.training # False
+model.linear1.training # False
+```
+
+```python
+@partial(jax.jit, static_argnums=(4,))
+def train_step(model, x, y, opt_state, training):
+    model = model.train(training)
+    ...
+```
+
+### Parameter Surgery
 ```python
 class VAE(tx.Module):
     encoder: Encoder

@@ -81,12 +81,9 @@ import optax
 optimizer = optax.adam(1e-2)
 
 params = model.slice(tx.Parameter)
-states = model.slice(tx.State)
-
 opt_state = optimizer.init(params)
 
 print(f"{params=}")
-print(f"{states=}")
 
 # %% [markdown]
 """
@@ -97,17 +94,15 @@ from functools import partial
 
 
 @partial(jax.value_and_grad, has_aux=True)
-def loss_fn(params: NoisyLinear, states: NoisyLinear, x, y):
-    # merge params and states to get a full model
-    model: NoisyLinear = params.merge(states)
+def loss_fn(params: NoisyLinear, model: NoisyLinear, x, y):
+    # merge params into model
+    model = model.merge(params)
     # apply model
     pred_y = model(x)
     # MSE loss
     loss = jnp.mean((y - pred_y) ** 2)
-    # new states
-    states = model.slice(tx.State)
-
-    return loss, states
+    # return model with state updates
+    return loss, model
 
 
 # %% [markdown]
@@ -121,14 +116,21 @@ Next, we will implement the `update` function, it will look indistinguishable fr
 
 # %%
 @jax.jit
-def update(params: NoisyLinear, states: NoisyLinear, opt_state, x, y):
-    (loss, states), grads = loss_fn(params, states, x, y)
-    updates, opt_state = optimizer.update(grads, opt_state, params)
+def update(model: NoisyLinear, opt_state, x, y):
+    # select Parameters
+    params = model.slice(tx.Parameter)
+
+    # call loss_fn to get loss, model state, and gradients
+    (loss, model), grads = loss_fn(params, model, x, y)
 
     # use regular optax
-    params = optax.apply_updates(params, updates)
+    updates, opt_state = optimizer.update(grads, opt_state, params)
+    new_params = optax.apply_updates(params, updates)
 
-    return params, states, opt_state, loss
+    # update new_params
+    model = model.merge(new_params)
+
+    return model, opt_state, loss
 
 
 # %% [markdown]
@@ -175,13 +177,10 @@ steps = 10_000
 for step in range(steps):
     x, y = get_batch(data, batch_size=32)
 
-    params, states, opt_state, loss = update(params, states, opt_state, x, y)
+    model, opt_state, loss = update(model, opt_state, x, y)
 
     if step % 1000 == 0:
         print(f"[{step}] loss = {loss}")
-
-# get the final model
-model = params.merge(states)
 
 # %% [markdown]
 """
