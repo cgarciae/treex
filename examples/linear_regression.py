@@ -56,7 +56,7 @@ for step in range(1000):
     if step % 100 == 0:
         print(f"loss: {loss:.4f}")
 
-model = model.train(False)
+model = model.eval()
 
 X_test = np.linspace(x.min(), x.max(), 100)[:, None]
 y_pred = model(X_test)

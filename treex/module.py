@@ -150,17 +150,6 @@ class Module:
     def copy(self: T) -> T:
         return jax.tree_map(lambda x: x, self)
 
-    def train(self: T, mode: bool) -> T:
-        old_training = LOCAL.training
-        LOCAL.training = mode
-
-        try:
-            module = self.copy()  # trigger flatten / unflatten
-        finally:
-            LOCAL.training = old_training
-
-        return module
-
     def slice(self: T, *filters: tp.Type) -> T:
         flat: tp.List[types.ValueAnnotation]
 
@@ -202,3 +191,17 @@ class Module:
             LOCAL.is_merging = old_merging
 
         return module
+
+    def train(self: T, mode: bool = True) -> T:
+        old_training = LOCAL.training
+        LOCAL.training = mode
+
+        try:
+            module = self.copy()  # trigger flatten / unflatten
+        finally:
+            LOCAL.training = old_training
+
+        return module
+
+    def eval(self: T) -> T:
+        return self.train(False)

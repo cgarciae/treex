@@ -163,7 +163,7 @@ class BatchNormTest(unittest.TestCase):
 
         @jax.jit
         def f(module, x):
-            module = module.train(False)
+            module = module.eval()
 
             return module, module(x)
 

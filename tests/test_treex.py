@@ -231,7 +231,7 @@ class TestTreex:
         assert mlp.linear1.training
         assert mlp.linear2.training
 
-        mlp = mlp.train(False)
+        mlp = mlp.eval()
 
         assert not mlp.training
         assert not mlp.linear1.training

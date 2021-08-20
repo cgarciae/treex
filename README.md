@@ -128,22 +128,35 @@ class MLP(tx.Module):
     linear2: Linear
     ...
 
-model = MLP(...)
+model = MLP(...).init(42)
 
-model.training # True
-model.linear1.training # True
+model.training # True by default
+model.linear1.training # True by default
 
-model = model.train(False) # model is now in evaluation mode
+model = model.eval() # model is now in evaluation mode
 
 model.training # False
 model.linear1.training # False
+
+model = model.train() # switch back to training mode
 ```
 
 ```python
-@partial(jax.jit, static_argnums=(4,))
-def train_step(model, x, y, opt_state, training):
-    model = model.train(training)
-    ...
+x = np.random.randn(10, 3)
+model = tx.Dropout(0.5).init(42)
+
+y1 = model(x)
+y2 = model(x)
+
+np.allcloase(y1, y2) # False
+
+# deterministic in eval mode
+model = model.eval()
+
+y1 = model(x)
+y2 = model(x)
+
+np.allclose(y1, y2) # True
 ```
 
 ### Parameter Surgery
@@ -213,7 +226,7 @@ def train_step(model, x, y, opt_state):
     (loss, model), grads = loss_fn(params, model, x, y)
 
     updates, opt_state = optimizer.update(grads, opt_state, model)
-    new_params = optax.apply_updates(model, updates)
+    new_params = optax.apply_updates(params, updates)
 
     model = model.merge(new_params)
 
@@ -225,7 +238,7 @@ for step in range(1000):
     if step % 100 == 0:
         print(f"loss: {loss:.4f}")
 
-model = model.train(False)
+model = model.eval()
 
 X_test = np.linspace(x.min(), x.max(), 100)[:, None]
 y_pred = model(X_test)

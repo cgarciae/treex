@@ -112,7 +112,7 @@ class DropoutTest(unittest.TestCase):
 
         assert not np.allclose(y1, y2)
 
-        module = module.train(False)
+        module = module.eval()
 
         y1 = module(x)
         y2 = module(x)

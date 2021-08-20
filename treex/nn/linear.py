@@ -9,8 +9,7 @@ from treex import types
 
 
 class Linear(Module):
-    """
-    A flax_module transformation applied over the last dimension of the input.
+    """A linear transformation applied over the last dimension of the input.
 
     `Linear` is implemented as a wrapper over `flax.linen.Dense`, its constructor
     arguments accept the same flax artifacts.
