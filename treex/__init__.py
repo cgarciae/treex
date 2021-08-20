@@ -4,3 +4,4 @@ from treex.module import *
 from treex.types import *
 
 from . import nn
+from flax.linen import initializers

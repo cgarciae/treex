@@ -7,18 +7,45 @@ import treex as tx
 from flax import linen
 from hypothesis import strategies as st
 
+INITS = (
+    tx.initializers.zeros,
+    tx.initializers.ones,
+    tx.initializers.normal(),
+    tx.initializers.uniform(),
+)
+
 
 class BatchNormTest(unittest.TestCase):
     @hp.given(
         batch_size=st.integers(min_value=1, max_value=32),
+        length=st.integers(min_value=1, max_value=32),
         channels=st.integers(min_value=1, max_value=32),
         training=st.booleans(),
-        axis=st.sampled_from([-1, 1]),  # flax has an error with axis = -2 and 0
+        axis=st.sampled_from([-1]),  # flax has an error with other axis
+        momentum=st.floats(min_value=0.01, max_value=1.0),
+        epsilon=st.floats(min_value=0.000001, max_value=0.01),
+        use_bias=st.booleans(),
+        use_scale=st.booleans(),
+        bias_init=st.sampled_from(INITS),
+        scale_init=st.sampled_from(INITS),
     )
     @hp.settings(deadline=None)
-    def test_equivalence(self, batch_size, channels, training, axis):
+    def test_equivalence(
+        self,
+        batch_size,
+        length,
+        channels,
+        training,
+        axis,
+        momentum,
+        epsilon,
+        use_bias,
+        use_scale,
+        bias_init,
+        scale_init,
+    ):
         use_running_average = not training
-        shape = (batch_size, channels)
+        shape = (batch_size, length, channels)
 
         x = np.random.uniform(size=shape)
 
@@ -27,20 +54,34 @@ class BatchNormTest(unittest.TestCase):
         flax_module = linen.BatchNorm(
             use_running_average=use_running_average,
             axis=axis,
+            momentum=momentum,
+            epsilon=epsilon,
+            use_bias=use_bias,
+            use_scale=use_scale,
+            bias_init=bias_init,
+            scale_init=scale_init,
         )
         treex_module = tx.nn.BatchNorm(
             features_in=shape[axis],
             axis=axis,
+            momentum=momentum,
+            epsilon=epsilon,
+            use_bias=use_bias,
+            use_scale=use_scale,
+            bias_init=bias_init,
+            scale_init=scale_init,
         ).train(training)
 
-        treex_module = treex_module.init(key)
         variables = flax_module.init(key, x)
+        treex_module = treex_module.init(key)
 
-        assert set(variables["params"]) == set(treex_module.params)
-        assert all(
-            np.allclose(variables["params"][name], treex_module.params[name])
-            for name in variables["params"]
-        )
+        if "params" in variables:
+            assert set(variables["params"]) == set(treex_module.params)
+            assert all(
+                np.allclose(variables["params"][name], treex_module.params[name])
+                for name in variables["params"]
+            )
+
         assert all(
             np.allclose(variables["batch_stats"][name], treex_module.batch_stats[name])
             for name in variables["batch_stats"]
@@ -52,10 +93,12 @@ class BatchNormTest(unittest.TestCase):
         y_treex = treex_module(x)
 
         assert np.allclose(y_flax, y_treex)
-        assert all(
-            np.allclose(variables["params"][name], treex_module.params[name])
-            for name in variables["params"]
-        )
+
+        if "params" in variables:
+            assert all(
+                np.allclose(variables["params"][name], treex_module.params[name])
+                for name in variables["params"]
+            )
         assert all(
             np.allclose(variables["batch_stats"][name], treex_module.batch_stats[name])
             for name in variables["batch_stats"]

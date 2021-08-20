@@ -88,8 +88,15 @@ class BatchNorm(Module):
         variables = self.params
 
         # Extract collections
-        self.params = variables["params"]
-        self.batch_stats = variables["batch_stats"]
+        if "params" in variables:
+            self.params = variables["params"]
+        else:
+            self.params = {}
+
+        if "batch_stats" in variables:
+            self.batch_stats = variables["batch_stats"]
+        else:
+            self.batch_stats = {}
 
     def __call__(
         self, x: np.ndarray, use_running_average: tp.Optional[bool] = None
