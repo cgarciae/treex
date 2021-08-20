@@ -101,7 +101,7 @@ jax.tree_leaves(module.Slice(tx.State))     # [2]
 
 A typical use case is to define `params` as a `Parameter` slice and pass it as the first argument to `grad` so that the gradient is computed only that subset and immediately merge them back to the `model` before performing any computation:
 
-```python~
+```python
 # we take `params` as a Parameter slice from model
 # but model itself is left untouched
 params = model.slice(tx.Parameter)
