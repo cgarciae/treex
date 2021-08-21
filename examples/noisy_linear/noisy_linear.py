@@ -95,8 +95,8 @@ from functools import partial
 
 @partial(jax.value_and_grad, has_aux=True)
 def loss_fn(params: NoisyLinear, model: NoisyLinear, x, y):
-    # merge params into model
-    model = model.merge(params)
+    # update params into model
+    model = model.update(params)
     # apply model
     pred_y = model(x)
     # MSE loss
@@ -128,7 +128,7 @@ def update(model: NoisyLinear, opt_state, x, y):
     new_params = optax.apply_updates(params, updates)
 
     # update new_params
-    model = model.merge(new_params)
+    model = model.update(new_params)
 
     return model, opt_state, loss
 
@@ -168,7 +168,7 @@ fig  # __st
 
 # %% [markdown]
 """
-Finally, we create a simple training loop that performs a few thousand updates and merge `params` and `states` back into a single `model` at the end:
+Finally, we create a simple training loop that performs a few thousand updates and update `params` and `states` back into a single `model` at the end:
 """
 
 # %%

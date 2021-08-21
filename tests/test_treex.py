@@ -123,7 +123,7 @@ class TestTreex:
         mlp_params = mlp.slice(Parameter)
         mlp_states = mlp.slice(State)
 
-        mlp_next = mlp_params.merge(mlp_states)
+        mlp_next = mlp_params.update(mlp_states)
 
         assert not isinstance(mlp_next.linear1.w, tx.Nothing)
         assert not isinstance(mlp_next.linear1.b, tx.Nothing)

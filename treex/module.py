@@ -170,7 +170,7 @@ class Module:
 
         return module
 
-    def merge(self: T, other: T, *rest: T) -> T:
+    def update(self: T, other: T, *rest: T) -> T:
         modules = (self, other) + rest
 
         old_merging = LOCAL.is_merging

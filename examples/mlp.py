@@ -36,7 +36,7 @@ opt_state = optimizer.init(model.slice(tx.Parameter))
 
 @partial(jax.value_and_grad, has_aux=True)
 def loss_fn(params, model, x, y):
-    model = model.merge(params)
+    model = model.update(params)
     y_pred = model(x)
     loss = jnp.mean((y_pred - y) ** 2)
 
@@ -51,7 +51,7 @@ def train_step(model, x, y, opt_state):
     updates, opt_state = optimizer.update(grads, opt_state, params)
     new_params = optax.apply_updates(params, updates)
 
-    model = model.merge(new_params)
+    model = model.update(new_params)
 
     return loss, model, opt_state
 
