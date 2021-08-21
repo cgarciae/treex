@@ -19,7 +19,7 @@ Currently we have many alternatives like Flax, Haiku, Objax, that have one or mo
 * Monadic architecture's add complexity, both Flax and Haiku use an `apply` method to call modules which sets a context with parameters, rng, etc, which add an additional overhead to the API and creates an asymmetry to how Modules are used inside and outside a context. In Treex you can just call the modules directly.
 * Parameter surgery is very difficult to implement, if you want to transfer a pretrained module or submodule as part of a new module, you have to know precisely how to extract their parameters and how to insert them into the new parameter structure / dictionaries such that it is in agreement with the new module structure. In Treex, just as in PyTorch / Keras you just pass the (sub)module to the new module and parameters go with them.
 * Deviate from JAX semantics and require special versions of `jit`, `grad`, `vmap`, etc, which makes it harder to integrate with other JAX libraries. Treex's Modules are plain old JAX PyTrees and are compatible with any JAX library that supports them.
-* Other PyTree-based approaches like Parallax and Equinox don't have a full state management solution to handle complex state as you see in Flax. Treex has the Slice and Update API that is very expressive and can effectively handle systems with complex state.
+* Other PyTree-based approaches like Parallax and Equinox don't have a full state management solution to handle complex state as you see in Flax. Treex has the Filter and Update API that is very expressive and can effectively handle systems with complex state.
 
 </details>
 
@@ -141,8 +141,8 @@ model = jax.tree_map(sdg, model, grads)
 ```
 
 
-### Slice and Update API
-The `slice` method allows you to select a subtree by filtering based on a type, all leaves that are not a subclass of such type are set to a special `Nothing` value.
+### Filter and Update API
+The `filter` method allows you to select a subtree by filtering based on a type, all leaves that are not a subclass of such type are set to a special `Nothing` value.
 ```python
 class MyModule(tx.Module):
     a: tx.Parameter = 1
@@ -151,22 +151,22 @@ class MyModule(tx.Module):
 
 module = MyModule(...)
 
-module.slice(tx.Parameter) # MyModule(a=1, b=Nothing)
-module.slice(tx.State)     # MyModule(a=Nothing, b=2)
+module.filter(tx.Parameter) # MyModule(a=1, b=Nothing)
+module.filter(tx.State)     # MyModule(a=Nothing, b=2)
 ```
 `Nothing` much like `None` is an empty pytree so it gets ignored by tree operations:
 
 ```python
-jax.tree_leaves(module.Slice(tx.Parameter)) # [1]
-jax.tree_leaves(module.Slice(tx.State))     # [2]
+jax.tree_leaves(module.filter(tx.Parameter)) # [1]
+jax.tree_leaves(module.filter(tx.State))     # [2]
 ```
 
-A typical use case is to define `params` as a `Parameter` slice and pass it as the first argument to `grad` so that the gradient is computed only that subset and immediately update them back to the `model` before performing any computation:
+A typical use case is to define `params` as a `Parameter` filter and pass it as the first argument to `grad` so that the gradient is computed only that subset and immediately update them back to the `model` before performing any computation:
 
 ```python
-# we take `params` as a Parameter slice from model
+# we take `params` as a Parameter filter from model
 # but model itself is left untouched
-params = model.slice(tx.Parameter)
+params = model.filter(tx.Parameter)
 
 @jax.grad 
 def loss_fn(params, model, x, y):
@@ -299,7 +299,7 @@ class Linear(tx.Module):
 model = Linear(1, 1).init(42)
 optimizer = optax.adam(0.01)
 
-opt_state = optimizer.init(model.slice(tx.Parameter))
+opt_state = optimizer.init(model.filter(tx.Parameter))
 
 
 @partial(jax.value_and_grad, has_aux=True)
@@ -314,7 +314,7 @@ def loss_fn(params, model, x, y):
 
 @jax.jit
 def train_step(model, x, y, opt_state):
-    params = model.slice(tx.Parameter)
+    params = model.filter(tx.Parameter)
     (loss, model), grads = loss_fn(params, model, x, y)
 
     updates, opt_state = optimizer.update(grads, opt_state, model)

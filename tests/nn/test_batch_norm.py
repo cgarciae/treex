@@ -123,11 +123,11 @@ class BatchNormTest(unittest.TestCase):
     def test_slice(self):
         module = tx.nn.BatchNorm(2).init(42)
 
-        flat = jax.tree_leaves(module.slice(tx.Parameter))
+        flat = jax.tree_leaves(module.filter(tx.Parameter))
 
         assert len(flat) == 2
 
-        flat = jax.tree_leaves(module.slice(tx.State))
+        flat = jax.tree_leaves(module.filter(tx.State))
 
         assert len(flat) == 2
 
@@ -145,15 +145,15 @@ class BatchNormTest(unittest.TestCase):
         assert all(
             np.allclose(a, b)
             for a, b in zip(
-                jax.tree_leaves(module.slice(tx.Parameter)),
-                jax.tree_leaves(module2.slice(tx.Parameter)),
+                jax.tree_leaves(module.filter(tx.Parameter)),
+                jax.tree_leaves(module2.filter(tx.Parameter)),
             )
         )
         assert not all(
             np.allclose(a, b)
             for a, b in zip(
-                jax.tree_leaves(module.slice(tx.State)),
-                jax.tree_leaves(module2.slice(tx.State)),
+                jax.tree_leaves(module.filter(tx.State)),
+                jax.tree_leaves(module2.filter(tx.State)),
             )
         )
 
@@ -173,14 +173,14 @@ class BatchNormTest(unittest.TestCase):
         assert all(
             np.allclose(a, b)
             for a, b in zip(
-                jax.tree_leaves(module.slice(tx.Parameter)),
-                jax.tree_leaves(module2.slice(tx.Parameter)),
+                jax.tree_leaves(module.filter(tx.Parameter)),
+                jax.tree_leaves(module2.filter(tx.Parameter)),
             )
         )
         assert all(
             np.allclose(a, b)
             for a, b in zip(
-                jax.tree_leaves(module.slice(tx.State)),
-                jax.tree_leaves(module2.slice(tx.State)),
+                jax.tree_leaves(module.filter(tx.State)),
+                jax.tree_leaves(module2.filter(tx.State)),
             )
         )

@@ -76,11 +76,11 @@ class DropoutTest(unittest.TestCase):
     def test_slice(self):
         module = tx.Dropout(0.5).init(42)
 
-        flat = jax.tree_leaves(module.slice(tx.Parameter))
+        flat = jax.tree_leaves(module.filter(tx.Parameter))
 
         assert len(flat) == 0
 
-        flat = jax.tree_leaves(module.slice(tx.State))
+        flat = jax.tree_leaves(module.filter(tx.State))
 
         assert len(flat) == 1
 
@@ -98,8 +98,8 @@ class DropoutTest(unittest.TestCase):
         assert not all(
             np.allclose(a, b)
             for a, b in zip(
-                jax.tree_leaves(module.slice(tx.State)),
-                jax.tree_leaves(module2.slice(tx.State)),
+                jax.tree_leaves(module.filter(tx.State)),
+                jax.tree_leaves(module2.filter(tx.State)),
             )
         )
 

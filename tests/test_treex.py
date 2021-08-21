@@ -45,7 +45,7 @@ class TestTreex:
 
     def test_flatten_slice(self):
 
-        mlp = MLP(2, 3, 5).slice(State)
+        mlp = MLP(2, 3, 5).filter(State)
 
         flat = jax.tree_leaves(mlp)
 
@@ -53,7 +53,7 @@ class TestTreex:
 
     def test_flatten_slice_merging(self):
 
-        mlp = MLP(2, 3, 5).slice(State)
+        mlp = MLP(2, 3, 5).filter(State)
 
         is_merging_old = tx.LOCAL.is_merging
         try:
@@ -95,7 +95,7 @@ class TestTreex:
         mlp = MLP(2, 3, 5)
 
         # params
-        mlp_params = mlp.slice(Parameter)
+        mlp_params = mlp.filter(Parameter)
 
         assert not isinstance(mlp_params.linear1.w, tx.Nothing)
         assert not isinstance(mlp_params.linear1.b, tx.Nothing)
@@ -106,7 +106,7 @@ class TestTreex:
         assert isinstance(mlp_params.linear2.n, tx.Nothing)
 
         # states
-        mlp_states = mlp.slice(State)
+        mlp_states = mlp.filter(State)
 
         assert isinstance(mlp_states.linear1.w, tx.Nothing)
         assert isinstance(mlp_states.linear1.b, tx.Nothing)
@@ -120,8 +120,8 @@ class TestTreex:
 
         mlp = MLP(2, 3, 5)
 
-        mlp_params = mlp.slice(Parameter)
-        mlp_states = mlp.slice(State)
+        mlp_params = mlp.filter(Parameter)
+        mlp_states = mlp.filter(State)
 
         mlp_next = mlp_params.update(mlp_states)
 

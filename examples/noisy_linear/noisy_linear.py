@@ -80,7 +80,7 @@ import optax
 
 optimizer = optax.adam(1e-2)
 
-params = model.slice(tx.Parameter)
+params = model.filter(tx.Parameter)
 opt_state = optimizer.init(params)
 
 print(f"{params=}")
@@ -118,7 +118,7 @@ Next, we will implement the `update` function, it will look indistinguishable fr
 @jax.jit
 def update(model: NoisyLinear, opt_state, x, y):
     # select Parameters
-    params = model.slice(tx.Parameter)
+    params = model.filter(tx.Parameter)
 
     # call loss_fn to get loss, model state, and gradients
     (loss, model), grads = loss_fn(params, model, x, y)

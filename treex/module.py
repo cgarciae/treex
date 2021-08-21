@@ -150,7 +150,7 @@ class Module:
     def copy(self: T) -> T:
         return jax.tree_map(lambda x: x, self)
 
-    def slice(self: T, *filters: tp.Type) -> T:
+    def filter(self: T, *filters: tp.Type) -> T:
         flat: tp.List[types.ValueAnnotation]
 
         old_slicing = LOCAL.is_slicing

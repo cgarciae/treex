@@ -107,11 +107,11 @@ class LinearTest(unittest.TestCase):
         x = np.random.uniform(size=(10, 2))
         module = tx.nn.Linear(2, 3).init(42)
 
-        flat = jax.tree_leaves(module.slice(tx.Parameter))
+        flat = jax.tree_leaves(module.filter(tx.Parameter))
 
         assert len(flat) == 2
 
-        flat = jax.tree_leaves(module.slice(tx.State))
+        flat = jax.tree_leaves(module.filter(tx.State))
 
         assert len(flat) == 0
 
