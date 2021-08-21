@@ -13,12 +13,6 @@ class Box:
     def __getitem__(self, *items):
         return self.value
 
-    def unwrap(self) -> tp.Type:
-        if isinstance(self.value, Box):
-            return self.value.unwrap()
-        else:
-            return self.value
-
 
 class IdentityGetter:
     def __getitem__(self, item):
@@ -34,7 +28,7 @@ IDENTITY_GETTER = IdentityGetter()
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
 T = tp.TypeVar("T", bound="Module")
-S = tp.TypeVar("S", bound="Sliceable")
+S = tp.TypeVar("S", bound="Module")
 
 
 class TreePart:
@@ -61,10 +55,6 @@ class _Rng(_State):
     pass
 
 
-class ModuleContainer(TreePart):
-    pass
-
-
 # simple types
 Parameter = annotation(tp.Union[np.ndarray, "Initializer"], _Parameter)
 State = annotation(tp.Union[np.ndarray, "Initializer"], _State)
@@ -73,7 +63,8 @@ Rng = annotation(tp.Union[np.ndarray, "Initializer"], _Rng)
 # composite types
 List = annotation(tp.List[A], IDENTITY_GETTER, generic=True)[A]
 Dict = annotation(tp.Dict[A, B], IDENTITY_GETTER, generic=True)[A, B]
-ModuleList = annotation(tp.List[T], Box(ModuleContainer), generic=True)[T]
+ModuleList = annotation(tp.List[T], Box(TreePart), generic=True)[T]
+ModuleDict = annotation(tp.Dict[T, S], Box(TreePart), generic=True)[T, S]
 
 
 class ValueAnnotation:

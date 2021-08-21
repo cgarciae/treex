@@ -35,23 +35,26 @@ Treex is currently in **alpha** stage, however, its internal implementation is v
 Current roadmap:
 - [x] Finish prototyping the API
 - [ ] Finalize basic API
-- [ ] Port all Flax Linen Modules
+- [ ] Wrap all Flax Linen Modules
 - [ ] Document public API
 - [ ] Create documentation site
 
 Since Treex is not a Google-related project its success will depend largely on support from the community.
 
 ## Getting Started
+This is a small appetizer to give you a feel for how using Treex looks like, be sure to checkout the [Guide section](#guide) below for details on more advanced usage.
 ```python
 from typing import Sequence
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 import treex as tx
+
 
 class MLP(tx.Module):
     layers: tx.ModuleList[tx.Linear]
-    
+
     def __init__(self, features: Sequence[int]):
         self.layers = [
             tx.Linear(din, dout) 
@@ -63,28 +66,40 @@ class MLP(tx.Module):
             x = jax.nn.relu(linear(x))
         return self.layers[-1](x)
 
-model = MLP([10, 12, 8, 4])
-x = jnp.ones((32, 10))
-y = jnp.ones((32, 4))
 
-model = model.init(42)
-output = model(x)
+model = MLP([1, 12, 8, 1]).init(42)
 
+x = np.random.uniform(-1, 1, size=(100, 1))
+y = 1.4 * x ** 2 - 0.3 + np.random.normal(scale=0.1, size=(100, 1))
+
+@jax.jit
 @jax.grad
 def loss_fn(model, x, y):
     y_pred = model(x)
     return jnp.mean((y_pred - y) ** 2)
 
-# in reality just use optax
+# in reality use optax
 def sdg(param, grad):
     return param - 0.01 * grad
 
-grads = loss_fn(model, x, y)
-model = jax.tree_map(sdg, model, grads)
+# training loop
+for step in range(10_000):
+    grads = loss_fn(model, x, y)
+    model = jax.tree_map(sdg, model, grads)
+
+model = model.eval()
+y_pred = model(x)
 ```
 
 ## Guide
-### Parameter Declaration
+### Defining Modules
+Treex Modules have the following characteristics:
+* Parameters and submodule fields **MUST** be specified using type annotations.
+* There are 3 kinds of valid type annotations:
+    * Subtypes of `tx.TreePart` like `tx.Parameter` and `tx.State`, this includes container type variations like e.g. `tx.List[tx.Parameter]`.
+    * Subtypes of `tx.Module`.
+    * Subtypes of `tx.ModuleContainer` like `tx.ModuleList` and `tx.ModuleDict`.
+
 ```python
 class Linear(tx.Module):
     w: tx.Parameter # treex uses annotations to define structure
@@ -102,8 +117,6 @@ class Linear(tx.Module):
 linear = Linear(3, 5).init(42) # pass an int or PRNGKey to initialize
 y = linear(x) # you can call modules directly
 ```
-
-### Module Composition
 
 ```python
 import treex as tx
@@ -140,6 +153,7 @@ grads = loss_fn(model, x, y)
 model = jax.tree_map(sdg, model, grads)
 ```
 
+### Initialization
 
 ### Filter and Update API
 The `filter` method allows you to select a subtree by filtering based on a type, all leaves that are not a subclass of such type are set to a special `Nothing` value.
@@ -268,6 +282,9 @@ decoder = vae.decoder
 samples = decoder(z)
 ```
 
+### Custom Annotations
+
+### Container Types
 
 ### Full Example
 
