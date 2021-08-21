@@ -1,5 +1,89 @@
 # Treex
 
+_A simple pure PyTree Module system for JAX_
+
+* **Simple and Intuitive**: Modules are simple Python objects that respect Object Oriented semantics and should make PyTorch users feel at home, no need for separate dictionary structures or complex `apply` methods..
+* **PyTree-based**: Modules are registered as JAX PyTrees so they can be used with any JAX function, no need for special versions of `jit`, `grad`, `vmap`, etc.
+* **Expressive**: By using type annotations you can tell Treex what the different parts of your module do, this leads to a very flexible state management solution that can handle different kinds of state such as differentiable parameters, batch statistics, rng state, and any other kind of state the user wishes to define.
+* **Doesn't reinvent the wheel**: Writting high-quality, battle-tested code for common layers is hard, so currently `treex.nn` Modules are wrappers over their **Flax** counterparts, keeping the same signatures so Flax users feel at home, but granting them the simple Pytorch-like behavior Treex brings.
+
+## Why Treex?
+Despite all JAX benefits, current Module systems are not intuitive to new users and add additional complexity not present in frameworks like PyTorch or Keras. Treex takes insparation from S4TF and delivers an intuitive experience using JAX PyTree infrastructure.
+
+<details>
+<summary>Current Alternative's Drawbacks and Solutions</summary>
+
+Currently we have many alternatives like Flax, Haiku, Objax, that have one or more of the following drawbacks:
+
+* Module structure and parameter structure are separate, parameters have to be manipulated around by the user which is not intuitive. In Treex, parameters are stored in the modules themselves and can be accessed directly.
+* Monadic architecture's add complexity, both Flax and Haiku use an `apply` method to call modules which sets a context with parameters, rng, etc, which add an additional overhead to the API and creates an asymmetry to how Modules are used inside and outside a context. In Treex you can just call the modules directly.
+* Parameter surgery is very difficult to implement, if you want to transfer a pretrained module or submodule as part of a new module, you have to know precisely how to extract their parameters and how to insert them into the new parameter structure / dictionaries such that it is in agreement with the new module structure. In Treex, just as in PyTorch / Keras you just pass the (sub)module to the new module and parameters go with them.
+* Deviate from JAX semantics and require special versions of `jit`, `grad`, `vmap`, etc, which makes it harder to integrate with other JAX libraries. Treex's Modules are plain old JAX PyTrees and are compatible with any JAX library that supports them.
+* Other PyTree-based approaches like Parallax and Equinox don't have a full state management solution to handle complex state as you see in Flax. Treex has the Slice and Merge API that is very expressive and can effectively handle systems with complex state.
+
+</details>
+
+## Installation
+Install using pip:
+```bash
+pip install treex
+```
+
+## Status
+Treex is currently in **alpha** stage, however, its internal implementation is very simple so its probably near completion.
+
+Current roadmap:
+- [x] Finish prototyping the API
+- [ ] Finalize basic API
+- [ ] Port all Flax Linen Modules
+- [ ] Document public API
+- [ ] Create documentation site
+
+Since Treex is not a Google-related project its success will depend largely on support from the community.
+
+## Getting Started
+```python
+from typing import Sequence
+
+import jax
+import jax.numpy as jnp
+import treex as tx
+
+class MLP(tx.Module):
+    layers: tx.ModuleList[tx.Linear]
+    
+    def __init__(self, features: Sequence[int]):
+        self.layers = [
+            tx.Linear(din, dout) 
+            for din, dout in zip(features[:-1], features[1:])
+        ]
+
+    def __call__(self, x):
+        for linear in self.layers[:-1]:
+            x = jax.nn.relu(linear(x))
+        return self.layers[-1](x)
+
+model = MLP([10, 12, 8, 4])
+x = jnp.ones((32, 10))
+y = jnp.ones((32, 4))
+
+model = model.init(42)
+output = model(x)
+
+@jax.grad
+def loss_fn(model, x, y):
+    y_pred = model(x)
+    return jnp.mean((y_pred - y) ** 2)
+
+# in reality just use optax
+def sdg(param, grad):
+    return param - 0.01 * grad
+
+grads = loss_fn(model, x, y)
+model = jax.tree_map(sdg, model, grads)
+```
+
+## Guide
 ### Parameter Declaration
 ```python
 class Linear(tx.Module):
@@ -40,12 +124,20 @@ class MLP(tx.Module):
 mlp = MLP(3, 5, 2).init(42)
 ```
 
-### Modules are Pytrees
+### Pytrees
 ```python
 @jax.grad # no need for special versions of `jit`, `grad`, `vmap`, etc.
 def loss_fn(model: MLP, x, y):  # as with any pytree Modules can be passed through `grad`
     y_pred = model(x) # just call the modules, no need for `apply`
     return jnp.mean((y_pred - y) ** 2)
+
+def sdg(param, grad):
+    return param - 0.01 * grad
+
+model = MLP(...).init(42)
+
+grads = loss_fn(model, x, y)
+model = jax.tree_map(sdg, model, grads)
 ```
 
 
@@ -76,7 +168,7 @@ A typical use case is to define `params` as a `Parameter` slice and pass it as t
 # but model itself is left untouched
 params = model.slice(tx.Parameter)
 
-@jax.grad # no need for special versions of `jit`, `grad`, `vmap`, etc.
+@jax.grad 
 def loss_fn(params, model, x, y):
     # merge traced arrays by `grad` from `params`
     model = model.merge(params)
