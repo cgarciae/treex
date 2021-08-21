@@ -1,13 +1,13 @@
-from typing import List, Union
+import typing as tp
+
 import jax
 import jax.numpy as jnp
 import jax.tree_util
 import numpy as np
 import treex as tx
 
-
-Parameter = tx.annotation(np.ndarray, tx.Parameter)
-State = tx.annotation(Union[np.ndarray, int], tx.State)
+Parameter = tp.cast(tp.Type[np.ndarray], tx.Parameter)
+State = tp.cast(tp.Type[tp.Union[np.ndarray, int]], tx.State)
 
 
 class Linear(tx.Module):
@@ -135,7 +135,7 @@ class TestTreex:
 
     def test_list(self):
         class LinearList(tx.Module):
-            params: tx.List[Parameter]
+            params: tp.List[Parameter]
 
             def __init__(self, din, dout, name="linear"):
 
@@ -163,7 +163,7 @@ class TestTreex:
 
     def test_treelist(self):
         class MLP(tx.Module):
-            linears: tx.ModuleList[Linear]
+            linears: tp.List[Linear]
 
             def __init__(self, din, dmid, dout, name="mlp"):
                 self.linears = [

@@ -96,7 +96,7 @@ y_pred = model(x)
 Treex Modules have the following characteristics:
 * Parameters and submodule fields **MUST** be specified using type annotations.
 * There are 3 kinds of valid type annotations:
-    * Subtypes of `tx.TreePart` like `tx.Parameter` and `tx.State`, this includes container type variations like e.g. `tx.List[tx.Parameter]`.
+    * Subtypes of `tx.TreePart` like `tx.Parameter` and `tx.State`, this includes container type variations like e.g. `tp.List[tx.Parameter]`.
     * Subtypes of `tx.Module`.
     * Subtypes of `tx.ModuleContainer` like `tx.ModuleList` and `tx.ModuleDict`.
 

@@ -15,7 +15,7 @@ class Linear(Module):
     arguments accept the same flax artifacts.
     """
 
-    params: types.Dict[str, types.Parameter]
+    params: tp.Dict[str, types.Parameter]
 
     def __init__(
         self,

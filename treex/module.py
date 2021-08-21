@@ -100,10 +100,15 @@ class Module:
 
         for name, value in fields.items():
             annotation = annotations.get(name, None)
+            annotation = _resolve_tree_type(name, annotation)
 
-            if isinstance(value, Module):
+            if annotation is None:
+                not_tree[name] = value
+
+            elif issubclass(annotation, Module):
                 tree[name] = value
-            elif annotation is not None and issubclass(annotation, types.TreePart):
+
+            elif issubclass(annotation, types.TreePart):
                 if LOCAL.is_slicing:
                     tree[name] = jax.tree_map(
                         lambda x: types.ValueAnnotation(x, annotation), value
@@ -205,3 +210,31 @@ class Module:
 
     def eval(self: T) -> T:
         return self.train(False)
+
+
+def _resolve_tree_type(name: str, t: tp.Optional[type]) -> tp.Optional[type]:
+    if t is None:
+        return None
+
+    tree_types = [x for x in _all_types(t) if issubclass(x, (types.TreePart, Module))]
+
+    if len(tree_types) > 1:
+        # if its a type with many Module subtypes just mark them all as Module
+        if all(issubclass(x, Module) for x in tree_types):
+            return Module
+        else:
+            raise TypeError(
+                f"Multiple tree parts found in annotation for field '{name}': {tree_types}"
+            )
+    elif len(tree_types) == 1:
+        return tree_types[0]
+    else:
+        return t
+
+
+def _all_types(t: tp.Type) -> tp.Iterable[tp.Type]:
+    if hasattr(t, "__args__"):
+        for arg in t.__args__:
+            yield from _all_types(arg)
+    else:
+        yield t

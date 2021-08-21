@@ -21,8 +21,8 @@ class BatchNorm(Module):
     passed via `__call__`.
     """
 
-    params: types.Dict[str, types.Parameter]
-    batch_stats: types.Dict[str, types.State]  # should State be renamed to BatchStat?
+    params: tp.Union[types.Initializer, tp.Dict[str, types.Parameter]]
+    batch_stats: tp.Dict[str, types.State]  # should State be renamed to BatchStat?
 
     def __init__(
         self,
@@ -84,7 +84,7 @@ class BatchNorm(Module):
         self.params = types.Initializer(
             lambda key: self._flax_init(key, features_in, axis)
         )
-        self.batch_stats = None
+        self.batch_stats = {}
 
     def post_init(self):
         assert isinstance(self.params, tp.Mapping)
