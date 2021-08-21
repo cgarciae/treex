@@ -72,7 +72,8 @@ class BatchNormTest(unittest.TestCase):
             scale_init=scale_init,
         ).train(training)
 
-        variables = flax_module.init(key, x)
+        flax_key, _ = jax.random.split(key)  # emulate init split
+        variables = flax_module.init(flax_key, x)
         treex_module = treex_module.init(key)
 
         if "params" in variables:
@@ -127,7 +128,7 @@ class BatchNormTest(unittest.TestCase):
 
         assert len(flat) == 2
 
-        flat = jax.tree_leaves(module.filter(tx.State))
+        flat = jax.tree_leaves(module.filter(tx.BatchStat))
 
         assert len(flat) == 2
 
@@ -152,8 +153,8 @@ class BatchNormTest(unittest.TestCase):
         assert not all(
             np.allclose(a, b)
             for a, b in zip(
-                jax.tree_leaves(module.filter(tx.State)),
-                jax.tree_leaves(module2.filter(tx.State)),
+                jax.tree_leaves(module.filter(tx.BatchStat)),
+                jax.tree_leaves(module2.filter(tx.BatchStat)),
             )
         )
 
@@ -180,7 +181,7 @@ class BatchNormTest(unittest.TestCase):
         assert all(
             np.allclose(a, b)
             for a, b in zip(
-                jax.tree_leaves(module.filter(tx.State)),
-                jax.tree_leaves(module2.filter(tx.State)),
+                jax.tree_leaves(module.filter(tx.BatchStat)),
+                jax.tree_leaves(module2.filter(tx.BatchStat)),
             )
         )

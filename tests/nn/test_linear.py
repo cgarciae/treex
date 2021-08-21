@@ -66,7 +66,8 @@ class LinearTest(unittest.TestCase):
             bias_init=bias_init,
         ).train(training)
 
-        variables = flax_module.init(key, x)
+        flax_key, _ = jax.random.split(key) # emulate init split
+        variables = flax_module.init(flax_key, x)
         treex_module = treex_module.init(key)
 
         assert set(variables["params"]) == set(treex_module.params)

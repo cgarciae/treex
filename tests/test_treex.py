@@ -199,7 +199,7 @@ class TestTreex:
         n = 0
 
         class A(tx.Module):
-            def post_init(self):
+            def module_init(self, key):
                 nonlocal n
                 n = n + 1
 
@@ -212,7 +212,7 @@ class TestTreex:
 
     def test_initialized(self):
         class A(tx.Module):
-            def post_init(self):
+            def module_init(self, key):
                 self.x = 420
 
         module = A()

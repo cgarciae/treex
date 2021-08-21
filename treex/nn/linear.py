@@ -15,7 +15,12 @@ class Linear(Module):
     arguments accept the same flax artifacts.
     """
 
-    params: tp.Dict[str, types.Parameter]
+    # pytree
+    params: tp.Optional[tp.Mapping[str, types.Parameter]]
+
+    # props
+    features_in: int
+    module: flax_module.Dense
 
     def __init__(
         self,
@@ -44,6 +49,7 @@ class Linear(Module):
             kernel_init: initializer function for the weight matrix.
             bias_init: initializer function for the bias.
         """
+        self.features_in = features_in
         self.module = flax_module.Dense(
             features=features_out,
             use_bias=use_bias,
@@ -52,30 +58,20 @@ class Linear(Module):
             kernel_init=kernel_init,
             bias_init=bias_init,
         )
-        self.params = types.Initializer(lambda key: self._flax_init(key, features_in))
+        self.params = None
 
-    def post_init(self):
-        assert isinstance(self.params, tp.Mapping)
+    def module_init(self, key: jnp.ndarray):
+        batch_size = 10  # random
+        x = jax.random.uniform(key, (batch_size, self.features_in))
 
-        # variables was temporarily stored in params during init
-        variables = self.params
+        variables = self.module.init(key, x)
 
         # Extract collections
         self.params = variables["params"]
 
     def __call__(self, x: np.ndarray) -> jnp.ndarray:
+        assert self.params is not None, "Module not initialized"
+        
         variables = dict(params=self.params)
         output = self.module.apply(variables, x)
         return tp.cast(jnp.ndarray, output)
-
-    def _flax_init(
-        self,
-        key: jnp.ndarray,
-        features_in,
-    ):
-        batch_size = 10  # random
-        x = jax.random.uniform(key, (batch_size, features_in))
-
-        variables = self.module.init(key, x)
-
-        return variables

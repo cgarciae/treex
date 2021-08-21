@@ -21,8 +21,13 @@ class BatchNorm(Module):
     passed via `__call__`.
     """
 
-    params: tp.Union[types.Initializer, tp.Dict[str, types.Parameter]]
-    batch_stats: tp.Dict[str, types.State]  # should State be renamed to BatchStat?
+    # pytree
+    params: tp.Optional[tp.Mapping[str, types.Parameter]]
+    batch_stats: tp.Optional[tp.Mapping[str, types.BatchStat]]
+
+    # props
+    features_in: int
+    module: flax_module.BatchNorm
 
     def __init__(
         self,
@@ -68,6 +73,7 @@ class BatchNorm(Module):
                 the examples on the first two and last two devices. See `jax.lax.psum`
                 for more details.
         """
+        self.features_in = features_in
         self.module = flax_module.BatchNorm(
             use_running_average=None,
             axis=axis,
@@ -81,27 +87,25 @@ class BatchNorm(Module):
             axis_name=axis_name,
             axis_index_groups=axis_index_groups,
         )
-        self.params = types.Initializer(
-            lambda key: self._flax_init(key, features_in, axis)
-        )
-        self.batch_stats = {}
+        self.params = None
+        self.batch_stats = None
 
-    def post_init(self):
-        assert isinstance(self.params, tp.Mapping)
+    def module_init(self, key: jnp.ndarray):
 
-        # variables was temporarily stored in params during init
-        variables = self.params
+        batch_size = 10  # random
+
+        shape = [batch_size] * (abs(self.module.axis) + 1)  # overcompensate
+        shape[self.module.axis] = self.features_in
+
+        x = jax.random.uniform(key, shape=shape)
+
+        variables = self.module.init(key, x, use_running_average=True)
 
         # Extract collections
         if "params" in variables:
             self.params = variables["params"]
-        else:
-            self.params = {}
 
-        if "batch_stats" in variables:
-            self.batch_stats = variables["batch_stats"]
-        else:
-            self.batch_stats = {}
+        self.batch_stats = variables["batch_stats"]
 
     def __call__(
         self, x: np.ndarray, use_running_average: tp.Optional[bool] = None
@@ -116,8 +120,10 @@ class BatchNorm(Module):
         Returns:
             Normalized inputs (the same shape as inputs).
         """
+        assert self.batch_stats is not None, "BatchNorm module not initialized"
+
         variables = dict(
-            params=self.params,
+            params=self.params if self.params is not None else {},
             batch_stats=self.batch_stats,
         )
         # use_running_average = True means batch_stats will not be mutated
@@ -141,20 +147,3 @@ class BatchNorm(Module):
             self.batch_stats = variables["batch_stats"]
 
         return tp.cast(jnp.ndarray, output)
-
-    def _flax_init(
-        self,
-        key: jnp.ndarray,
-        features_in,
-        axis,
-    ):
-        batch_size = 10  # random
-
-        shape = [batch_size] * (abs(axis) + 1)  # overcompensate
-        shape[axis] = features_in
-
-        x = jax.random.uniform(key, shape=shape)
-
-        variables = self.module.init(key, x, use_running_average=True)
-
-        return variables

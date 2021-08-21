@@ -1,6 +1,8 @@
 import threading
 import typing as tp
 from abc import ABC, abstractmethod
+
+from jax.nn import initializers
 from treex import types
 
 
@@ -15,6 +17,15 @@ class Context(threading.local):
     is_merging: bool = False
     is_initializing: bool = False
     training: tp.Optional[bool] = None
+    key: tp.Optional[jnp.ndarray] = None
+
+    def next_key(self) -> jnp.ndarray:
+        assert self.is_initializing and self.key is not None
+
+        # key = self.key
+        key, self.key = jax.random.split(self.key)
+
+        return key
 
 
 LOCAL: Context = Context()
@@ -57,38 +68,32 @@ class Module:
         return self._training
 
     def init(self: T, key: tp.Union[int, jnp.ndarray]) -> T:
-        first = True
 
         if isinstance(key, int):
             key = jax.random.PRNGKey(key)
 
-        def init_fn(x):
-            nonlocal key, first
-
-            key = tp.cast(jnp.ndarray, key)
-
-            if isinstance(x, types.Initializer):
-                if first:
-                    next_key = key
-                    first = False
-                else:
-                    key, next_key = jax.random.split(key, 2)
-
-                x = x(next_key)
-
-            return x
-
         old_initializing = LOCAL.is_initializing
+        old_key = LOCAL.key
+
         LOCAL.is_initializing = True
+        LOCAL.key = key
 
         try:
-            module = jax.tree_map(init_fn, self)
+            module = jax.tree_map(
+                lambda initializer: (
+                    initializer(LOCAL.next_key())
+                    if isinstance(initializer, types.Initializer)
+                    else initializer
+                ),
+                self,
+            )
         finally:
             LOCAL.is_initializing = old_initializing
+            LOCAL.key = old_key
 
         return module
 
-    def post_init(self):
+    def module_init(self, key: jnp.ndarray) -> None:
         pass
 
     def tree_flatten(self):
@@ -141,7 +146,7 @@ class Module:
             setattr(module, k, v)
 
         if LOCAL.is_initializing and not module._initialized:
-            module.post_init()
+            module.module_init(LOCAL.next_key())
             module._initialized = True
 
         if LOCAL.training is not None:

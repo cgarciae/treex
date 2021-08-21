@@ -63,6 +63,7 @@ class Dropout(Module):
         variables = dict()
 
         training = not deterministic if deterministic is not None else self.training
+        deterministic = not training
 
         if rng is None:
             assert isinstance(self.rng, jnp.ndarray)
@@ -72,7 +73,7 @@ class Dropout(Module):
         output = self.module.apply(
             variables,
             x,
-            deterministic=not training,
+            deterministic=deterministic,
             rng=rng,
         )
 

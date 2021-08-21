@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, List
 
 import jax
 import jax.numpy as jnp
@@ -8,7 +8,7 @@ import treex as tx
 
 
 class MLP(tx.Module):
-    layers: tx.ModuleList[tx.Linear]
+    layers: List[tx.Linear]
 
     def __init__(self, features: Sequence[int]):
         self.layers = [

@@ -2,10 +2,10 @@
 
 _A simple pure PyTree Module system for JAX_
 
-* **Simple and Intuitive**: Modules are simple Python objects that respect Object Oriented semantics and should make PyTorch users feel at home, no need for separate dictionary structures or complex `apply` methods..
+* **Simple and Intuitive**: Modules are simple Python objects that respect Object Oriented semantics and should make PyTorch users feel at home, no need for separate dictionary structures or complex `apply` methods.
 * **PyTree-based**: Modules are registered as JAX PyTrees so they can be used with any JAX function, no need for special versions of `jit`, `grad`, `vmap`, etc.
-* **Expressive**: By using type annotations you can tell Treex what the different parts of your module do, this leads to a very flexible state management solution that can handle different kinds of state such as differentiable parameters, batch statistics, rng state, and any other kind of state the user wishes to define.
-* **Doesn't reinvent the wheel**: Writting high-quality, battle-tested code for common layers is hard, so currently `treex.nn` Modules are wrappers over their **Flax** counterparts, keeping the same signatures so Flax users feel at home, but granting them the simple Pytorch-like behavior Treex brings.
+* **Expressive**: By using type annotations you can tell Treex what the different parts of your module do, this leads to a very powerful state management solution.
+* **Doesn't reinvent the wheel**: Writting high-quality, battle-tested code for common layers is hard, so currently Modules in `treex.nn` are wrappers over their **Flax** counterparts, they keep the same signatures so Flax users feel at home but still grant them the simple Pytorch-like behavior Treex brings.
 
 ## Why Treex?
 Despite all JAX benefits, current Module systems are not intuitive to new users and add additional complexity not present in frameworks like PyTorch or Keras. Treex takes insparation from S4TF and delivers an intuitive experience using JAX PyTree infrastructure.
@@ -44,7 +44,7 @@ Since Treex is not a Google-related project its success will depend largely on s
 ## Getting Started
 This is a small appetizer to give you a feel for how using Treex looks like, be sure to checkout the [Guide section](#guide) below for details on more advanced usage.
 ```python
-from typing import Sequence
+from typing import Sequence, List
 
 import jax
 import jax.numpy as jnp
@@ -53,7 +53,7 @@ import treex as tx
 
 
 class MLP(tx.Module):
-    layers: tx.ModuleList[tx.Linear]
+    layers: List[tx.Linear]
 
     def __init__(self, features: Sequence[int]):
         self.layers = [
@@ -94,54 +94,59 @@ y_pred = model(x)
 ## Guide
 ### Defining Modules
 Treex Modules have the following characteristics:
-* Parameters and submodule fields **MUST** be specified using type annotations.
-* There are 3 kinds of valid type annotations:
-    * Subtypes of `tx.TreePart` like `tx.Parameter` and `tx.State`, this includes container type variations like e.g. `tp.List[tx.Parameter]`.
-    * Subtypes of `tx.Module`.
-    * Subtypes of `tx.ModuleContainer` like `tx.ModuleList` and `tx.ModuleDict`.
+* They inherit from `tx.Module`.
+* Fields for parameter and submodule **MUST** be marked using a _valid_ type annotation.
+
 
 ```python
 class Linear(tx.Module):
-    w: tx.Parameter # treex uses annotations to define structure
-    b: tx.Parameter # modules contain their parameters directly
+    w: tx.Parameter
+    b: tx.Parameter
 
     def __init__(self, din, dout):
-        # you can use an Initializer for lazy initialization
-        self.w = tx.Initializer(lambda key: jax.random.uniform(key, shape=(din, dout)))
-        # or just set their value directly
+        self.w = tx.Initializer(
+            lambda key: jax.random.uniform(key, shape=(din, dout)))
         self.b = jnp.zeros(shape=(dout,))
 
     def __call__(self, x):
         return jnp.dot(x, self.w) + self.b
 
-linear = Linear(3, 5).init(42) # pass an int or PRNGKey to initialize
-y = linear(x) # you can call modules directly
+linear = Linear(3, 5).init(42)
+y = linear(x)
 ```
 
+Valid type annotations include:
+* Subtypes of `tx.TreePart` e.g. `tx.Parameter`, `tx.BatchStat`, etc.
+* Subtypes of `tx.Module` e.g. `tx.Linear`, custom Module types, etc.
+* Generic subtypes from the `typing` module of the previous e.g. `List[tx.Parameter]` or `Dict[str, tx.Linear]`.
+
+Type annotations that do not comform to the above rules will be ignored and the field will not be counted as part of the PyTree.
+
 ```python
-import treex as tx
-
 class MLP(tx.Module):
-    linear1: tx.Linear
-    linear2: tx.Linear
+    layers: List[tx.Linear]
 
-    def __init__(din, dmid, dout):
-        self.linear1 = tx.Linear(din, dmid)
-        self.linear2 = tx.Linear(dmid, dout)
+    def __init__(self, features: Sequence[int]):
+        self.layers = [
+            tx.Linear(din, dout) 
+            for din, dout in zip(features[:-1], features[1:])
+        ]
 
     def __call__(self, x):
-        x = jax.nn.relu(self.linear1(x))
-        x = self.linear2(x)
-        return x
+        for linear in self.layers[:-1]:
+            x = jax.nn.relu(linear(x))
+        return self.layers[-1](x)
 
-mlp = MLP(3, 5, 2).init(42)
+mlp = MLP([3, 5, 2]).init(42)
 ```
 
 ### Pytrees
+Since Modules are pytrees they can be arguments to JAX functions such as `jit`, `grad`, `vmap`, etc, and the `jax.tree_*` function family.
 ```python
-@jax.grad # no need for special versions of `jit`, `grad`, `vmap`, etc.
-def loss_fn(model: MLP, x, y):  # as with any pytree Modules can be passed through `grad`
-    y_pred = model(x) # just call the modules, no need for `apply`
+@jax.jit
+@jax.grad
+def loss_fn(model, x, y):
+    y_pred = model(x)
     return jnp.mean((y_pred - y) ** 2)
 
 def sdg(param, grad):
@@ -152,27 +157,66 @@ model = MLP(...).init(42)
 grads = loss_fn(model, x, y)
 model = jax.tree_map(sdg, model, grads)
 ```
+This makes Treex Modules compatible with tooling from the JAX ecosystem, and enables correct unification of Modules as both the parameter containers and the definition of the foward computation.
 
 ### Initialization
+
+```python
+class MyModule(tx.Module):
+    a: tx.Parameter
+    b: tx.Parameter
+
+    def __init__(self):
+        self.a = tx.Initializer(lambda key: 1)
+        self.b = 2
+
+module = MyModule() 
+module # MyModule(a=Initializer, b=2)
+moduel.initialized # False
+
+module = module.init(42)  
+module # MyModule(a=1, b=2)
+module.initialized # True
+```
+
+```python
+class MyModule(tx.Module):
+    a: tx.Parameter
+    b: tx.Parameter
+
+    def __init__(self):
+        self.a = tx.Initializer(lambda key: 1)
+        self.b = 2
+
+module = MyModule() 
+module # MyModule(a=Initializer, b=2)
+moduel.initialized # False
+
+module = module.init(42)  
+module # MyModule(a=1, b=2)
+module.initialized # True
+```
+
+
 
 ### Filter and Update API
 The `filter` method allows you to select a subtree by filtering based on a type, all leaves that are not a subclass of such type are set to a special `Nothing` value.
 ```python
 class MyModule(tx.Module):
-    a: tx.Parameter = 1
-    b: tx.State = 2
+    a: tx.Parameter = np.array(1)
+    b: tx.BatchStat = np.array(2)
     ...
 
 module = MyModule(...)
 
-module.filter(tx.Parameter) # MyModule(a=1, b=Nothing)
-module.filter(tx.State)     # MyModule(a=Nothing, b=2)
+module.filter(tx.Parameter) # MyModule(a=array([1]), b=Nothing)
+module.filter(tx.BatchStat) # MyModule(a=Nothing, b=array([2]))
 ```
 `Nothing` much like `None` is an empty pytree so it gets ignored by tree operations:
 
 ```python
-jax.tree_leaves(module.filter(tx.Parameter)) # [1]
-jax.tree_leaves(module.filter(tx.State))     # [2]
+jax.tree_leaves(module.filter(tx.Parameter)) # [array([1])]
+jax.tree_leaves(module.filter(tx.BatchStat)) # [array([2])]
 ```
 
 A typical use case is to define `params` as a `Parameter` filter and pass it as the first argument to `grad` so that the gradient is computed only that subset and immediately update them back to the `model` before performing any computation:
@@ -229,31 +273,13 @@ class Dropout(tx.Module):
 
 ### Training State
 ```python
-class MLP(tx.Module):
-    linear1: Linear
-    linear2: Linear
-    ...
-
-model = MLP(...).init(42)
-
-model.training # True by default
-model.linear1.training # True by default
-
-model = model.eval() # model is now in evaluation mode
-
-model.training # False
-model.linear1.training # False
-
-model = model.train() # switch back to training mode
-```
-
-```python
 x = np.random.randn(10, 3)
 model = tx.Dropout(0.5).init(42)
 
 y1 = model(x)
 y2 = model(x)
 
+model.training       # True
 np.allcloase(y1, y2) # False
 
 # deterministic in eval mode
@@ -262,6 +288,7 @@ model = model.eval()
 y1 = model(x)
 y2 = model(x)
 
+model.training      # False
 np.allclose(y1, y2) # True
 ```
 

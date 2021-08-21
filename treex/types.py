@@ -20,10 +20,15 @@ class _Rng(_State):
     pass
 
 
+class _BatchStat(_State):
+    pass
+
+
 # use cast to trick static analyzers into believing these types
 Parameter = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Parameter)
 State = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _State)
 Rng = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Rng)
+BatchStat = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _BatchStat)
 
 
 class ValueAnnotation:
