@@ -35,6 +35,14 @@ class MLP(tx.Module):
 
 
 class TestTreex:
+    def test_flatten_nothing(self):
+        x = [(1, 2), (3, tx.Nothing())]
+        assert jax.tree_leaves(x) == [1, 2, 3]
+
+        flat_with_nothing = jax.tree_flatten(x, lambda x: isinstance(x, tx.Nothing))[0]
+
+        assert flat_with_nothing == [1, 2, 3, tx.Nothing()]
+
     def test_flatten(self):
 
         mlp = MLP(2, 3, 5)
@@ -55,12 +63,7 @@ class TestTreex:
 
         mlp = MLP(2, 3, 5).filter(State)
 
-        is_merging_old = tx.LOCAL.is_merging
-        try:
-            tx.LOCAL.is_merging = True
-            flat = jax.tree_leaves(mlp)
-        finally:
-            tx.LOCAL.is_merging = is_merging_old
+        flat = jax.tree_flatten(mlp, lambda x: isinstance(x, tx.Nothing))[0]
 
         assert len(flat) == 6
 

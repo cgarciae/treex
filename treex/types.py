@@ -37,10 +37,6 @@ class ValueAnnotation:
         self.annotation = annotation
 
 
-class Dummy:
-    pass
-
-
 class Initializer:
     def __init__(self, f: tp.Callable[[jnp.ndarray], tp.Any]):
         self.f = f

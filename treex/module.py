@@ -14,7 +14,6 @@ import numpy as np
 
 class Context(threading.local):
     is_slicing: bool = False
-    is_merging: bool = False
     is_initializing: bool = False
     training: tp.Optional[bool] = None
     key: tp.Optional[jnp.ndarray] = None
@@ -38,21 +37,17 @@ T = tp.TypeVar("T", bound="Module")
 @jax.tree_util.register_pytree_node_class
 class Nothing:
     def tree_flatten(self):
-        children = (types.Dummy(),) if LOCAL.is_merging else ()
-        return children, None
+        return (), None
 
     @classmethod
     def tree_unflatten(cls, _aux_data, children):
-        if LOCAL.is_merging:
-            value = children[0]
-
-            if not isinstance(value, types.Dummy):
-                return value
-
         return cls()
 
     def __repr__(self) -> str:
         return "Nothing"
+
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, Nothing)
 
 
 class Module:
@@ -183,22 +178,22 @@ class Module:
     def update(self: T, other: T, *rest: T) -> T:
         modules = (self, other) + rest
 
-        old_merging = LOCAL.is_merging
-        LOCAL.is_merging = True
-
-        def merge_fn(*xs):
+        def merge_fn(xs):
             acc, *xs = xs
             for x in xs:
-                if not isinstance(x, types.Dummy):
+                if not isinstance(x, Nothing):
                     acc = x
             return acc
 
-        try:
-            flats, treedefs = zip(*[jax.tree_flatten(m) for m in modules])
-            flat_out = jax.tree_util.tree_map(merge_fn, *flats)
-            module = jax.tree_unflatten(treedefs[0], flat_out)
-        finally:
-            LOCAL.is_merging = old_merging
+        flats, treedefs = zip(
+            *[
+                jax.tree_flatten(m, is_leaf=lambda x: isinstance(x, Nothing))
+                for m in modules
+            ]
+        )
+        # flat_out = jax.tree_util.tree_map(merge_fn, *flats)
+        flat_out = [merge_fn(values) for values in zip(*flats)]
+        module = jax.tree_unflatten(treedefs[0], flat_out)
 
         return module
 
