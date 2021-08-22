@@ -12,7 +12,11 @@ class Conv(Module):
     """Convolution Module wrapping lax.conv_general_dilated.
 
     `Conv` is implemented as a wrapper over `flax.linen.Conv`, its constructor
-    arguments accept the same flax artifacts.
+    arguments accept almost the same arguments including any Flax artifacts such as initializers.
+    Main differences:
+
+    * receives `features_in` as a first argument since shapes must be statically known.
+    * `features` argument is renamed to `features_out`.
     """
 
     # pytree
@@ -111,6 +115,14 @@ class Conv(Module):
         self.params = variables["params"]
 
     def __call__(self, x: np.ndarray) -> jnp.ndarray:
+        """Applies a convolution to the inputs.
+
+        Arguments:
+            x: input data with dimensions (batch, spatial_dims..., features).
+
+        Returns:
+            The convolved data.
+        """
         assert self.params is not None, "Module not initialized"
 
         variables = dict(params=self.params)

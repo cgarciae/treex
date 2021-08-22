@@ -12,7 +12,11 @@ class Linear(Module):
     """A linear transformation applied over the last dimension of the input.
 
     `Linear` is implemented as a wrapper over `flax.linen.Dense`, its constructor
-    arguments accept the same flax artifacts.
+    arguments accept almost the same arguments including any Flax artifacts such as initializers.
+    Main differences:
+
+    * receives `features_in` as a first argument since shapes must be statically known.
+    * `features` argument is renamed to `features_out`.
     """
 
     # pytree
@@ -70,8 +74,16 @@ class Linear(Module):
         self.params = variables["params"]
 
     def __call__(self, x: np.ndarray) -> jnp.ndarray:
+        """Applies a linear transformation to the inputs along the last dimension.
+
+        Arguments:
+            x: The nd-array to be transformed.
+
+        Returns:
+            The transformed input.
+        """
         assert self.params is not None, "Module not initialized"
-        
+
         variables = dict(params=self.params)
         output = self.module.apply(variables, x)
         return tp.cast(jnp.ndarray, output)
