@@ -11,6 +11,10 @@ import jax.numpy as jnp
 import jax.tree_util
 import numpy as np
 
+A = tp.TypeVar("A")
+B = tp.TypeVar("B")
+T = tp.TypeVar("T", bound="Module")
+
 
 class Context(threading.local):
     is_slicing: bool = False
@@ -28,26 +32,6 @@ class Context(threading.local):
 
 
 LOCAL: Context = Context()
-
-A = tp.TypeVar("A")
-B = tp.TypeVar("B")
-T = tp.TypeVar("T", bound="Module")
-
-
-@jax.tree_util.register_pytree_node_class
-class Nothing:
-    def tree_flatten(self):
-        return (), None
-
-    @classmethod
-    def tree_unflatten(cls, _aux_data, children):
-        return cls()
-
-    def __repr__(self) -> str:
-        return "Nothing"
-
-    def __eq__(self, o: object) -> bool:
-        return isinstance(o, Nothing)
 
 
 class Module:
@@ -166,7 +150,7 @@ class Module:
             flat_out = [
                 value_annotation.value
                 if issubclass(value_annotation.annotation, filters)
-                else Nothing()
+                else types.Nothing()
                 for value_annotation in flat
             ]
             module = jax.tree_unflatten(treedef, flat_out)
@@ -181,13 +165,13 @@ class Module:
         def merge_fn(xs):
             acc, *xs = xs
             for x in xs:
-                if not isinstance(x, Nothing):
+                if not isinstance(x, types.Nothing):
                     acc = x
             return acc
 
         flats, treedefs = zip(
             *[
-                jax.tree_flatten(m, is_leaf=lambda x: isinstance(x, Nothing))
+                jax.tree_flatten(m, is_leaf=lambda x: isinstance(x, types.Nothing))
                 for m in modules
             ]
         )

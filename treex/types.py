@@ -1,6 +1,8 @@
 import typing as tp
 
+import jax
 import jax.numpy as jnp
+import jax.tree_util
 import numpy as np
 
 
@@ -46,3 +48,19 @@ class Initializer:
 
     def __repr__(self) -> str:
         return "Initializer"
+
+
+@jax.tree_util.register_pytree_node_class
+class Nothing:
+    def tree_flatten(self):
+        return (), None
+
+    @classmethod
+    def tree_unflatten(cls, _aux_data, children):
+        return cls()
+
+    def __repr__(self) -> str:
+        return "Nothing"
+
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, Nothing)
