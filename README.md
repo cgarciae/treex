@@ -309,6 +309,9 @@ y_pred = model(X_test)
 ### Parameter Annotations
 The role of each parameter is defined by its annotation. While valid annotations is any type which inherits from `tx.TreePart`, the default annotations from Treex are currently organized into the following type hierarchy:
 
+<details>
+<summary>Graph code</summary>
+
 ```mermaid
 graph TD;
     TreePart-->Parameter;
@@ -316,6 +319,11 @@ graph TD;
     State-->Rng;
     State-->BatchStat;
 ```
+
+</details>
+
+![types](images/types.png)
+
 This is useful because you can make specific or more general queries using `filter` depending on what you want to achive. E.g.
 
 ```python
