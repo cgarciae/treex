@@ -30,16 +30,14 @@ pip install treex
 ```
 
 ## Status
-Treex is currently in **alpha** stage, however, its internal implementation is very simple so its probably near completion.
+While its core API is probably near complete, Treex right now its more of a proof of concept for what a PyTree-based Module system for JAX could look like. More testing is needed to find out wether its general enough for complex models and potential issues. Feedback is appriciated.
 
-Current roadmap:
-- [x] Finish prototyping the API
-- [ ] Finalize basic API
+**Roadmap**:
+- [x] Finish prototyping core API
 - [ ] Wrap all Flax Linen Modules
 - [ ] Document public API
 - [ ] Create documentation site
 
-Since Treex is not a Google-related project its success will depend largely on support from the community.
 
 ## Getting Started
 This is a small appetizer to give you a feel for how using Treex looks like, be sure to checkout the [Guide section](#guide) below for details on more advanced usage.
@@ -160,14 +158,17 @@ model = jax.tree_map(sdg, model, grads)
 This makes Treex Modules compatible with tooling from the JAX ecosystem, and enables correct unification of Modules as both the parameter containers and the definition of the foward computation.
 
 ### Initialization
+Initialization in Treex is done by calling the `init` method on the Module with a seed, this returns a new Module with all fields initialized.
 
+There are two initialization mechanisms in Treex, the first is setting the fields you wish to initialize to an `Initializer` object. `Initializer`s contain functions that take a `key` and return the initial value of the field:
 ```python
 class MyModule(tx.Module):
     a: tx.Parameter
     b: tx.Parameter
 
     def __init__(self):
-        self.a = tx.Initializer(lambda key: 1)
+        self.a = tx.Initializer(
+            lambda key: jax.random.uniform(key, shape=(1,)))
         self.b = 2
 
 module = MyModule() 
@@ -175,27 +176,27 @@ module # MyModule(a=Initializer, b=2)
 moduel.initialized # False
 
 module = module.init(42)  
-module # MyModule(a=1, b=2)
+module # MyModule(a=array([0.034...]), b=2)
 module.initialized # True
 ```
-
+The second is to use override the `module_init` which takes a `key` and can initialized any required fields. This is useful for modules that require complex initialization logic or whose fields initialization depend on each other.
 ```python
 class MyModule(tx.Module):
     a: tx.Parameter
     b: tx.Parameter
 
     def __init__(self):
-        self.a = tx.Initializer(lambda key: 1)
-        self.b = 2
+        self.a = None
+        self.b = None
 
-module = MyModule() 
-module # MyModule(a=Initializer, b=2)
-moduel.initialized # False
+    def module_init(self, key):
+        # some complex initialization
+        ...
 
-module = module.init(42)  
-module # MyModule(a=1, b=2)
-module.initialized # True
+module = MyModule().init(42)
+module # MyModule(a=array([0.927...]), b=array([0.749...]))
 ```
+You can also mix and match the two strategies, meaning that some parameters can be initialized via `Initializer`s while others via `module_init`. The rule is that `Initializer`s are always going the be called first.
 
 
 
@@ -239,6 +240,7 @@ opt_state = optimizer.init(params) # only needs params
 ```
 
 ### State Management
+Treex takes a "direct" approach to state management, that is, state is updated inplace by the Module when ever it needs to. For example, this module will calculate the running average of its input:
 ```python
 class Average(tx.Module):
     count: tx.State
@@ -254,64 +256,97 @@ class Average(tx.Module):
 
         return self.total / self.count
 ```
-
+Treex Modules that require random state will often keep a `rng` key internally and update it inplace when needed:
 ```python
 class Dropout(tx.Module):
     rng: tx.Rng
 
     def __init__(self, rate: float):
-        self.rate = rate
-        self.rng = tx.Initializer(lambda key: key) # its just a PRNGKey
+        self.rng = tx.Initializer(lambda key: key)
+        ...
 
     def __call__(self, x):
-        # RNG is just State, update in place as well
         key, self.rng = jax.random.split(self.rng)
-        mask = jax.random.bernoulli(key, self.rate, x.shape)
         ...
 ```
+State management is the hardest thing in JAX but here it seems effortless, what is the catch? The thing you have to worry about is how to propagate changes in state properly taking into account the fact that pytree operations create new objects, that is, reference don't persist across calls throught these functions. 
+
+The solution to this problem is: **always output the module to update state**. For example, a typical loss function that contains stateful model would look like this:
+
+```python
+@partial(jax.value_and_grad, has_aux=True)
+def loss_fn(params, model, x, y):
+    model = model.update(params)
+
+    y_pred = model(x)
+    loss = jnp.mean((y_pred - y) ** 2)
+
+    return loss, model
+
+params = model.filter(tx.Parameter)
+(loss, model), grads = loss_fn(params, model, x, y)
+...
+```
+Here `model` is returned along with the loss through `value_and_grad` to update `model` on the outside.
 
 
 ### Training State
+Treex Modules have a `training: bool` property that specifies whether the module is in training mode or not. This property conditions the behavior of Modules such as `Dropout` and `BatchNorm` which behave differently between training and evaluation. 
+
+To switch between modes use the `.train()` and `.eval()` methods, they return a new Module whose `training` state and the state of all of its submodules (recursively) are set to the desired value.
+
 ```python
-x = np.random.randn(10, 3)
-model = tx.Dropout(0.5).init(42)
+# training loop
+for step in range(1000):
+    loss, model, opt_state = train_step(model, x, y, opt_state)
 
-y1 = model(x)
-y2 = model(x)
-
-model.training       # True
-np.allcloase(y1, y2) # False
-
-# deterministic in eval mode
+# prepare for evaluation
 model = model.eval()
 
-y1 = model(x)
-y2 = model(x)
-
-model.training      # False
-np.allclose(y1, y2) # True
+# make predictions
+y_pred = model(X_test)
 ```
+### Parameter Annotations
+The role of each parameter is defined by its annotation. While valid annotations is any type which inherits from `tx.TreePart`, the default annotations from Treex are currently organized into the following type hierarchy:
 
-### Parameter Surgery
+```mermaid
+graph TD;
+    TreePart-->Parameter;
+    TreePart-->State;
+    State-->Rng;
+    State-->BatchStat;
+```
+This is useful because you can make specific or more general queries using `filter` depending on what you want to achive. E.g.
+
 ```python
-class VAE(tx.Module):
-    encoder: Encoder
-    decoder: Decoder
-    ...
-
-vae = VAE(...)
-
-# train VAE
-...
-
-# extract decoder to generate samples
-decoder = vae.decoder
-samples = decoder(z)
+rngs = model.filter(tx.Rng)
+batch_stats = model.filter(tx.BatchStat)
+all_states = model.filter(tx.State) # union of the previous two
 ```
+You can easily define you own annotations by inheriting from directly `tx.TreePart` or any of its subclasses. As an example lets create a new `Cache` state to emulates Flax's `cache` collection:
 
-### Custom Annotations
+```python
+class Cache(tx.TreePart):
+    pass
+```
+That is it! Now you can use it in your model:
+```python
+class MyModule(tx.Module):
+    memory: Cache
+    ...
+```
+**Tip**: Your static analyzer will probably start complaining if you try to assign an `jnp.ndarray` to `memory` in this example because `ndarray`s are not `TreePart`s. While this makes sense, we want to trick the static analyzer into thinking `Cache` represents an `ndarray` and not a `TreePart`, the easiest way to do this is to use `typing.cast`:
 
-### Container Types
+```python
+from typing import cast, Type
+import jax.numpy as jnp
+
+class Cache(tx.TreePart):
+    pass
+
+Cache = cast(Type[jnp.ndarray], Cache)
+```
+`cast` an identity function, meaning `Cache` is actually reassigned to itself, however, the static analyzer will now think its an `ndarray`. This way both the static analyzer and Treex will be happy.
 
 ### Full Example
 
