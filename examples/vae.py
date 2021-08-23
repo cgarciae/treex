@@ -156,8 +156,8 @@ print("X_test:", X_test.shape, X_test.dtype)
 epochs = 20
 batch_size = 32
 image_shape = (28, 28)
-hidden_size = 512
-latent_size = 512
+hidden_size = 128
+latent_size = 128
 optimizer = optax.adam(1e-3)
 
 model = VAE(
