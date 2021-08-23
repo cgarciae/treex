@@ -2,24 +2,24 @@
 
 _A simple pure PyTree Module system for JAX_
 
-* **Simple and Intuitive**: Modules are simple Python objects that respect Object Oriented semantics and should make PyTorch users feel at home, no need for separate dictionary structures or complex `apply` methods.
-* **PyTree-based**: Modules are registered as JAX PyTrees so they can be used with any JAX function, no need for special versions of `jit`, `grad`, `vmap`, etc.
+* **Intuitive and straightforward**: Modules are simple Python objects that respect Object-Oriented semantics and should make PyTorch users feel at home, with no need for separate dictionary structures or complex `apply` methods.
+* **PyTree-based**:  Modules are registered as JAX PyTrees, enabling their use with any JAX function. No need for particular versions of `jit`, `grad`, `vmap`, etc.
 * **Expressive**: By using type annotations you can tell Treex what the different parts of your module do, this leads to a very powerful state management solution.
-* **Doesn't reinvent the wheel**: Writting high-quality, battle-tested code for common layers is hard, so currently Modules in `treex.nn` are wrappers over their **Flax** counterparts, they keep the same signatures so Flax users feel at home but still grant them the simple Pytorch-like behavior Treex brings.
+* **Does not reinvent the wheel**: Writing high-quality, battle-tested code for common layers is complex. Currently, Modules in `treex.nn` are wrappers over their **Flax** counterparts. They keep the identical signatures, enabling Flax users to feel at home but still grant them the simple Pytorch-like behavior Treex brings.
 
 ## Why Treex?
-Despite all JAX benefits, current Module systems are not intuitive to new users and add additional complexity not present in frameworks like PyTorch or Keras. Treex takes insparation from S4TF and delivers an intuitive experience using JAX PyTree infrastructure.
+Despite all JAX benefits, current Module systems are not intuitive to new users and add additional complexity not present in frameworks like PyTorch or Keras. Treex takes inspiration from S4TF and delivers an intuitive experience using JAX PyTree infrastructure.
 
 <details>
 <summary>Current Alternative's Drawbacks and Solutions</summary>
 
 Currently we have many alternatives like Flax, Haiku, Objax, that have one or more of the following drawbacks:
 
-* Module structure and parameter structure are separate, parameters have to be manipulated around by the user which is not intuitive. In Treex, parameters are stored in the modules themselves and can be accessed directly.
-* Monadic architecture's add complexity, both Flax and Haiku use an `apply` method to call modules which sets a context with parameters, rng, etc, which add an additional overhead to the API and creates an asymmetry to how Modules are used inside and outside a context. In Treex you can just call the modules directly.
-* Parameter surgery is very difficult to implement, if you want to transfer a pretrained module or submodule as part of a new module, you have to know precisely how to extract their parameters and how to insert them into the new parameter structure / dictionaries such that it is in agreement with the new module structure. In Treex, just as in PyTorch / Keras you just pass the (sub)module to the new module and parameters go with them.
-* Deviate from JAX semantics and require special versions of `jit`, `grad`, `vmap`, etc, which makes it harder to integrate with other JAX libraries. Treex's Modules are plain old JAX PyTrees and are compatible with any JAX library that supports them.
-* Other PyTree-based approaches like Parallax and Equinox don't have a full state management solution to handle complex state as you see in Flax. Treex has the Filter and Update API that is very expressive and can effectively handle systems with complex state.
+* Module structure and parameter structure are separate, and parameters have to be manipulated around by the end-user, which is not intuitive. In Treex, parameters are stored in the modules themselves and can be accessed directly.
+* Monadic architecture adds complexity. Flax and Haiku use an `apply` method to call modules that set a context with parameters, rng, and different metadata, which adds additional overhead to the API and creates an asymmetry in how Modules are being used inside and outside a context. In Treex, modules can be called directly.
+* Among different frameworks, parameter surgery requires special consideration and is challenging to implement. Consider a standard workflow such as transfer learning, transferring parameters and state from a  pre-trained module or submodule as part of a new module; in different frameworks, we have to know precisely how to extract their parameters and how to insert them into the new parameter structure/dictionaries such that it is in agreement with the new module structure. In Treex, just as in PyTorch / Keras, we enable to pass the (sub)module to the new module, and parameters are automatically added to the new structure.
+* Multiple frameworks deviate from JAX semantics and require particular versions of `jit`, `grad`, `vmap`, etc., which makes it harder to integrate with other JAX libraries. Treex's Modules are plain old JAX PyTrees and are compatible with any JAX library that supports them.
+* Other PyTree-based approaches like Parallax and Equinox do not have a total state management solution to handle complex states as encountered in Flax. Treex has the Filter and Update API, which is very expressive and can effectively handle systems with a complex state.
 
 </details>
 
@@ -30,7 +30,7 @@ pip install treex
 ```
 
 ## Status
-While its core API is probably near complete, Treex right now its more of a proof of concept for what a PyTree-based Module system for JAX could look like. More testing is needed to find out wether its general enough for complex models and potential issues. Feedback is appriciated.
+While its core API is near complete, Treex is more of a proof of concept for what a PyTree-based Module system for JAX could look like. More testing is needed to find out whether it is general enough for complex models and potential issues. Feedback is much appreciated.
 
 **Roadmap**:
 - [x] Finish prototyping core API
@@ -93,7 +93,7 @@ y_pred = model(x)
 ### Defining Modules
 Treex Modules have the following characteristics:
 * They inherit from `tx.Module`.
-* Fields for parameter and submodule **MUST** be marked using a _valid_ type annotation.
+* Fields for parameter and submodules **MUST** be marked using a _valid_ type annotation.
 
 
 ```python
@@ -155,12 +155,12 @@ model = MLP(...).init(42)
 grads = loss_fn(model, x, y)
 model = jax.tree_map(sdg, model, grads)
 ```
-This makes Treex Modules compatible with tooling from the JAX ecosystem, and enables correct unification of Modules as both the parameter containers and the definition of the foward computation.
+Treex Modules are compatible with tooling from the JAX ecosystem, which enables correct unification of Modules as both the parameter containers and the definition of the forward computation.
 
 ### Initialization
-Initialization in Treex is done by calling the `init` method on the Module with a seed, this returns a new Module with all fields initialized.
+Initialization in Treex is done by calling the `init` method on the Module with a seed. This returns a new Module with all fields initialized.
 
-There are two initialization mechanisms in Treex, the first is setting the fields you wish to initialize to an `Initializer` object. `Initializer`s contain functions that take a `key` and return the initial value of the field:
+There are two initialization mechanisms in Treex. The first one is setting the fields we wish to initialize to an `Initializer` object. `Initializer`s contain functions that take a `key` and return the initial value of the field:
 ```python
 class MyModule(tx.Module):
     a: tx.Parameter
@@ -179,7 +179,7 @@ module = module.init(42)
 module # MyModule(a=array([0.034...]), b=2)
 module.initialized # True
 ```
-The second is to use override the `module_init` which takes a `key` and can initialized any required fields. This is useful for modules that require complex initialization logic or whose fields initialization depend on each other.
+The second is to override the `module_init`, which takes a `key` and can initialize any required fields. This is useful for modules that require complex initialization logic or whose field's initialization depends on each other.
 ```python
 class MyModule(tx.Module):
     a: tx.Parameter
@@ -196,12 +196,11 @@ class MyModule(tx.Module):
 module = MyModule().init(42)
 module # MyModule(a=array([0.927...]), b=array([0.749...]))
 ```
-You can also mix and match the two strategies, meaning that some parameters can be initialized via `Initializer`s while others via `module_init`. The rule is that `Initializer`s are always going the be called first.
-
+We can also mix and match the two strategies, meaning that some parameters can be initialized via `Initializer`s while others via `module_init`. The rule is that `Initializer`s are always going the be called first.
 
 
 ### Filter and Update API
-The `filter` method allows you to select a subtree by filtering based on a type, all leaves that are not a subclass of such type are set to a special `Nothing` value.
+The `filter` method allows selecting a subtree by filtering based on a type, all leaves that are not a subclass of such type are set to a special `Nothing` value.
 ```python
 class MyModule(tx.Module):
     a: tx.Parameter = np.array(1)
@@ -220,7 +219,7 @@ jax.tree_leaves(module.filter(tx.Parameter)) # [array([1])]
 jax.tree_leaves(module.filter(tx.BatchStat)) # [array([2])]
 ```
 
-A typical use case is to define `params` as a `Parameter` filter and pass it as the first argument to `grad` so that the gradient is computed only that subset and immediately update them back to the `model` before performing any computation:
+A typical use case is to define `params` as a `Parameter` filter and pass it as the first argument to `grad` so that the gradient is computed only that particular subset and immediately update them back to the `model` before performing any computation:
 
 ```python
 # we take `params` as a Parameter filter from model
@@ -240,7 +239,7 @@ opt_state = optimizer.init(params) # only needs params
 ```
 
 ### State Management
-Treex takes a "direct" approach to state management, that is, state is updated inplace by the Module when ever it needs to. For example, this module will calculate the running average of its input:
+Treex takes a "direct" approach to state management, i.e., state is updated in-place by the Module whenever it needs to. For example, this module will calculate the running average of its input:
 ```python
 class Average(tx.Module):
     count: tx.State
@@ -256,7 +255,7 @@ class Average(tx.Module):
 
         return self.total / self.count
 ```
-Treex Modules that require random state will often keep a `rng` key internally and update it inplace when needed:
+Treex Modules that require random state will often keep a `rng` key internally and update it in-place when needed:
 ```python
 class Dropout(tx.Module):
     rng: tx.Rng
@@ -269,9 +268,9 @@ class Dropout(tx.Module):
         key, self.rng = jax.random.split(self.rng)
         ...
 ```
-State management is the hardest thing in JAX but here it seems effortless, what is the catch? The thing you have to worry about is how to propagate changes in state properly taking into account the fact that pytree operations create new objects, that is, reference don't persist across calls throught these functions. 
+State management is one of the most challenging things in JAX, but with the help of Treex it seems effortless, but there is a trade-off to consider, Treex's approach requires to consider how to propagate state changes properly, while taking into account the fact that pytree operations create new objects, that is, reference do not persist across calls through these functions. 
 
-The solution to this problem is: **always output the module to update state**. For example, a typical loss function that contains stateful model would look like this:
+A standard solution to this problem is: **always output the module to update state**. For example, a typical loss function that contains a stateful model would look like this:
 
 ```python
 @partial(jax.value_and_grad, has_aux=True)
@@ -291,9 +290,9 @@ Here `model` is returned along with the loss through `value_and_grad` to update 
 
 
 ### Training State
-Treex Modules have a `training: bool` property that specifies whether the module is in training mode or not. This property conditions the behavior of Modules such as `Dropout` and `BatchNorm` which behave differently between training and evaluation. 
+Treex Modules have a `training: bool` property that specifies whether the module is in training mode or not. This property conditions the behavior of Modules such as `Dropout` and `BatchNorm`, which behave differently between training and evaluation. 
 
-To switch between modes use the `.train()` and `.eval()` methods, they return a new Module whose `training` state and the state of all of its submodules (recursively) are set to the desired value.
+To switch between modes, use the `.train()` and `.eval()` methods, they return a new Module whose `training` state and the state of all of its submodules (recursively) are set to the desired value.
 
 ```python
 # training loop
@@ -324,7 +323,7 @@ graph TD;
 
 ![types](images/types.png)
 
-This is useful because you can make specific or more general queries using `filter` depending on what you want to achive. E.g.
+This is useful because you can make specific or more general queries using `filter` depending on what you want to achive. e.g.
 
 ```python
 rngs = model.filter(tx.Rng)
