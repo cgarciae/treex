@@ -56,10 +56,9 @@ class Encoder(tx.Module):
         x = jax.nn.relu(x)
 
         mean = self.linear_mean(x)
-        log_stddev = self.linear_std(x)
-        stddev = jnp.exp(log_stddev)
+        log_std = self.linear_std(x)
+        stddev = jnp.exp(log_std)
 
-        # friendly RNG interface: rng.next() == jax.random.split(...)
         assert isinstance(self.rng, jnp.ndarray)
         key, self.rng = jax.random.split(self.rng)
         z = mean + stddev * jax.random.normal(key, mean.shape)
@@ -109,14 +108,15 @@ class VAE(tx.Module):
         self.decoder = Decoder(latent_size, hidden_size, image_shape)
 
     def __call__(self, x):
-        z = self.encoder(x)
-        return self.decoder(z)
+        return self.decoder(self.encoder(x))
 
+    @jax.jit
     def generate(self, z):
         return jax.nn.sigmoid(self.decoder(z))
 
+    @jax.jit
     def reconstruct(self, x):
-        return jax.nn.sigmoid(self.decoder(self.encoder(x)))
+        return jax.nn.sigmoid(self(x))
 
 
 @partial(jax.value_and_grad, has_aux=True)
@@ -133,41 +133,46 @@ def loss_fn(params: VAE, model: VAE, x: np.ndarray) -> tp.Tuple[jnp.ndarray, VAE
 
 
 @jax.jit
-def train_step(model: VAE, opt_state, x: np.ndarray):
+def train_step(
+    model: VAE, opt_state: optax.OptState, x: np.ndarray
+) -> tp.Tuple[jnp.ndarray, VAE, optax.OptState]:
     params = model.filter(tx.Parameter)
     (loss, model), grads = loss_fn(params, model, x)
 
-    updates, opt_state = optimizer.update(grads, opt_state, model)
-    new_params = optax.apply_updates(params, updates)
+    updates, opt_state = optimizer.update(grads, opt_state, params)
+    new_params: VAE = optax.apply_updates(params, updates)
 
     model = model.update(new_params)
 
     return loss, model, opt_state
 
 
-X_train, _1, X_test, _2 = dataget.image.mnist(global_cache=True).get()
-# Now binarize data
-X_train = (X_train > 0).astype(jnp.float32)
-X_test = (X_test > 0).astype(jnp.float32)
-
-print("X_train:", X_train.shape, X_train.dtype)
-print("X_test:", X_test.shape, X_test.dtype)
-
-epochs = 20
+# define parameters
+epochs = 5
 batch_size = 32
 image_shape = (28, 28)
 hidden_size = 128
 latent_size = 128
-optimizer = optax.adam(1e-3)
 
 model = VAE(
     image_shape=image_shape,
     hidden_size=hidden_size,
     latent_size=latent_size,
 ).init(42)
+
+optimizer = optax.adam(1e-3)
 opt_state = optimizer.init(model.filter(tx.Parameter))
 
 
+# load data
+X_train, _1, X_test, _2 = dataget.image.mnist().get()
+X_train = (X_train > 0).astype(jnp.float32)
+X_test = (X_test > 0).astype(jnp.float32)
+
+print("X_train:", X_train.shape, X_train.dtype)
+print("X_test:", X_test.shape, X_test.dtype)
+
+epoch_losses = []
 for epoch in range(epochs):
     losses = []
     model = model.train()
@@ -177,15 +182,21 @@ for epoch in range(epochs):
         loss, model, opt_state = train_step(model, opt_state, x)
         losses.append(loss)
 
-    print(f"[{epoch}] loss={np.mean(losses)}")
+    epoch_loss = jnp.mean(jnp.stack(losses))
+    epoch_losses.append(epoch_loss)
+    print(f"[{epoch}] loss={epoch_loss}")
 
 model = model.eval()
 
+# plot loss curve
+plt.figure()
+plt.plot(epoch_losses)
+
+# visualize reconstructions
 idxs = np.random.randint(0, len(X_test), size=(5,))
 x_sample = X_test[idxs]
 x_pred = model.reconstruct(x_sample)
 
-# plot and save results
 plt.figure()
 for i in range(5):
     plt.subplot(2, 5, i + 1)
@@ -193,6 +204,7 @@ for i in range(5):
     plt.subplot(2, 5, 5 + i + 1)
     plt.imshow(x_pred[i], cmap="gray")
 
+# visualize samples from latent space
 z_samples = np.random.normal(size=(12, latent_size))
 samples = model.generate(z_samples)
 
