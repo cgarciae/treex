@@ -153,7 +153,7 @@ X_test = (X_test > 0).astype(jnp.float32)
 print("X_train:", X_train.shape, X_train.dtype)
 print("X_test:", X_test.shape, X_test.dtype)
 
-epochs = 100
+epochs = 20
 batch_size = 32
 image_shape = (28, 28)
 hidden_size = 512
@@ -179,31 +179,30 @@ for epoch in range(epochs):
 
     print(f"[{epoch}] loss={np.mean(losses)}")
 
-    if epoch % 20 == 0:
-        model = model.eval()
+model = model.eval()
 
-        idxs = np.random.randint(0, len(X_test), size=(5,))
-        x_sample = X_test[idxs]
-        x_pred = model.reconstruct(x_sample)
+idxs = np.random.randint(0, len(X_test), size=(5,))
+x_sample = X_test[idxs]
+x_pred = model.reconstruct(x_sample)
 
-        # plot and save results
-        plt.figure()
-        for i in range(5):
-            plt.subplot(2, 5, i + 1)
-            plt.imshow(x_sample[i], cmap="gray")
-            plt.subplot(2, 5, 5 + i + 1)
-            plt.imshow(x_pred[i], cmap="gray")
+# plot and save results
+plt.figure()
+for i in range(5):
+    plt.subplot(2, 5, i + 1)
+    plt.imshow(x_sample[i], cmap="gray")
+    plt.subplot(2, 5, 5 + i + 1)
+    plt.imshow(x_pred[i], cmap="gray")
 
-        z_samples = np.random.normal(size=(12, latent_size))
-        samples = model.generate(z_samples)
+z_samples = np.random.normal(size=(12, latent_size))
+samples = model.generate(z_samples)
 
-        plt.figure()
-        plt.title("Generative Samples")
-        for i in range(5):
-            plt.subplot(2, 5, 2 * i + 1)
-            plt.imshow(samples[i], cmap="gray")
-            plt.subplot(2, 5, 2 * i + 2)
-            plt.imshow(samples[i + 1], cmap="gray")
+plt.figure()
+plt.title("Generative Samples")
+for i in range(5):
+    plt.subplot(2, 5, 2 * i + 1)
+    plt.imshow(samples[i], cmap="gray")
+    plt.subplot(2, 5, 2 * i + 2)
+    plt.imshow(samples[i + 1], cmap="gray")
 
-        plt.show()
-        plt.close()
+plt.show()
+plt.close()
