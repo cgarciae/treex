@@ -16,17 +16,17 @@ Batch = tp.Mapping[str, np.ndarray]
 np.random.seed(42)
 
 
-def kl_divergence(mean: jnp.ndarray, std: jnp.ndarray) -> jnp.ndarray:
-    return jnp.mean(
-        0.5 * jnp.mean(-jnp.log(std ** 2) - 1.0 + std ** 2 + mean ** 2, axis=-1)
-    )
-
-
 class _Loss(tx.TreePart):
     pass
 
 
 Loss = tp.cast(tp.Type[jnp.ndarray], _Loss)
+
+
+def kl_divergence(mean: jnp.ndarray, std: jnp.ndarray) -> jnp.ndarray:
+    return jnp.mean(
+        0.5 * jnp.mean(-jnp.log(std ** 2) - 1.0 + std ** 2 + mean ** 2, axis=-1)
+    )
 
 
 class Encoder(tx.Module):
@@ -64,7 +64,7 @@ class Encoder(tx.Module):
         key, self.rng = jax.random.split(self.rng)
         z = mean + stddev * jax.random.normal(key, mean.shape)
 
-        self.kl_loss = kl_divergence(mean, stddev)
+        self.kl_loss = 2e-1 * kl_divergence(mean, stddev)
 
         return z
 
@@ -125,9 +125,9 @@ def loss_fn(params: VAE, model: VAE, x: np.ndarray) -> tp.Tuple[jnp.ndarray, VAE
     x_pred = model(x)
 
     crossentropy_loss = jnp.mean(optax.sigmoid_binary_cross_entropy(x_pred, x))
-    kl_loss = model.encoder.kl_loss
+    aux_losses = jax.tree_leaves(model.filter(Loss))
 
-    loss = crossentropy_loss + 2e-1 * kl_loss
+    loss = crossentropy_loss + sum(aux_losses, 0.0)
 
     return loss, model
 
@@ -178,30 +178,32 @@ for epoch in range(epochs):
         losses.append(loss)
 
     print(f"[{epoch}] loss={np.mean(losses)}")
-    model = model.eval()
 
-    idxs = np.random.randint(0, len(X_test), size=(5,))
-    x_sample = X_test[idxs]
-    x_pred = model.reconstruct(x_sample)
+    if epoch % 20 == 0:
+        model = model.eval()
 
-    # plot and save results
-    plt.figure()
-    for i in range(5):
-        plt.subplot(2, 5, i + 1)
-        plt.imshow(x_sample[i], cmap="gray")
-        plt.subplot(2, 5, 5 + i + 1)
-        plt.imshow(x_pred[i], cmap="gray")
+        idxs = np.random.randint(0, len(X_test), size=(5,))
+        x_sample = X_test[idxs]
+        x_pred = model.reconstruct(x_sample)
 
-    z_samples = np.random.normal(size=(12, latent_size))
-    samples = model.generate(z_samples)
+        # plot and save results
+        plt.figure()
+        for i in range(5):
+            plt.subplot(2, 5, i + 1)
+            plt.imshow(x_sample[i], cmap="gray")
+            plt.subplot(2, 5, 5 + i + 1)
+            plt.imshow(x_pred[i], cmap="gray")
 
-    plt.figure()
-    plt.title("Generative Samples")
-    for i in range(5):
-        plt.subplot(2, 5, 2 * i + 1)
-        plt.imshow(samples[i], cmap="gray")
-        plt.subplot(2, 5, 2 * i + 2)
-        plt.imshow(samples[i + 1], cmap="gray")
+        z_samples = np.random.normal(size=(12, latent_size))
+        samples = model.generate(z_samples)
 
-    plt.show()
-    plt.close()
+        plt.figure()
+        plt.title("Generative Samples")
+        for i in range(5):
+            plt.subplot(2, 5, 2 * i + 1)
+            plt.imshow(samples[i], cmap="gray")
+            plt.subplot(2, 5, 2 * i + 2)
+            plt.imshow(samples[i + 1], cmap="gray")
+
+        plt.show()
+        plt.close()
