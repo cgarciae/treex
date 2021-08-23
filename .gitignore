@@ -139,7 +139,8 @@ cython_debug/
 
 # vscode
 .vscode
-
+.devcontainer
 
 *notebook.py
 *streambook.py
+
