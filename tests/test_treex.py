@@ -1,3 +1,5 @@
+from inspect import signature
+from treex.types import Initializer
 import typing as tp
 
 import jax
@@ -30,6 +32,11 @@ class MLP(tx.Module):
     linear2: Linear
 
     def __init__(self, din, dmid, dout, name="mlp"):
+        self.din = din
+        self.dmid = dmid
+        self.dout = dout
+        self.name = name
+
         self.linear1 = Linear(din, dmid, name="linear1")
         self.linear2 = Linear(dmid, dout, name="linear2")
 
@@ -256,3 +263,49 @@ class TestTreex:
                 self.linear2 = tx.Linear(dmid, dout)
 
         mlp = MLP(2, 3, 5).init(42)
+
+    def test_repr(self):
+        class MyModule(tx.Module):
+            a: tp.Dict[str, tp.List[MLP]]
+            b: tp.List[tx.Parameter]
+
+            def __init__(self):
+                self.a = {"mlps": [MLP(2, 3, 5), MLP(2, 3, 5)]}
+                self.b = [
+                    tx.Initializer(lambda key: jnp.zeros((10, 4))),
+                    jnp.zeros((5, 13)),
+                ]
+
+        mlp = MyModule()  # .init(42)
+        mlp = jax.tree_map(
+            lambda x: jnp.asarray(x) if not isinstance(x, tx.Initializer) else x, mlp
+        )
+        mlp = mlp.filter(tx.Parameter)
+
+        rep = repr(mlp)
+
+        rep
+
+    def test_tabulate(self):
+        class MyModule(tx.Module):
+            a: tp.Dict[str, tp.List[MLP]]
+            b: tp.List[tx.Parameter]
+
+            def __init__(self):
+                self.a = {"mlps": [MLP(256, 1024, 512), MLP(256, 1024, 512)]}
+                self.b = [
+                    tx.Initializer(lambda key: jnp.zeros((512, 256))),
+                    jnp.zeros((512, 128)),
+                ]
+
+        mlp = MyModule()  # .init(42)
+        mlp = jax.tree_map(
+            lambda x: jnp.asarray(x) if not isinstance(x, tx.Initializer) else x, mlp
+        )
+        # mlp = mlp.filter(tx.Parameter)
+
+        rep = mlp.tabulate()
+
+        print(rep)
+
+        print(mlp.a["mlps"][1].linear2)
