@@ -54,7 +54,20 @@ class Module:
         return self._training
 
     def init(self: T, key: tp.Union[int, jnp.ndarray]) -> T:
+        """
+        Creates a new module with the same structure, but with its fields initialized given a seed `key`. The following
+        procedure is used:
 
+        1. The input `key` is split and iteratively updated before passing a derived value to any
+            process that requires initialization.
+        2. `Initializer`s are called and applied to the module first.
+        3. `Module.module_init` methods are called last.
+
+        Arguments:
+            key: The seed to use for initialization.
+        Returns:
+            The new module with the fields initialized.
+        """
         if isinstance(key, int):
             key = jax.random.PRNGKey(key)
 
@@ -144,9 +157,37 @@ class Module:
         jax.tree_util.register_pytree_node_class(cls)
 
     def copy(self: T) -> T:
+        """
+        Returns a deep copy of the module, implemented as:
+        ```python
+        jax.tree_map(lambda x: x, self)
+        ```
+        """
         return jax.tree_map(lambda x: x, self)
 
     def filter(self: T, *filters: tp.Type) -> T:
+        """
+        Creates a new module with the same structure, but leaves whose type annotations are not subtypes
+        of the given filters (as determined by `issubclass`) as set to `Nothing`.
+
+        Example:
+        ```python
+        class MyModule(tx.Module):
+            a: tx.Parameter = 1
+            b: tx.BatchStat = 2
+
+        module = MyModule()
+
+        module.filter(tx.Parameter) # MyModule(a=1, b=Nothing)
+        module.filter(tx.BatchStat) # MyModule(a=Nothing, b=2)
+        ```
+
+        Arguments:
+            filters: Types to filter by, membership is determined by `issubclass`.
+        Returns:
+            The new module with the filtered fields.
+
+        """
         flat: tp.List[types.ValueAnnotation]
 
         old_slicing = LOCAL.is_slicing
@@ -167,6 +208,44 @@ class Module:
         return module
 
     def update(self: T, other: T, *rest: T) -> T:
+        """
+        Creates a new module with the same structure, but its values
+        updated based on the values from the incoming modules. Updates are performed using
+        the following rules:
+
+        * Updates are performed in the order of the input modules from left to right.
+        * If a leaf value from an incoming module is `Nothing`, it wont update
+            the corresponding value on the currently aggregated module.
+        * The static state of the output module (`initialized`, `training`, and user defined static fields)
+            is the same as the current module (`self`).
+
+        Example:
+
+        ```python
+        a = MyModule(x=Nothing, y=2, z=3)
+        b = MyModule(x=1, y=Nothing, z=4)
+
+        a.update(b) # MyModule(x=1, y=2, z=4)
+        ```
+        Notice the following:
+
+        * The value of `x` and `z` were updated since they were present in `b`.
+        * The value of `y` was not updated since `b.y` was `Nothing`.
+
+        When using `update` with multiple modules the following equivalence holds:
+
+        ```
+        m1.update(m2, m3) = m1.update(m2).update(m3)
+        ```
+
+        Arguments:
+            other: The first to get the values to update from.
+            rest: Additional modules to perform the update in order from left to right.
+
+        Returns:
+            A new module with the updated values.
+
+        """
         modules = (self, other) + rest
 
         def merge_fn(xs):
@@ -189,6 +268,14 @@ class Module:
         return module
 
     def train(self: T, mode: bool = True) -> T:
+        """
+        Creates a new module with the same structure, but with `Module.training` set to the given value.
+
+        Arguments:
+            mode: The new training mode.
+        Returns:
+            The new module in with the training mode is set to the given value.
+        """
         old_training = LOCAL.training
         LOCAL.training = mode
 
@@ -200,6 +287,12 @@ class Module:
         return module
 
     def eval(self: T) -> T:
+        """
+        Creates a new module with the training mode set to False, equivalent to calling `train(False)`.
+
+        Returns:
+            The new module with the training mode set to False.
+        """
         return self.train(False)
 
     def __repr__(self) -> str:
@@ -209,7 +302,16 @@ class Module:
     def tabulate(
         self, depth: int = -1, signature: bool = False, param_types: bool = True
     ) -> str:
+        """
+        Returns a tabular representation of the module.
 
+        Arguments:
+            depth: The maximum depth of the representation in terms of nested Modules, -1 means no limit.
+            signature: Whether to show the signature of the Module.
+            param_types: Whether to show the types of the parameters.
+        Returns:
+            A string containing the tabular representation.
+        """
         old_slicing = LOCAL.is_slicing
         LOCAL.is_slicing = True
 
@@ -269,6 +371,11 @@ class Module:
         )
 
         return _get_rich_repr(table)
+
+
+# --------------------------------------------------
+# utils
+# --------------------------------------------------
 
 
 def _get_rich_repr(table):
