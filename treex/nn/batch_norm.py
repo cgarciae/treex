@@ -103,9 +103,9 @@ class BatchNorm(Module):
 
         # Extract collections
         if "params" in variables:
-            self.params = variables["params"]
+            self.params = variables["params"].unfreeze()
 
-        self.batch_stats = variables["batch_stats"]
+        self.batch_stats = variables["batch_stats"].unfreeze()
 
     def __call__(
         self, x: np.ndarray, use_running_average: tp.Optional[bool] = None
@@ -144,6 +144,6 @@ class BatchNorm(Module):
 
         # update batch_stats
         if "batch_stats" in variables:
-            self.batch_stats = variables["batch_stats"]
+            self.batch_stats = variables["batch_stats"].unfreeze()
 
         return tp.cast(jnp.ndarray, output)

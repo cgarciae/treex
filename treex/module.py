@@ -269,7 +269,6 @@ class Module:
 
         Returns:
             A new module with the updated values or `None` if `inplace` is `True`.
-
         """
         modules = (self, other) + rest
 
@@ -727,7 +726,12 @@ def _resolve_tree_type(name: str, t: tp.Optional[type]) -> tp.Optional[type]:
     if t is None:
         return None
 
-    tree_types = [x for x in _all_types(t) if issubclass(x, (types.TreePart, Module))]
+    tree_types = [
+        x
+        for x in _all_types(t)
+        if isinstance(x, tp.Type)
+        if issubclass(x, (types.TreePart, Module))
+    ]
 
     if len(tree_types) > 1:
         # if its a type with many Module subtypes just mark them all as Module
@@ -740,7 +744,7 @@ def _resolve_tree_type(name: str, t: tp.Optional[type]) -> tp.Optional[type]:
     elif len(tree_types) == 1:
         return tree_types[0]
     else:
-        return t
+        return None
 
 
 def _all_types(t: tp.Type) -> tp.Iterable[tp.Type]:

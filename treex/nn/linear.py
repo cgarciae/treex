@@ -71,7 +71,7 @@ class Linear(Module):
         variables = self.module.init(key, x)
 
         # Extract collections
-        self.params = variables["params"]
+        self.params = variables["params"].unfreeze()
 
     def __call__(self, x: np.ndarray) -> jnp.ndarray:
         """Applies a linear transformation to the inputs along the last dimension.
