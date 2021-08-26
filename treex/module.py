@@ -207,7 +207,15 @@ class Module:
 
         return module
 
+    @tp.overload
     def update(self: T, other: T, *rest: T) -> T:
+        ...
+
+    @tp.overload
+    def update(self: T, other: T, *rest: T, inplace: bool) -> None:
+        ...
+
+    def update(self: T, other: T, *rest: T, inplace: bool = False) -> tp.Optional[T]:
         """
         Creates a new module with the same structure, but its values
         updated based on the values from the incoming modules. Updates are performed using
@@ -238,12 +246,29 @@ class Module:
         m1.update(m2, m3) = m1.update(m2).update(m3)
         ```
 
+        If you want to update the current module instead of creating a new one use `inplace=True`.
+        This is useful when applying transformation inside a method where reassigning `self` is not possible:
+
+        ```python
+        def double_params(self):
+            # this is not doing what you expect
+            self = jax.tree_map(lambda x: 2 * x, self)
+        ```
+        Instead do this:
+
+        ```python
+        def double_params(self):
+            doubled = jax.tree_map(lambda x: 2 * x, self)
+            self.update(doubled, inplace=True)
+        ```
+
         Arguments:
             other: The first to get the values to update from.
             rest: Additional modules to perform the update in order from left to right.
+            inplace: If `True`, the current module is modified with the updated values.
 
         Returns:
-            A new module with the updated values.
+            A new module with the updated values or `None` if `inplace` is `True`.
 
         """
         modules = (self, other) + rest
@@ -265,7 +290,11 @@ class Module:
         flat_out = [merge_fn(values) for values in zip(*flats)]
         module = jax.tree_unflatten(treedefs[0], flat_out)
 
-        return module
+        if inplace:
+            self.__dict__.update(module.__dict__)
+            return None
+        else:
+            return module
 
     def train(self: T, mode: bool = True) -> T:
         """

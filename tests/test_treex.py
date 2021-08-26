@@ -126,7 +126,7 @@ class TestTreex:
         assert isinstance(mlp_states.linear2.b, tx.Nothing)
         assert not isinstance(mlp_states.linear2.n, tx.Nothing)
 
-    def test_merge(self):
+    def test_update(self):
 
         mlp = MLP(2, 3, 5)
 
@@ -142,6 +142,40 @@ class TestTreex:
         assert not isinstance(mlp_next.linear2.w, tx.Nothing)
         assert not isinstance(mlp_next.linear2.b, tx.Nothing)
         assert not isinstance(mlp_next.linear2.n, tx.Nothing)
+
+    def test_update_inplace(self):
+
+        mlp = MLP(2, 3, 5)
+
+        mlp_params = mlp.filter(Parameter)
+        mlp_states = mlp.filter(State)
+
+        mlp_params.update(mlp_states, inplace=True)
+
+        assert not isinstance(mlp_params.linear1.w, tx.Nothing)
+        assert not isinstance(mlp_params.linear1.b, tx.Nothing)
+        assert not isinstance(mlp_params.linear1.n, tx.Nothing)
+
+        assert not isinstance(mlp_params.linear2.w, tx.Nothing)
+        assert not isinstance(mlp_params.linear2.b, tx.Nothing)
+        assert not isinstance(mlp_params.linear2.n, tx.Nothing)
+
+    def test_update_not_inplace(self):
+
+        mlp = MLP(2, 3, 5)
+
+        mlp_params = mlp.filter(Parameter)
+        mlp_states = mlp.filter(State)
+
+        mlp_params.update(mlp_states)
+
+        assert not isinstance(mlp_params.linear1.w, tx.Nothing)
+        assert not isinstance(mlp_params.linear1.b, tx.Nothing)
+        assert isinstance(mlp_params.linear1.n, tx.Nothing)
+
+        assert not isinstance(mlp_params.linear2.w, tx.Nothing)
+        assert not isinstance(mlp_params.linear2.b, tx.Nothing)
+        assert isinstance(mlp_params.linear2.n, tx.Nothing)
 
     def test_list(self):
         class LinearList(tx.Module):
