@@ -48,6 +48,8 @@ class Optimizer(TreeObject):
         self, grads: A, params: tp.Optional[A] = None, apply_updates: bool = True
     ) -> A:
         assert self.opt_state is not None
+        if apply_updates and params is None:
+            raise ValueError("params must be provided to apply update")
 
         param_updates: A
         param_updates, self.opt_state = self.optimizer.update(
@@ -55,8 +57,6 @@ class Optimizer(TreeObject):
         )
 
         if apply_updates:
-            if params is None:
-                raise ValueError("params must be provided to apply update")
             return optax.apply_updates(params, param_updates)
 
         return param_updates

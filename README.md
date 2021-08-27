@@ -212,7 +212,7 @@ module = MyModule(...)
 module.filter(tx.Parameter) # MyModule(a=array([1]), b=Nothing)
 module.filter(tx.BatchStat) # MyModule(a=Nothing, b=array([2]))
 ```
-`Nothing` much like `None` is an empty pytree so it gets ignored by tree operations:
+`Nothing` much like `None` is an empty Pytree so it gets ignored by tree operations:
 
 ```python
 jax.tree_leaves(module.filter(tx.Parameter)) # [array([1])]
@@ -237,6 +237,50 @@ grads = loss_fn(params, model, x, y)
 optimizer = tx.Optimizer(optax.adam(1e-3))
 optimizer = optimizer.init(params) # only needs params
 ```
+
+### Optimizer
+
+Optax is an amazing library however, its optimizers are not pytrees, this means that state and computation are separate, and you cannot jit them. To solve this Treex provides an `tx.Optimizer` class that can wrap any Optax optimizer and make it a Pytree.
+
+While in optax you would define something like this:
+```python
+def main():
+    ...
+    optimizer = optax.adam(1e-3)
+    opt_state = optimizer.init(params)
+    ...
+
+@partial(jax.jit, static_argnums=(4,))
+def train_step(model, x, y, opt_state, optimizer): # optimizer has to be static
+    ...
+    updates, opt_state = optimizer.update(grads, opt_state, params)
+    params = optax.apply_updates(params, updates)
+    ...
+    return model, loss, opt_state
+```
+
+With `tx.Optimizer` you it can be simplified to:
+
+```python
+def main():
+    ...
+    optimizer = tx.Optimizer(optax.adam(1e-3)).init(params)
+    ...
+
+jax.jit
+def train_step(model, x, y, optimizer):
+    ...
+    params = optimizer.update(grads, params)
+    ...
+    return model, loss, optimizer
+```
+
+As you see, `tx.Optimizer` follows the same API as `optax.GradientTransformation` except that:
+1. There is no `opt_state`, instead optimizer IS the state.
+2. `update` by default applies the gradient updates to the parameters.
+3. `update` updates the internal state of the optimizer in-place.
+
+Notice that since `tx.Optimizer` is a Pytree, it was passed through `jit` without the need to specify `static_argnums`.
 
 ### State Management
 Treex takes a "direct" approach to state management, i.e., state is updated in-place by the Module whenever it needs to. For example, this module will calculate the running average of its input:
@@ -268,7 +312,21 @@ class Dropout(tx.Module):
         key, self.rng = jax.random.split(self.rng)
         ...
 ```
-State management is one of the most challenging things in JAX, but with the help of Treex it seems effortless, what is the catch? As always there is a trade-off to consider: Treex's approach requires to consider how to propagate state changes properly while taking into account the fact that pytree operations create new objects, that is, since reference do not persist across calls through these functions changes might be lost. 
+Finally `tx.Optimizer` also performs inplace updates inside the `update` method, here is a sketch of how it works:
+```python
+class Optimizer(tx.TreeObject):
+    opt_state: tx.OptState
+    optimizer: optax.GradientTransformation
+
+    def update(self, grads, params):
+        ...
+        updates, self.opt_state = self.optimizer.update(
+            grads, self.opt_state, params
+        )
+        ...
+```
+#### What is the catch?
+State management is one of the most challenging things in JAX, but with the help of Treex it seems effortless, what is the catch? As always there is a trade-off to consider: Treex's approach requires to consider how to propagate state changes properly while taking into account the fact that Pytree operations create new objects, that is, since reference do not persist across calls through these functions changes might be lost. 
 
 A standard solution to this problem is: **always output the module to update state**. For example, a typical loss function that contains a stateful model would look like this:
 
