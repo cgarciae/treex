@@ -18,7 +18,7 @@ from treex import types
 
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
-T = tp.TypeVar("T", bound="Module")
+T = tp.TypeVar("T", bound="TreeObject")
 
 PAD = r"{pad}"
 
@@ -41,59 +41,9 @@ class Context(threading.local):
 LOCAL: Context = Context()
 
 
-class Module:
-    _initialized = False
-    _training = True
-
-    @property
-    def initialized(self) -> bool:
-        return self._initialized
-
-    @property
-    def training(self) -> bool:
-        return self._training
-
-    def init(self: T, key: tp.Union[int, jnp.ndarray]) -> T:
-        """
-        Creates a new module with the same structure, but with its fields initialized given a seed `key`. The following
-        procedure is used:
-
-        1. The input `key` is split and iteratively updated before passing a derived value to any
-            process that requires initialization.
-        2. `Initializer`s are called and applied to the module first.
-        3. `Module.module_init` methods are called last.
-
-        Arguments:
-            key: The seed to use for initialization.
-        Returns:
-            The new module with the fields initialized.
-        """
-        if isinstance(key, int):
-            key = jax.random.PRNGKey(key)
-
-        old_initializing = LOCAL.is_initializing
-        old_key = LOCAL.key
-
-        LOCAL.is_initializing = True
-        LOCAL.key = key
-
-        try:
-            module = jax.tree_map(
-                lambda initializer: (
-                    initializer(LOCAL.next_key())
-                    if isinstance(initializer, types.Initializer)
-                    else initializer
-                ),
-                self,
-            )
-        finally:
-            LOCAL.is_initializing = old_initializing
-            LOCAL.key = old_key
-
-        return module
-
-    def module_init(self, key: jnp.ndarray) -> None:
-        pass
+class TreeObject:
+    def _get_props(self) -> tp.Dict[str, tp.Any]:
+        return {}
 
     def tree_flatten(self):
         annotations = getattr(self.__class__, "__annotations__", {})
@@ -109,7 +59,7 @@ class Module:
             if annotation is None:
                 not_tree[name] = value
 
-            elif issubclass(annotation, Module):
+            elif issubclass(annotation, TreeObject):
                 tree[name] = value
 
             elif issubclass(annotation, types.TreePart):
@@ -125,10 +75,7 @@ class Module:
         return tuple(tree.values()), dict(
             tree=tree.keys(),
             not_tree=not_tree,
-            props=dict(
-                _initialized=self._initialized,
-                _training=self._training,
-            ),
+            props=self._get_props(),
         )
 
     @classmethod
@@ -165,6 +112,68 @@ class Module:
         """
         return jax.tree_map(lambda x: x, self)
 
+    def __repr__(self) -> str:
+        rep = _get_repr(self, level=0, array_type=None, inline=False)
+        return _get_rich_repr(Text.from_markup(rep))
+
+
+class Module(TreeObject):
+    _initialized = False
+    _training = True
+
+    @property
+    def initialized(self) -> bool:
+        return self._initialized
+
+    @property
+    def training(self) -> bool:
+        return self._training
+
+    def _get_props(self) -> tp.Dict[str, tp.Any]:
+        return dict(_initialized=self._initialized, _training=self._training)
+
+    def init(self: T, key: tp.Union[int, jnp.ndarray]) -> T:
+        """
+        Creates a new module with the same structure, but with its fields initialized given a seed `key`. The following
+        procedure is used:
+
+        1. The input `key` is split and iteratively updated before passing a derived value to any
+            process that requires initialization.
+        2. `Initializer`s are called and applied to the module first.
+        3. `TreeObject.module_init` methods are called last.
+
+        Arguments:
+            key: The seed to use for initialization.
+        Returns:
+            The new module with the fields initialized.
+        """
+        if isinstance(key, int):
+            key = jax.random.PRNGKey(key)
+
+        old_initializing = LOCAL.is_initializing
+        old_key = LOCAL.key
+
+        LOCAL.is_initializing = True
+        LOCAL.key = key
+
+        try:
+            module = jax.tree_map(
+                lambda initializer: (
+                    initializer(LOCAL.next_key())
+                    if isinstance(initializer, types.Initializer)
+                    else initializer
+                ),
+                self,
+            )
+        finally:
+            LOCAL.is_initializing = old_initializing
+            LOCAL.key = old_key
+
+        return module
+
+    def module_init(self, key: jnp.ndarray) -> None:
+        pass
+
     def filter(self: T, *filters: tp.Type) -> T:
         """
         Creates a new module with the same structure, but leaves whose type annotations are not subtypes
@@ -172,7 +181,7 @@ class Module:
 
         Example:
         ```python
-        class MyModule(tx.Module):
+        class MyModule(tx.TreeObject):
             a: tx.Parameter = 1
             b: tx.BatchStat = 2
 
@@ -297,7 +306,7 @@ class Module:
 
     def train(self: T, mode: bool = True) -> T:
         """
-        Creates a new module with the same structure, but with `Module.training` set to the given value.
+        Creates a new module with the same structure, but with `TreeObject.training` set to the given value.
 
         Arguments:
             mode: The new training mode.
@@ -323,10 +332,6 @@ class Module:
         """
         return self.train(False)
 
-    def __repr__(self) -> str:
-        rep = _get_repr(self, level=0, array_type=None, inline=False)
-        return _get_rich_repr(Text.from_markup(rep))
-
     def tabulate(
         self, depth: int = -1, signature: bool = False, param_types: bool = True
     ) -> str:
@@ -335,7 +340,7 @@ class Module:
 
         Arguments:
             depth: The maximum depth of the representation in terms of nested Modules, -1 means no limit.
-            signature: Whether to show the signature of the Module.
+            signature: Whether to show the signature of the TreeObject.
             param_types: Whether to show the types of the parameters.
         Returns:
             A string containing the tabular representation.
@@ -419,7 +424,7 @@ def _get_repr(
 ) -> str:
     indent_level = space * level
 
-    if isinstance(obj, Module):
+    if isinstance(obj, TreeObject):
 
         annotations = getattr(obj.__class__, "__annotations__", {})
         children, aux_data = obj.tree_flatten()
@@ -434,7 +439,7 @@ def _get_repr(
 
             assert annotation is not None
 
-            if issubclass(annotation, Module):
+            if issubclass(annotation, TreeObject):
                 submodules[field] = children[i]
             elif issubclass(annotation, types.TreePart):
                 params[field] = children[i]
@@ -511,7 +516,7 @@ def _get_tabulate_rows(
     include_signature,
     include_param_type,
 ) -> tp.Iterable[tp.List[tp.Any]]:
-    if isinstance(obj, Module):
+    if isinstance(obj, TreeObject):
         annotations = getattr(obj.__class__, "__annotations__", {})
         children, aux_data = obj.tree_flatten()
 
@@ -525,7 +530,7 @@ def _get_tabulate_rows(
 
             assert annotation is not None
 
-            if issubclass(annotation, Module):
+            if issubclass(annotation, TreeObject):
                 submodules[field] = children[i]
             elif issubclass(annotation, types.TreePart):
                 params[field] = children[i]
@@ -557,6 +562,7 @@ def _get_tabulate_rows(
             )
             for field, value in params.items()
         }
+        params_repr = _simplify(params_repr)
         params_str = _as_yaml_str(params_repr)
 
         if level == 0:
@@ -632,8 +638,19 @@ def _as_yaml_str(value) -> str:
     return file.getvalue().replace("\n...", "").replace("'", "")
 
 
+def _simplify(obj):
+    if isinstance(obj, str):
+        return obj
+    elif isinstance(obj, tp.Sequence):
+        return [_simplify(x) for x in obj]
+    elif isinstance(obj, tp.Mapping):
+        return {k: _simplify(v) for k, v in obj.items()}
+    else:
+        return obj
+
+
 def _format_module_signature(
-    obj: Module, not_tree: tp.Dict[str, tp.Any]
+    obj: TreeObject, not_tree: tp.Dict[str, tp.Any]
 ) -> tp.Dict[str, str]:
     signature = {}
     simple_types = {int, str, float, bool}
@@ -730,13 +747,13 @@ def _resolve_tree_type(name: str, t: tp.Optional[type]) -> tp.Optional[type]:
         x
         for x in _all_types(t)
         if isinstance(x, tp.Type)
-        if issubclass(x, (types.TreePart, Module))
+        if issubclass(x, (types.TreePart, TreeObject))
     ]
 
     if len(tree_types) > 1:
-        # if its a type with many Module subtypes just mark them all as Module
-        if all(issubclass(x, Module) for x in tree_types):
-            return Module
+        # if its a type with many TreeObject subtypes just mark them all as TreeObject
+        if all(issubclass(x, TreeObject) for x in tree_types):
+            return TreeObject
         else:
             raise TypeError(
                 f"Multiple tree parts found in annotation for field '{name}': {tree_types}"

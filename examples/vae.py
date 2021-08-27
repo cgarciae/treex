@@ -8,7 +8,6 @@ import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
-import optax
 import treex as tx
 import optax
 
@@ -134,17 +133,15 @@ def loss_fn(params: VAE, model: VAE, x: np.ndarray) -> tp.Tuple[jnp.ndarray, VAE
 
 @jax.jit
 def train_step(
-    model: VAE, opt_state: optax.OptState, x: np.ndarray
-) -> tp.Tuple[jnp.ndarray, VAE, optax.OptState]:
+    model: VAE, optimizer: tx.Optimizer, x: np.ndarray
+) -> tp.Tuple[jnp.ndarray, VAE, tx.Optimizer]:
     params = model.filter(tx.Parameter)
     (loss, model), grads = loss_fn(params, model, x)
 
-    updates, opt_state = optimizer.update(grads, opt_state, params)
-    new_params: VAE = optax.apply_updates(params, updates)
+    params = optimizer.update(grads, params)
+    model = model.update(params)
 
-    model = model.update(new_params)
-
-    return loss, model, opt_state
+    return loss, model, optimizer
 
 
 # define parameters
@@ -160,8 +157,8 @@ model = VAE(
     latent_size=latent_size,
 ).init(42)
 
-optimizer = optax.adam(1e-3)
-opt_state = optimizer.init(model.filter(tx.Parameter))
+optimizer = tx.Optimizer(optax.adam(1e-3))
+optimizer = optimizer.init(model.filter(tx.Parameter))
 
 
 # load data
@@ -179,7 +176,7 @@ for epoch in range(epochs):
     for step in range(len(X_train) // batch_size):
         idx = np.random.choice(len(X_train), batch_size)
         x = X_train[idx]
-        loss, model, opt_state = train_step(model, opt_state, x)
+        loss, model, optimizer = train_step(model, optimizer, x)
         losses.append(loss)
 
     epoch_loss = jnp.mean(jnp.stack(losses))

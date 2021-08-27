@@ -23,9 +23,8 @@ class Linear(tx.Module):
 
 
 model = Linear(1, 1).init(42)
-optimizer = optax.adam(0.01)
-
-opt_state = optimizer.init(model.filter(tx.Parameter))
+optimizer = tx.Optimizer(optax.adam(0.01))
+optimizer = optimizer.init(model.filter(tx.Parameter))
 
 
 @partial(jax.value_and_grad, has_aux=True)
@@ -39,20 +38,18 @@ def loss_fn(params, model, x, y):
 
 
 @jax.jit
-def train_step(model, x, y, opt_state):
+def train_step(model, x, y, optimizer):
     params = model.filter(tx.Parameter)
     (loss, model), grads = loss_fn(params, model, x, y)
 
-    updates, opt_state = optimizer.update(grads, opt_state, model)
-    new_params = optax.apply_updates(model, updates)
+    # here model == params
+    model = optimizer.update(grads, model)
 
-    model = model.update(new_params)
-
-    return loss, model, opt_state
+    return loss, model, optimizer
 
 
 for step in range(1000):
-    loss, model, opt_state = train_step(model, x, y, opt_state)
+    loss, model, optimizer = train_step(model, x, y, optimizer)
     if step % 100 == 0:
         print(f"loss: {loss:.4f}")
 

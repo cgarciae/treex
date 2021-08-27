@@ -78,10 +78,10 @@ Now we will be reusing the previous NoisyLinear model, and we will create an opt
 # %%
 import optax
 
-optimizer = optax.adam(1e-2)
+optimizer = tx.Optimizer(optax.adam(1e-2))
 
 params = model.filter(tx.Parameter)
-opt_state = optimizer.init(params)
+optimizer = optimizer.init(params)
 
 print(f"{params=}")
 
@@ -116,21 +116,20 @@ Next, we will implement the `update` function, it will look indistinguishable fr
 
 # %%
 @jax.jit
-def update(model: NoisyLinear, opt_state, x, y):
+def train_step(model: NoisyLinear, optimizer: tx.Optimizer, x, y):
     # select Parameters
     params = model.filter(tx.Parameter)
 
     # call loss_fn to get loss, model state, and gradients
     (loss, model), grads = loss_fn(params, model, x, y)
 
-    # use regular optax
-    updates, opt_state = optimizer.update(grads, opt_state, params)
-    new_params = optax.apply_updates(params, updates)
+    # apply optax update
+    new_params = optimizer.update(grads, params)
 
     # update new_params
     model = model.update(new_params)
 
-    return model, opt_state, loss
+    return model, optimizer, loss
 
 
 # %% [markdown]
@@ -177,7 +176,7 @@ steps = 10_000
 for step in range(steps):
     x, y = get_batch(data, batch_size=32)
 
-    model, opt_state, loss = update(model, opt_state, x, y)
+    model, optimizer, loss = train_step(model, optimizer, x, y)
 
     if step % 1000 == 0:
         print(f"[{step}] loss = {loss}")

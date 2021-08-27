@@ -7,11 +7,6 @@ import numpy as np
 import optax
 import treex as tx
 
-np.random.seed(69)
-
-x = np.random.uniform(-1, 1, size=(500, 1))
-y = 1.4 * x ** 2 - 0.3 + np.random.normal(scale=0.1, size=(500, 1))
-
 
 class MLP(tx.Module):
     linear1: tx.Linear
@@ -29,11 +24,6 @@ class MLP(tx.Module):
         return x
 
 
-model = MLP(1, 32, 1, dropout=0.1).init(42)
-optimizer = optax.adam(0.001)
-opt_state = optimizer.init(model.filter(tx.Parameter))
-
-
 @partial(jax.value_and_grad, has_aux=True)
 def loss_fn(params, model, x, y):
     model = model.update(params)
@@ -44,23 +34,29 @@ def loss_fn(params, model, x, y):
 
 
 @jax.jit
-def train_step(model, x, y, opt_state):
+def train_step(model, x, y, optimizer):
     params = model.filter(tx.Parameter)
     (loss, model), grads = loss_fn(params, model, x, y)
 
-    updates, opt_state = optimizer.update(grads, opt_state, params)
-    new_params = optax.apply_updates(params, updates)
-
+    new_params = optimizer.update(grads, params)
     model = model.update(new_params)
 
-    return loss, model, opt_state
+    return loss, model, optimizer
 
+
+np.random.seed(69)
+x = np.random.uniform(-1, 1, size=(500, 1))
+y = 1.4 * x ** 2 - 0.3 + np.random.normal(scale=0.1, size=(500, 1))
+
+model = MLP(1, 32, 1, dropout=0.1).init(42)
+optimizer = tx.Optimizer(optax.adam(0.001))
+optimizer = optimizer.init(model.filter(tx.Parameter))
 
 for step in range(20_000):
     idx = np.random.choice(len(x), size=64, replace=False)
-    loss, model, opt_state = train_step(model, x[idx], y[idx], opt_state)
-    if step % 500 == 0:
-        print(f"loss: {loss:.4f}")
+    loss, model, optimizer = train_step(model, x[idx], y[idx], optimizer)
+    if step % 2000 == 0:
+        print(f"[{step}] loss: {loss:.4f}")
 
 model = model.eval()
 
