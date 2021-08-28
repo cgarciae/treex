@@ -12,7 +12,7 @@ from treex.nn.linear import Linear
 
 class MLP(Module):
     """A Multi-Layer Perceptron (MLP) that applies a sequence of linear layers
-    with relu activations, the last layer is linear.
+    with a given activation (relu by default), the last layer is linear.
     """
 
     # pytree
@@ -25,6 +25,7 @@ class MLP(Module):
     def __init__(
         self,
         features: tp.Sequence[int],
+        activation: tp.Callable[[jnp.ndarray], jnp.ndarray] = jax.nn.relu,
         use_bias: bool = True,
         dtype: tp.Any = jnp.float32,
         precision: tp.Any = None,
@@ -53,6 +54,7 @@ class MLP(Module):
             raise ValueError("features must have at least 2 elements")
 
         self.features = features
+        self.activation = activation
         self.layers = [
             Linear(
                 features_in=features_in,
@@ -77,6 +79,6 @@ class MLP(Module):
             The output of the MLP.
         """
         for layer in self.layers[:-1]:
-            x = jax.nn.relu(layer(x))
+            x = self.activation(layer(x))
 
         return self.layers[-1](x)
