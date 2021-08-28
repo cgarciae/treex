@@ -35,7 +35,7 @@ class LinearTest(unittest.TestCase):
         kernel_init=st.sampled_from(KERNEL_INITS),
         bias_init=st.sampled_from(BIAS_INITS),
     )
-    @hp.settings(deadline=None)
+    @hp.settings(deadline=None, max_examples=20)
     def test_equivalence(
         self,
         batch_size,

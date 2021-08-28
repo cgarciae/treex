@@ -20,7 +20,7 @@ class DropoutTest(unittest.TestCase):
             st.integers(min_value=0, max_value=2), min_size=0, max_size=2
         ),
     )
-    @hp.settings(deadline=None)
+    @hp.settings(deadline=None, max_examples=20)
     def test_equivalence(
         self,
         batch_size,

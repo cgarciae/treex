@@ -1,3 +1,4 @@
+# isort:skip_file
 # %% [markdown]
 """
 # Treex
@@ -139,6 +140,7 @@ Before we start training lets get some data:
 """
 
 import matplotlib.pyplot as plt
+
 # %%
 import numpy as np
 
