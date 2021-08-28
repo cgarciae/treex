@@ -43,6 +43,7 @@ class MLP(Module):
             features: a sequence of L+1 integers, where L is the number of layers,
                 the first integer is the number of input features and all subsequent
                 integers are the number of output features of the respective layer.
+            activation: the activation function to use.
             use_bias: whether to add a bias to the output (default: True).
             dtype: the dtype of the computation (default: float32).
             precision: numerical precision of the computation see `jax.lax.Precision`
