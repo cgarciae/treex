@@ -30,14 +30,10 @@ extra:
   social:
   - icon: octicons/mark-github-16
     link: https://github.com/cgarciae
-  - icon: octicons/mark-github-16
-    link: https://github.com/charlielito
   - icon: fontawesome/brands/twitter
     link: https://twitter.com/cgarciae88
   - icon: fontawesome/brands/linkedin
     link: https://www.linkedin.com/in/cgarciae
-  - icon: fontawesome/brands/linkedin
-    link: https://www.linkedin.com/in/calvarez92
 theme:
   name: material
   favicon: images/favicon.png
