@@ -1,0 +1,1759 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="canonical" href="https://cgarciae.github.io/treex/api/Linear/">
+      
+      <link rel="icon" href="../../images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.2.5">
+    
+    
+      
+        <title>Linear - Treex</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.be71726b.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.3f5d1f46.min.css">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
+      
+    
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    
+      
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    <script>function __prefix(e){return new URL("../..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#treexlinear" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Treex" class="md-header__button md-logo" aria-label="Treex" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path d="M471.1 96C405 96 353.3 137.3 320 174.6 286.7 137.3 235 96 168.9 96 75.8 96 0 167.8 0 256s75.8 160 168.9 160c66.1 0 117.8-41.3 151.1-78.6 33.3 37.3 85 78.6 151.1 78.6 93.1 0 168.9-71.8 168.9-160S564.2 96 471.1 96zM168.9 320c-40.2 0-72.9-28.7-72.9-64s32.7-64 72.9-64c38.2 0 73.4 36.1 94 64-20.4 27.6-55.9 64-94 64zm302.2 0c-38.2 0-73.4-36.1-94-64 20.4-27.6 55.9-64 94-64 40.2 0 72.9 28.7 72.9 64s-32.7 64-72.9 64z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Treex
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Linear
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        
+<a href="https://github.com/cgarciae/treex/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    cgarciae/treex
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Treex" class="md-nav__button md-logo" aria-label="Treex" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path d="M471.1 96C405 96 353.3 137.3 320 174.6 286.7 137.3 235 96 168.9 96 75.8 96 0 167.8 0 256s75.8 160 168.9 160c66.1 0 117.8-41.3 151.1-78.6 33.3 37.3 85 78.6 151.1 78.6 93.1 0 168.9-71.8 168.9-160S564.2 96 471.1 96zM168.9 320c-40.2 0-72.9-28.7-72.9-64s32.7-64 72.9-64c38.2 0 73.4 36.1 94 64-20.4 27.6-55.9 64-94 64zm302.2 0c-38.2 0-73.4-36.1-94-64 20.4-27.6 55.9-64 94-64 40.2 0 72.9 28.7 72.9 64s-32.7 64-72.9 64z"/></svg>
+
+    </a>
+    Treex
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/cgarciae/treex/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    cgarciae/treex
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" checked>
+      
+      <label class="md-nav__link" for="__nav_2">
+        API Reference
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="API Reference" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          API Reference
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BatchNorm/" class="md-nav__link">
+        BatchNorm
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BatchStat/" class="md-nav__link">
+        BatchStat
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Conv/" class="md-nav__link">
+        Conv
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Dropout/" class="md-nav__link">
+        Dropout
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Initializer/" class="md-nav__link">
+        Initializer
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Lambda/" class="md-nav__link">
+        Lambda
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Linear
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Linear
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear" class="md-nav__link">
+    treex.nn.linear.Linear
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.__call__" class="md-nav__link">
+    __call__()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.__init__" class="md-nav__link">
+    __init__()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.copy" class="md-nav__link">
+    copy()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.eval" class="md-nav__link">
+    eval()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.filter" class="md-nav__link">
+    filter()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.init" class="md-nav__link">
+    init()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.tabulate" class="md-nav__link">
+    tabulate()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.train" class="md-nav__link">
+    train()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.update" class="md-nav__link">
+    update()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MLP/" class="md-nav__link">
+        MLP
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Module/" class="md-nav__link">
+        Module
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Nothing/" class="md-nav__link">
+        Nothing
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OptState/" class="md-nav__link">
+        OptState
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Optimizer/" class="md-nav__link">
+        Optimizer
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parameter/" class="md-nav__link">
+        Parameter
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Rng/" class="md-nav__link">
+        Rng
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Sequence/" class="md-nav__link">
+        Sequence
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../State/" class="md-nav__link">
+        State
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TreeObject/" class="md-nav__link">
+        TreeObject
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TreePart/" class="md-nav__link">
+        TreePart
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sequence/" class="md-nav__link">
+        sequence
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear" class="md-nav__link">
+    treex.nn.linear.Linear
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.__call__" class="md-nav__link">
+    __call__()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.__init__" class="md-nav__link">
+    __init__()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.copy" class="md-nav__link">
+    copy()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.eval" class="md-nav__link">
+    eval()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.filter" class="md-nav__link">
+    filter()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.init" class="md-nav__link">
+    init()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.tabulate" class="md-nav__link">
+    tabulate()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.train" class="md-nav__link">
+    train()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#treex.nn.linear.Linear.update" class="md-nav__link">
+    update()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/cgarciae/treex/edit/master/docs/api/Linear.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+                  </a>
+                
+                
+                <h1 id="treexlinear">treex.Linear</h1>
+
+
+  <div class="doc doc-object doc-class">
+
+<a id="treex.nn.linear.Linear"></a>
+    <div class="doc doc-contents first">
+
+      <p>A linear transformation applied over the last dimension of the input.</p>
+<p><code>Linear</code> is implemented as a wrapper over <code>flax.linen.Dense</code>, its constructor
+arguments accept almost the same arguments including any Flax artifacts such as initializers.
+Main differences:</p>
+<ul>
+<li>receives <code>features_in</code> as a first argument since shapes must be statically known.</li>
+<li><code>features</code> argument is renamed to <code>features_out</code>.</li>
+</ul>
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 id="treex.nn.linear.Linear.__call__" class="doc doc-heading">
+<code class="codehilite language-python"><span style="color: #0000FF">__call__</span>(<span style="color: #008000">self</span>, x)</code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-special"><code>special</code></small>
+  </span>
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Applies a linear transformation to the inputs along the last dimension.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>x</code></td>
+        <td><code>ndarray</code></td>
+        <td><p>The nd-array to be transformed.</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>ndarray</code></td>
+      <td><p>The transformed input.</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>treex/nn/linear.py</code></summary>
+          <div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__call__</span>(<span style="color: #008000">self</span>, x: np<span style="color: #666666">.</span>ndarray) <span style="color: #666666">-&gt;</span> jnp<span style="color: #666666">.</span>ndarray:
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Applies a linear transformation to the inputs along the last dimension.</span>
+
+<span style="color: #BA2121; font-style: italic">    Arguments:</span>
+<span style="color: #BA2121; font-style: italic">        x: The nd-array to be transformed.</span>
+
+<span style="color: #BA2121; font-style: italic">    Returns:</span>
+<span style="color: #BA2121; font-style: italic">        The transformed input.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>params <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>, <span style="color: #BA2121">&quot;Module not initialized&quot;</span>
+
+    variables <span style="color: #666666">=</span> <span style="color: #008000">dict</span>(params<span style="color: #666666">=</span><span style="color: #008000">self</span><span style="color: #666666">.</span>params)
+    output <span style="color: #666666">=</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>module<span style="color: #666666">.</span>apply(variables, x)
+    <span style="color: #008000; font-weight: bold">return</span> tp<span style="color: #666666">.</span>cast(jnp<span style="color: #666666">.</span>ndarray, output)
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 id="treex.nn.linear.Linear.__init__" class="doc doc-heading">
+<code class="codehilite language-python"><span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, features_in, features_out, use_bias<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>, dtype<span style="color: #666666">=&lt;</span><span style="color: #008000; font-weight: bold">class</span> <span style="border: 1px solid #FF0000">&#39;</span><span style="color: #0000FF; font-weight: bold">jax</span><span style="color: #666666">.</span>_src<span style="color: #666666">.</span>numpy<span style="color: #666666">.</span>lax_numpy<span style="color: #666666">.</span>float32<span style="color: #BA2121">&#39;&gt;, precision=None, kernel_init=&lt;function variance_scaling.&lt;locals&gt;.init at 0x7f0628ee7280&gt;, bias_init=&lt;function zeros at 0x7f0632eed3a0&gt;)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-special"><code>special</code></small>
+  </span>
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>features_in</code></td>
+        <td><code>int</code></td>
+        <td><p>the number of input features.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>features_out</code></td>
+        <td><code>int</code></td>
+        <td><p>the number of output features.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>use_bias</code></td>
+        <td><code>bool</code></td>
+        <td><p>whether to add a bias to the output (default: True).</p></td>
+        <td><code>True</code></td>
+      </tr>
+      <tr>
+        <td><code>dtype</code></td>
+        <td><code>Any</code></td>
+        <td><p>the dtype of the computation (default: float32).</p></td>
+        <td><code>&lt;class &#39;jax._src.numpy.lax_numpy.float32&#39;&gt;</code></td>
+      </tr>
+      <tr>
+        <td><code>precision</code></td>
+        <td><code>Any</code></td>
+        <td><p>numerical precision of the computation see <code>jax.lax.Precision</code>
+for details.</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>kernel_init</code></td>
+        <td><code>Callable[[Any, Iterable[int], Any], Any]</code></td>
+        <td><p>initializer function for the weight matrix.</p></td>
+        <td><code>&lt;function variance_scaling.&lt;locals&gt;.init at 0x7f0628ee7280&gt;</code></td>
+      </tr>
+      <tr>
+        <td><code>bias_init</code></td>
+        <td><code>Callable[[Any, Iterable[int], Any], Any]</code></td>
+        <td><p>initializer function for the bias.</p></td>
+        <td><code>&lt;function zeros at 0x7f0632eed3a0&gt;</code></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>treex/nn/linear.py</code></summary>
+          <div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(
+    <span style="color: #008000">self</span>,
+    features_in: <span style="color: #008000">int</span>,
+    features_out: <span style="color: #008000">int</span>,
+    use_bias: <span style="color: #008000">bool</span> <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>,
+    dtype: tp<span style="color: #666666">.</span>Any <span style="color: #666666">=</span> jnp<span style="color: #666666">.</span>float32,
+    precision: tp<span style="color: #666666">.</span>Any <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">None</span>,
+    kernel_init: tp<span style="color: #666666">.</span>Callable[
+        [flax_module<span style="color: #666666">.</span>PRNGKey, flax_module<span style="color: #666666">.</span>Shape, flax_module<span style="color: #666666">.</span>Dtype],
+        flax_module<span style="color: #666666">.</span>Array,
+    ] <span style="color: #666666">=</span> flax_module<span style="color: #666666">.</span>default_kernel_init,
+    bias_init: tp<span style="color: #666666">.</span>Callable[
+        [flax_module<span style="color: #666666">.</span>PRNGKey, flax_module<span style="color: #666666">.</span>Shape, flax_module<span style="color: #666666">.</span>Dtype],
+        flax_module<span style="color: #666666">.</span>Array,
+    ] <span style="color: #666666">=</span> flax_module<span style="color: #666666">.</span>zeros,
+):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Arguments:</span>
+<span style="color: #BA2121; font-style: italic">        features_in: the number of input features.</span>
+<span style="color: #BA2121; font-style: italic">        features_out: the number of output features.</span>
+<span style="color: #BA2121; font-style: italic">        use_bias: whether to add a bias to the output (default: True).</span>
+<span style="color: #BA2121; font-style: italic">        dtype: the dtype of the computation (default: float32).</span>
+<span style="color: #BA2121; font-style: italic">        precision: numerical precision of the computation see `jax.lax.Precision`</span>
+<span style="color: #BA2121; font-style: italic">            for details.</span>
+<span style="color: #BA2121; font-style: italic">        kernel_init: initializer function for the weight matrix.</span>
+<span style="color: #BA2121; font-style: italic">        bias_init: initializer function for the bias.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000">self</span><span style="color: #666666">.</span>features_in <span style="color: #666666">=</span> features_in
+    <span style="color: #008000">self</span><span style="color: #666666">.</span>module <span style="color: #666666">=</span> flax_module<span style="color: #666666">.</span>Dense(
+        features<span style="color: #666666">=</span>features_out,
+        use_bias<span style="color: #666666">=</span>use_bias,
+        dtype<span style="color: #666666">=</span>dtype,
+        precision<span style="color: #666666">=</span>precision,
+        kernel_init<span style="color: #666666">=</span>kernel_init,
+        bias_init<span style="color: #666666">=</span>bias_init,
+    )
+    <span style="color: #008000">self</span><span style="color: #666666">.</span>params <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">None</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 id="treex.nn.linear.Linear.copy" class="doc doc-heading">
+<code class="codehilite language-python">copy(<span style="color: #008000">self</span>)</code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-inherited"><code>inherited</code></small>
+  </span>
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Returns a deep copy of the module, implemented as:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>jax<span style="color: #666666">.</span>tree_map(<span style="color: #008000; font-weight: bold">lambda</span> x: x, <span style="color: #008000">self</span>)
+</code></pre></div>
+
+        <details class="quote">
+          <summary>Source code in <code>treex/nn/linear.py</code></summary>
+          <div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">copy</span>(<span style="color: #008000">self</span>: T) <span style="color: #666666">-&gt;</span> T:
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Returns a deep copy of the module, implemented as:</span>
+<span style="color: #BA2121; font-style: italic">    ```python</span>
+<span style="color: #BA2121; font-style: italic">    jax.tree_map(lambda x: x, self)</span>
+<span style="color: #BA2121; font-style: italic">    ```</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">return</span> jax<span style="color: #666666">.</span>tree_map(<span style="color: #008000; font-weight: bold">lambda</span> x: x, <span style="color: #008000">self</span>)
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 id="treex.nn.linear.Linear.eval" class="doc doc-heading">
+<code class="codehilite language-python"><span style="color: #008000">eval</span>(<span style="color: #008000">self</span>)</code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-inherited"><code>inherited</code></small>
+  </span>
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates a new module with the training mode set to False, equivalent to calling <code>train(False)</code>.</p>
+
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~T</code></td>
+      <td><p>The new module with the training mode set to False.</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>treex/nn/linear.py</code></summary>
+          <div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">eval</span>(<span style="color: #008000">self</span>: T) <span style="color: #666666">-&gt;</span> T:
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Creates a new module with the training mode set to False, equivalent to calling `train(False)`.</span>
+
+<span style="color: #BA2121; font-style: italic">    Returns:</span>
+<span style="color: #BA2121; font-style: italic">        The new module with the training mode set to False.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>train(<span style="color: #008000; font-weight: bold">False</span>)
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 id="treex.nn.linear.Linear.filter" class="doc doc-heading">
+<code class="codehilite language-python"><span style="color: #008000">filter</span>(<span style="color: #008000">self</span>, <span style="color: #666666">*</span>filters)</code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-inherited"><code>inherited</code></small>
+  </span>
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates a new module with the same structure, but leaves whose type annotations are not subtypes
+of the given filters (as determined by <code>issubclass</code>) as set to <code>Nothing</code>.</p>
+
+<p><strong>Examples:</strong></p>
+    
+      <div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">MyModule</span>(tx<span style="color: #666666">.</span>TreeObject):
+    a: tx<span style="color: #666666">.</span>Parameter <span style="color: #666666">=</span> <span style="color: #666666">1</span>
+    b: tx<span style="color: #666666">.</span>BatchStat <span style="color: #666666">=</span> <span style="color: #666666">2</span>
+
+module <span style="color: #666666">=</span> MyModule()
+
+module<span style="color: #666666">.</span>filter(tx<span style="color: #666666">.</span>Parameter) <span style="color: #408080; font-style: italic"># MyModule(a=1, b=Nothing)</span>
+module<span style="color: #666666">.</span>filter(tx<span style="color: #666666">.</span>BatchStat) <span style="color: #408080; font-style: italic"># MyModule(a=Nothing, b=2)</span>
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>filters</code></td>
+        <td><code>Type</code></td>
+        <td><p>Types to filter by, membership is determined by <code>issubclass</code>.</p></td>
+        <td><code>()</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~T</code></td>
+      <td><p>The new module with the filtered fields.</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>treex/nn/linear.py</code></summary>
+          <div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">filter</span>(<span style="color: #008000">self</span>: T, <span style="color: #666666">*</span>filters: tp<span style="color: #666666">.</span>Type) <span style="color: #666666">-&gt;</span> T:
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Creates a new module with the same structure, but leaves whose type annotations are not subtypes</span>
+<span style="color: #BA2121; font-style: italic">    of the given filters (as determined by `issubclass`) as set to `Nothing`.</span>
+
+<span style="color: #BA2121; font-style: italic">    Example:</span>
+<span style="color: #BA2121; font-style: italic">    ```python</span>
+<span style="color: #BA2121; font-style: italic">    class MyModule(tx.TreeObject):</span>
+<span style="color: #BA2121; font-style: italic">        a: tx.Parameter = 1</span>
+<span style="color: #BA2121; font-style: italic">        b: tx.BatchStat = 2</span>
+
+<span style="color: #BA2121; font-style: italic">    module = MyModule()</span>
+
+<span style="color: #BA2121; font-style: italic">    module.filter(tx.Parameter) # MyModule(a=1, b=Nothing)</span>
+<span style="color: #BA2121; font-style: italic">    module.filter(tx.BatchStat) # MyModule(a=Nothing, b=2)</span>
+<span style="color: #BA2121; font-style: italic">    ```</span>
+
+<span style="color: #BA2121; font-style: italic">    Arguments:</span>
+<span style="color: #BA2121; font-style: italic">        filters: Types to filter by, membership is determined by `issubclass`.</span>
+<span style="color: #BA2121; font-style: italic">    Returns:</span>
+<span style="color: #BA2121; font-style: italic">        The new module with the filtered fields.</span>
+
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    flat: tp<span style="color: #666666">.</span>List[types<span style="color: #666666">.</span>_ValueAnnotation]
+
+    old_slicing <span style="color: #666666">=</span> _LOCAL<span style="color: #666666">.</span>is_slicing
+    _LOCAL<span style="color: #666666">.</span>is_slicing <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
+
+    <span style="color: #008000; font-weight: bold">try</span>:
+        flat, treedef <span style="color: #666666">=</span> jax<span style="color: #666666">.</span>tree_flatten(<span style="color: #008000">self</span>)
+        flat_out <span style="color: #666666">=</span> [
+            value_annotation<span style="color: #666666">.</span>value
+            <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">issubclass</span>(value_annotation<span style="color: #666666">.</span>annotation, filters)
+            <span style="color: #008000; font-weight: bold">else</span> types<span style="color: #666666">.</span>Nothing()
+            <span style="color: #008000; font-weight: bold">for</span> value_annotation <span style="color: #AA22FF; font-weight: bold">in</span> flat
+        ]
+        module <span style="color: #666666">=</span> jax<span style="color: #666666">.</span>tree_unflatten(treedef, flat_out)
+    <span style="color: #008000; font-weight: bold">finally</span>:
+        _LOCAL<span style="color: #666666">.</span>is_slicing <span style="color: #666666">=</span> old_slicing
+
+    <span style="color: #008000; font-weight: bold">return</span> module
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 id="treex.nn.linear.Linear.init" class="doc doc-heading">
+<code class="codehilite language-python">init(<span style="color: #008000">self</span>, key)</code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-inherited"><code>inherited</code></small>
+  </span>
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates a new module with the same structure, but with its fields initialized given a seed <code>key</code>. The following
+procedure is used:</p>
+<ol>
+<li>The input <code>key</code> is split and iteratively updated before passing a derived value to any
+    process that requires initialization.</li>
+<li><code>Initializer</code>s are called and applied to the module first.</li>
+<li><code>TreeObject.module_init</code> methods are called last.</li>
+</ol>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>key</code></td>
+        <td><code>Union[int, jax._src.numpy.lax_numpy.ndarray]</code></td>
+        <td><p>The seed to use for initialization.</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~T</code></td>
+      <td><p>The new module with the fields initialized.</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>treex/nn/linear.py</code></summary>
+          <div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">init</span>(<span style="color: #008000">self</span>: T, key: tp<span style="color: #666666">.</span>Union[<span style="color: #008000">int</span>, jnp<span style="color: #666666">.</span>ndarray]) <span style="color: #666666">-&gt;</span> T:
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Creates a new module with the same structure, but with its fields initialized given a seed `key`. The following</span>
+<span style="color: #BA2121; font-style: italic">    procedure is used:</span>
+
+<span style="color: #BA2121; font-style: italic">    1. The input `key` is split and iteratively updated before passing a derived value to any</span>
+<span style="color: #BA2121; font-style: italic">        process that requires initialization.</span>
+<span style="color: #BA2121; font-style: italic">    2. `Initializer`s are called and applied to the module first.</span>
+<span style="color: #BA2121; font-style: italic">    3. `TreeObject.module_init` methods are called last.</span>
+
+<span style="color: #BA2121; font-style: italic">    Arguments:</span>
+<span style="color: #BA2121; font-style: italic">        key: The seed to use for initialization.</span>
+<span style="color: #BA2121; font-style: italic">    Returns:</span>
+<span style="color: #BA2121; font-style: italic">        The new module with the fields initialized.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(key, <span style="color: #008000">int</span>):
+        key <span style="color: #666666">=</span> jax<span style="color: #666666">.</span>random<span style="color: #666666">.</span>PRNGKey(key)
+
+    old_initializing <span style="color: #666666">=</span> _LOCAL<span style="color: #666666">.</span>is_initializing
+    old_key <span style="color: #666666">=</span> _LOCAL<span style="color: #666666">.</span>key
+
+    _LOCAL<span style="color: #666666">.</span>is_initializing <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
+    _LOCAL<span style="color: #666666">.</span>key <span style="color: #666666">=</span> key
+
+    <span style="color: #008000; font-weight: bold">try</span>:
+        module <span style="color: #666666">=</span> jax<span style="color: #666666">.</span>tree_map(
+            <span style="color: #008000; font-weight: bold">lambda</span> initializer: (
+                initializer(_LOCAL<span style="color: #666666">.</span>next_key())
+                <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(initializer, types<span style="color: #666666">.</span>Initializer)
+                <span style="color: #008000; font-weight: bold">else</span> initializer
+            ),
+            <span style="color: #008000">self</span>,
+        )
+    <span style="color: #008000; font-weight: bold">finally</span>:
+        _LOCAL<span style="color: #666666">.</span>is_initializing <span style="color: #666666">=</span> old_initializing
+        _LOCAL<span style="color: #666666">.</span>key <span style="color: #666666">=</span> old_key
+
+    <span style="color: #008000; font-weight: bold">return</span> module
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 id="treex.nn.linear.Linear.tabulate" class="doc doc-heading">
+<code class="codehilite language-python">tabulate(<span style="color: #008000">self</span>, depth<span style="color: #666666">=-1</span>, signature<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">False</span>, param_types<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>)</code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-inherited"><code>inherited</code></small>
+  </span>
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Returns a tabular representation of the module.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>depth</code></td>
+        <td><code>int</code></td>
+        <td><p>The maximum depth of the representation in terms of nested Modules, -1 means no limit.</p></td>
+        <td><code>-1</code></td>
+      </tr>
+      <tr>
+        <td><code>signature</code></td>
+        <td><code>bool</code></td>
+        <td><p>Whether to show the signature of the TreeObject.</p></td>
+        <td><code>False</code></td>
+      </tr>
+      <tr>
+        <td><code>param_types</code></td>
+        <td><code>bool</code></td>
+        <td><p>Whether to show the types of the parameters.</p></td>
+        <td><code>True</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>str</code></td>
+      <td><p>A string containing the tabular representation.</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>treex/nn/linear.py</code></summary>
+          <div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">tabulate</span>(
+    <span style="color: #008000">self</span>, depth: <span style="color: #008000">int</span> <span style="color: #666666">=</span> <span style="color: #666666">-1</span>, signature: <span style="color: #008000">bool</span> <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">False</span>, param_types: <span style="color: #008000">bool</span> <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
+) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Returns a tabular representation of the module.</span>
+
+<span style="color: #BA2121; font-style: italic">    Arguments:</span>
+<span style="color: #BA2121; font-style: italic">        depth: The maximum depth of the representation in terms of nested Modules, -1 means no limit.</span>
+<span style="color: #BA2121; font-style: italic">        signature: Whether to show the signature of the TreeObject.</span>
+<span style="color: #BA2121; font-style: italic">        param_types: Whether to show the types of the parameters.</span>
+<span style="color: #BA2121; font-style: italic">    Returns:</span>
+<span style="color: #BA2121; font-style: italic">        A string containing the tabular representation.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    old_slicing <span style="color: #666666">=</span> _LOCAL<span style="color: #666666">.</span>is_slicing
+    _LOCAL<span style="color: #666666">.</span>is_slicing <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
+
+    <span style="color: #008000; font-weight: bold">try</span>:
+        flat, _ <span style="color: #666666">=</span> jax<span style="color: #666666">.</span>tree_flatten(<span style="color: #008000">self</span>)
+        tree_part_types: tp<span style="color: #666666">.</span>Tuple[tp<span style="color: #666666">.</span>Type[types<span style="color: #666666">.</span>TreePart], <span style="color: #666666">...</span>] <span style="color: #666666">=</span> <span style="color: #008000">tuple</span>(
+            {value_annotation<span style="color: #666666">.</span>annotation <span style="color: #008000; font-weight: bold">for</span> value_annotation <span style="color: #AA22FF; font-weight: bold">in</span> flat}
+        )
+    <span style="color: #008000; font-weight: bold">finally</span>:
+        _LOCAL<span style="color: #666666">.</span>is_slicing <span style="color: #666666">=</span> old_slicing
+
+    path <span style="color: #666666">=</span> ()
+    rows <span style="color: #666666">=</span> <span style="color: #008000">list</span>(
+        _get_tabulate_rows(
+            path, <span style="color: #008000">self</span>, depth, tree_part_types, signature, param_types
+        )
+    )
+    rows[<span style="color: #666666">0</span>][<span style="color: #666666">0</span>] <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;*&quot;</span>
+    rows<span style="color: #666666">.</span>append(
+        [<span style="color: #BA2121">&quot;&quot;</span>, <span style="color: #BA2121">&quot;&quot;</span>, <span style="color: #BA2121">&quot;Total:&quot;</span>]
+        <span style="color: #666666">+</span> [
+            _format_obj_size(<span style="color: #008000">self</span><span style="color: #666666">.</span>filter(tree_type), add_padding<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>)
+            <span style="color: #008000; font-weight: bold">for</span> tree_type <span style="color: #AA22FF; font-weight: bold">in</span> tree_part_types
+        ]
+    )
+    _add_padding(rows)
+
+    table <span style="color: #666666">=</span> Table(
+        show_header<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>,
+        show_lines<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>,
+        show_footer<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>,
+        <span style="color: #408080; font-style: italic"># box=rich.box.HORIZONTALS,</span>
+    )
+
+    table<span style="color: #666666">.</span>add_column(<span style="color: #BA2121">&quot;path&quot;</span>)
+    table<span style="color: #666666">.</span>add_column(<span style="color: #BA2121">&quot;module&quot;</span>)
+    table<span style="color: #666666">.</span>add_column(<span style="color: #BA2121">&quot;params&quot;</span>)
+
+    <span style="color: #008000; font-weight: bold">for</span> tree_part_type <span style="color: #AA22FF; font-weight: bold">in</span> tree_part_types:
+        type_name <span style="color: #666666">=</span> tree_part_type<span style="color: #666666">.</span><span style="color: #19177C">__name__</span>
+        <span style="color: #008000; font-weight: bold">if</span> type_name<span style="color: #666666">.</span>startswith(<span style="color: #BA2121">&quot;_&quot;</span>):
+            type_name <span style="color: #666666">=</span> type_name[<span style="color: #666666">1</span>:]
+
+        table<span style="color: #666666">.</span>add_column(type_name)
+
+    <span style="color: #008000; font-weight: bold">for</span> row <span style="color: #AA22FF; font-weight: bold">in</span> rows[:<span style="color: #666666">-1</span>]:
+        table<span style="color: #666666">.</span>add_row(<span style="color: #666666">*</span>row)
+
+    table<span style="color: #666666">.</span>columns[<span style="color: #666666">2</span>]<span style="color: #666666">.</span>footer <span style="color: #666666">=</span> Text<span style="color: #666666">.</span>from_markup(rows[<span style="color: #666666">-1</span>][<span style="color: #666666">2</span>], justify<span style="color: #666666">=</span><span style="color: #BA2121">&quot;right&quot;</span>)
+
+    <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #008000">len</span>(tree_part_types)):
+        table<span style="color: #666666">.</span>columns[<span style="color: #666666">3</span> <span style="color: #666666">+</span> i]<span style="color: #666666">.</span>footer <span style="color: #666666">=</span> rows[<span style="color: #666666">-1</span>][<span style="color: #666666">3</span> <span style="color: #666666">+</span> i]
+
+    table<span style="color: #666666">.</span>caption_style <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;bold&quot;</span>
+    table<span style="color: #666666">.</span>caption <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #BB6622; font-weight: bold">\n</span><span style="color: #BA2121">Total Parameters: &quot;</span> <span style="color: #666666">+</span> _format_obj_size(
+        <span style="color: #008000">self</span>, add_padding<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">False</span>
+    )
+
+    <span style="color: #008000; font-weight: bold">return</span> _get_rich_repr(table)
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 id="treex.nn.linear.Linear.train" class="doc doc-heading">
+<code class="codehilite language-python">train(<span style="color: #008000">self</span>, mode<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>)</code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-inherited"><code>inherited</code></small>
+  </span>
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates a new module with the same structure, but with <code>TreeObject.training</code> set to the given value.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>mode</code></td>
+        <td><code>bool</code></td>
+        <td><p>The new training mode.</p></td>
+        <td><code>True</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>~T</code></td>
+      <td><p>The new module in with the training mode is set to the given value.</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>treex/nn/linear.py</code></summary>
+          <div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">train</span>(<span style="color: #008000">self</span>: T, mode: <span style="color: #008000">bool</span> <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>) <span style="color: #666666">-&gt;</span> T:
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Creates a new module with the same structure, but with `TreeObject.training` set to the given value.</span>
+
+<span style="color: #BA2121; font-style: italic">    Arguments:</span>
+<span style="color: #BA2121; font-style: italic">        mode: The new training mode.</span>
+<span style="color: #BA2121; font-style: italic">    Returns:</span>
+<span style="color: #BA2121; font-style: italic">        The new module in with the training mode is set to the given value.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    old_training <span style="color: #666666">=</span> _LOCAL<span style="color: #666666">.</span>training
+    _LOCAL<span style="color: #666666">.</span>training <span style="color: #666666">=</span> mode
+
+    <span style="color: #008000; font-weight: bold">try</span>:
+        module <span style="color: #666666">=</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>copy()  <span style="color: #408080; font-style: italic"># trigger flatten / unflatten</span>
+    <span style="color: #008000; font-weight: bold">finally</span>:
+        _LOCAL<span style="color: #666666">.</span>training <span style="color: #666666">=</span> old_training
+
+    <span style="color: #008000; font-weight: bold">return</span> module
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h2 id="treex.nn.linear.Linear.update" class="doc doc-heading">
+<code class="codehilite language-python">update(<span style="color: #008000">self</span>, other, <span style="color: #666666">*</span>rest, <span style="color: #666666">*</span>, inplace<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">False</span>)</code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-inherited"><code>inherited</code></small>
+  </span>
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates a new module with the same structure, but its values
+updated based on the values from the incoming modules. Updates are performed using
+the following rules:</p>
+<ul>
+<li>Updates are performed in the order of the input modules from left to right.</li>
+<li>If a leaf value from an incoming module is <code>Nothing</code>, it wont update
+    the corresponding value on the currently aggregated module.</li>
+<li>The static state of the output module (<code>initialized</code>, <code>training</code>, and user defined static fields)
+    is the same as the current module (<code>self</code>).</li>
+</ul>
+
+<p><strong>Examples:</strong></p>
+    
+      <div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>a <span style="color: #666666">=</span> MyModule(x<span style="color: #666666">=</span>Nothing, y<span style="color: #666666">=2</span>, z<span style="color: #666666">=3</span>)
+b <span style="color: #666666">=</span> MyModule(x<span style="color: #666666">=1</span>, y<span style="color: #666666">=</span>Nothing, z<span style="color: #666666">=4</span>)
+
+a<span style="color: #666666">.</span>update(b) <span style="color: #408080; font-style: italic"># MyModule(x=1, y=2, z=4)</span>
+</code></pre></div>
+
+<p>Notice the following:</p>
+<ul>
+<li>The value of <code>x</code> and <code>z</code> were updated since they were present in <code>b</code>.</li>
+<li>The value of <code>y</code> was not updated since <code>b.y</code> was <code>Nothing</code>.</li>
+</ul>
+<p>When using <code>update</code> with multiple modules the following equivalence holds:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>m1.update(m2, m3) = m1.update(m2).update(m3)
+</code></pre></div>
+
+<p>If you want to update the current module instead of creating a new one use <code>inplace=True</code>.
+This is useful when applying transformation inside a method where reassigning <code>self</code> is not possible:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">double_params</span>(<span style="color: #008000">self</span>):
+    <span style="color: #408080; font-style: italic"># this is not doing what you expect</span>
+    <span style="color: #008000">self</span> <span style="color: #666666">=</span> jax<span style="color: #666666">.</span>tree_map(<span style="color: #008000; font-weight: bold">lambda</span> x: <span style="color: #666666">2</span> <span style="color: #666666">*</span> x, <span style="color: #008000">self</span>)
+</code></pre></div>
+
+<p>Instead do this:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">double_params</span>(<span style="color: #008000">self</span>):
+    doubled <span style="color: #666666">=</span> jax<span style="color: #666666">.</span>tree_map(<span style="color: #008000; font-weight: bold">lambda</span> x: <span style="color: #666666">2</span> <span style="color: #666666">*</span> x, <span style="color: #008000">self</span>)
+    <span style="color: #008000">self</span><span style="color: #666666">.</span>update(doubled, inplace<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>)
+</code></pre></div>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>other</code></td>
+        <td><code>~T</code></td>
+        <td><p>The first to get the values to update from.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>rest</code></td>
+        <td><code>~T</code></td>
+        <td><p>Additional modules to perform the update in order from left to right.</p></td>
+        <td><code>()</code></td>
+      </tr>
+      <tr>
+        <td><code>inplace</code></td>
+        <td><code>bool</code></td>
+        <td><p>If <code>True</code>, the current module is modified with the updated values.</p></td>
+        <td><code>False</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Optional[~T]</code></td>
+      <td><p>A new module with the updated values or <code>None</code> if <code>inplace</code> is <code>True</code>.</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>treex/nn/linear.py</code></summary>
+          <div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">update</span>(<span style="color: #008000">self</span>: T, other: T, <span style="color: #666666">*</span>rest: T, inplace: <span style="color: #008000">bool</span> <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">False</span>) <span style="color: #666666">-&gt;</span> tp<span style="color: #666666">.</span>Optional[T]:
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Creates a new module with the same structure, but its values</span>
+<span style="color: #BA2121; font-style: italic">    updated based on the values from the incoming modules. Updates are performed using</span>
+<span style="color: #BA2121; font-style: italic">    the following rules:</span>
+
+<span style="color: #BA2121; font-style: italic">    * Updates are performed in the order of the input modules from left to right.</span>
+<span style="color: #BA2121; font-style: italic">    * If a leaf value from an incoming module is `Nothing`, it wont update</span>
+<span style="color: #BA2121; font-style: italic">        the corresponding value on the currently aggregated module.</span>
+<span style="color: #BA2121; font-style: italic">    * The static state of the output module (`initialized`, `training`, and user defined static fields)</span>
+<span style="color: #BA2121; font-style: italic">        is the same as the current module (`self`).</span>
+
+<span style="color: #BA2121; font-style: italic">    Example:</span>
+
+<span style="color: #BA2121; font-style: italic">    ```python</span>
+<span style="color: #BA2121; font-style: italic">    a = MyModule(x=Nothing, y=2, z=3)</span>
+<span style="color: #BA2121; font-style: italic">    b = MyModule(x=1, y=Nothing, z=4)</span>
+
+<span style="color: #BA2121; font-style: italic">    a.update(b) # MyModule(x=1, y=2, z=4)</span>
+<span style="color: #BA2121; font-style: italic">    ```</span>
+<span style="color: #BA2121; font-style: italic">    Notice the following:</span>
+
+<span style="color: #BA2121; font-style: italic">    * The value of `x` and `z` were updated since they were present in `b`.</span>
+<span style="color: #BA2121; font-style: italic">    * The value of `y` was not updated since `b.y` was `Nothing`.</span>
+
+<span style="color: #BA2121; font-style: italic">    When using `update` with multiple modules the following equivalence holds:</span>
+
+<span style="color: #BA2121; font-style: italic">    ```</span>
+<span style="color: #BA2121; font-style: italic">    m1.update(m2, m3) = m1.update(m2).update(m3)</span>
+<span style="color: #BA2121; font-style: italic">    ```</span>
+
+<span style="color: #BA2121; font-style: italic">    If you want to update the current module instead of creating a new one use `inplace=True`.</span>
+<span style="color: #BA2121; font-style: italic">    This is useful when applying transformation inside a method where reassigning `self` is not possible:</span>
+
+<span style="color: #BA2121; font-style: italic">    ```python</span>
+<span style="color: #BA2121; font-style: italic">    def double_params(self):</span>
+<span style="color: #BA2121; font-style: italic">        # this is not doing what you expect</span>
+<span style="color: #BA2121; font-style: italic">        self = jax.tree_map(lambda x: 2 * x, self)</span>
+<span style="color: #BA2121; font-style: italic">    ```</span>
+<span style="color: #BA2121; font-style: italic">    Instead do this:</span>
+
+<span style="color: #BA2121; font-style: italic">    ```python</span>
+<span style="color: #BA2121; font-style: italic">    def double_params(self):</span>
+<span style="color: #BA2121; font-style: italic">        doubled = jax.tree_map(lambda x: 2 * x, self)</span>
+<span style="color: #BA2121; font-style: italic">        self.update(doubled, inplace=True)</span>
+<span style="color: #BA2121; font-style: italic">    ```</span>
+
+<span style="color: #BA2121; font-style: italic">    Arguments:</span>
+<span style="color: #BA2121; font-style: italic">        other: The first to get the values to update from.</span>
+<span style="color: #BA2121; font-style: italic">        rest: Additional modules to perform the update in order from left to right.</span>
+<span style="color: #BA2121; font-style: italic">        inplace: If `True`, the current module is modified with the updated values.</span>
+
+<span style="color: #BA2121; font-style: italic">    Returns:</span>
+<span style="color: #BA2121; font-style: italic">        A new module with the updated values or `None` if `inplace` is `True`.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    modules <span style="color: #666666">=</span> (<span style="color: #008000">self</span>, other) <span style="color: #666666">+</span> rest
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">merge_fn</span>(xs):
+        acc, <span style="color: #666666">*</span>xs <span style="color: #666666">=</span> xs
+        <span style="color: #008000; font-weight: bold">for</span> x <span style="color: #AA22FF; font-weight: bold">in</span> xs:
+            <span style="color: #008000; font-weight: bold">if</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">isinstance</span>(x, types<span style="color: #666666">.</span>Nothing):
+                acc <span style="color: #666666">=</span> x
+        <span style="color: #008000; font-weight: bold">return</span> acc
+
+    flats, treedefs <span style="color: #666666">=</span> <span style="color: #008000">zip</span>(
+        <span style="color: #666666">*</span>[
+            jax<span style="color: #666666">.</span>tree_flatten(m, is_leaf<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">lambda</span> x: <span style="color: #008000">isinstance</span>(x, types<span style="color: #666666">.</span>Nothing))
+            <span style="color: #008000; font-weight: bold">for</span> m <span style="color: #AA22FF; font-weight: bold">in</span> modules
+        ]
+    )
+    <span style="color: #408080; font-style: italic"># flat_out = jax.tree_util.tree_map(merge_fn, *flats)</span>
+    flat_out <span style="color: #666666">=</span> [merge_fn(values) <span style="color: #008000; font-weight: bold">for</span> values <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">zip</span>(<span style="color: #666666">*</span>flats)]
+    module <span style="color: #666666">=</span> jax<span style="color: #666666">.</span>tree_unflatten(treedefs[<span style="color: #666666">0</span>], flat_out)
+
+    <span style="color: #008000; font-weight: bold">if</span> inplace:
+        <span style="color: #008000">self</span><span style="color: #666666">.</span><span style="color: #19177C">__dict__</span><span style="color: #666666">.</span>update(module<span style="color: #666666">.</span><span style="color: #19177C">__dict__</span>)
+        <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000; font-weight: bold">None</span>
+    <span style="color: #008000; font-weight: bold">else</span>:
+        <span style="color: #008000; font-weight: bold">return</span> module
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../Lambda/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Lambda" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Lambda
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../MLP/" class="md-footer__link md-footer__link--next" aria-label="Next: MLP" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              MLP
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+        
+      </div>
+      
+  <div class="md-footer-social">
+    
+      
+      
+        
+        
+      
+      <a href="https://github.com/cgarciae" target="_blank" rel="noopener" title="github.com" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+      </a>
+    
+      
+      
+        
+        
+      
+      <a href="https://twitter.com/cgarciae88" target="_blank" rel="noopener" title="twitter.com" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
+      </a>
+    
+      
+      
+        
+        
+      
+      <a href="https://www.linkedin.com/in/cgarciae" target="_blank" rel="noopener" title="www.linkedin.com" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg>
+      </a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.409db549.min.js", "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.56a63758.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+      
+    
+  </body>
+</html>

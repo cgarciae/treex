@@ -1,0 +1,1320 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="canonical" href="https://cgarciae.github.io/treex/">
+      
+      <link rel="icon" href="images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.2.5">
+    
+    
+      
+        <title>Treex</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.be71726b.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.3f5d1f46.min.css">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
+      
+    
+    
+    
+      <link rel="stylesheet" href="assets/_mkdocstrings.css">
+    
+    
+      
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    <script>function __prefix(e){return new URL(".",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#treex" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="Treex" class="md-header__button md-logo" aria-label="Treex" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path d="M471.1 96C405 96 353.3 137.3 320 174.6 286.7 137.3 235 96 168.9 96 75.8 96 0 167.8 0 256s75.8 160 168.9 160c66.1 0 117.8-41.3 151.1-78.6 33.3 37.3 85 78.6 151.1 78.6 93.1 0 168.9-71.8 168.9-160S564.2 96 471.1 96zM168.9 320c-40.2 0-72.9-28.7-72.9-64s32.7-64 72.9-64c38.2 0 73.4 36.1 94 64-20.4 27.6-55.9 64-94 64zm302.2 0c-38.2 0-73.4-36.1-94-64 20.4-27.6 55.9-64 94-64 40.2 0 72.9 28.7 72.9 64s-32.7 64-72.9 64z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Treex
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Introduction
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        
+<a href="https://github.com/cgarciae/treex/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    cgarciae/treex
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="Treex" class="md-nav__button md-logo" aria-label="Treex" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path d="M471.1 96C405 96 353.3 137.3 320 174.6 286.7 137.3 235 96 168.9 96 75.8 96 0 167.8 0 256s75.8 160 168.9 160c66.1 0 117.8-41.3 151.1-78.6 33.3 37.3 85 78.6 151.1 78.6 93.1 0 168.9-71.8 168.9-160S564.2 96 471.1 96zM168.9 320c-40.2 0-72.9-28.7-72.9-64s32.7-64 72.9-64c38.2 0 73.4 36.1 94 64-20.4 27.6-55.9 64-94 64zm302.2 0c-38.2 0-73.4-36.1-94-64 20.4-27.6 55.9-64 94-64 40.2 0 72.9 28.7 72.9 64s-32.7 64-72.9 64z"/></svg>
+
+    </a>
+    Treex
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/cgarciae/treex/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    cgarciae/treex
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Introduction
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        Introduction
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-treex" class="md-nav__link">
+    Why Treex?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    Installation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#status" class="md-nav__link">
+    Status
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    Getting Started
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guide" class="md-nav__link">
+    Guide
+  </a>
+  
+    <nav class="md-nav" aria-label="Guide">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#defining-modules" class="md-nav__link">
+    Defining Modules
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pytrees" class="md-nav__link">
+    Pytrees
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#initialization" class="md-nav__link">
+    Initialization
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filter-and-update-api" class="md-nav__link">
+    Filter and Update API
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optimizer" class="md-nav__link">
+    Optimizer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#state-management" class="md-nav__link">
+    State Management
+  </a>
+  
+    <nav class="md-nav" aria-label="State Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-is-the-catch" class="md-nav__link">
+    What is the catch?
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#training-state" class="md-nav__link">
+    Training State
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parameter-annotations" class="md-nav__link">
+    Parameter Annotations
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#full-example" class="md-nav__link">
+    Full Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
+      
+      <label class="md-nav__link" for="__nav_2">
+        API Reference
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="API Reference" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          API Reference
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/BatchNorm/" class="md-nav__link">
+        BatchNorm
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/BatchStat/" class="md-nav__link">
+        BatchStat
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/Conv/" class="md-nav__link">
+        Conv
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/Dropout/" class="md-nav__link">
+        Dropout
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/Initializer/" class="md-nav__link">
+        Initializer
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/Lambda/" class="md-nav__link">
+        Lambda
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/Linear/" class="md-nav__link">
+        Linear
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/MLP/" class="md-nav__link">
+        MLP
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/Module/" class="md-nav__link">
+        Module
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/Nothing/" class="md-nav__link">
+        Nothing
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/OptState/" class="md-nav__link">
+        OptState
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/Optimizer/" class="md-nav__link">
+        Optimizer
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/Parameter/" class="md-nav__link">
+        Parameter
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/Rng/" class="md-nav__link">
+        Rng
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/Sequence/" class="md-nav__link">
+        Sequence
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/State/" class="md-nav__link">
+        State
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/TreeObject/" class="md-nav__link">
+        TreeObject
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/TreePart/" class="md-nav__link">
+        TreePart
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="api/sequence/" class="md-nav__link">
+        sequence
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-treex" class="md-nav__link">
+    Why Treex?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    Installation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#status" class="md-nav__link">
+    Status
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    Getting Started
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guide" class="md-nav__link">
+    Guide
+  </a>
+  
+    <nav class="md-nav" aria-label="Guide">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#defining-modules" class="md-nav__link">
+    Defining Modules
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pytrees" class="md-nav__link">
+    Pytrees
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#initialization" class="md-nav__link">
+    Initialization
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filter-and-update-api" class="md-nav__link">
+    Filter and Update API
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optimizer" class="md-nav__link">
+    Optimizer
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#state-management" class="md-nav__link">
+    State Management
+  </a>
+  
+    <nav class="md-nav" aria-label="State Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-is-the-catch" class="md-nav__link">
+    What is the catch?
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#training-state" class="md-nav__link">
+    Training State
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parameter-annotations" class="md-nav__link">
+    Parameter Annotations
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#full-example" class="md-nav__link">
+    Full Example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/cgarciae/treex/edit/master/docs/index.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+                  </a>
+                
+                
+                <h1 id="treex">Treex</h1>
+<p><em>A Pytree-based Module system for JAX</em></p>
+<ul>
+<li><strong>Intuitive</strong>: Modules are simple Python objects that respect Object-Oriented semantics and should make PyTorch users feel at home, with no need for separate dictionary structures or complex <code>apply</code> methods.</li>
+<li><strong>Pytree-based</strong>:  Modules are registered as JAX PyTrees, enabling their use with any JAX function. No need for specialized versions of <code>jit</code>, <code>grad</code>, <code>vmap</code>, etc.</li>
+<li><strong>Expressive</strong>: In Treex you use type annotations to define what the different parts of your module represent (submodules, parameters, batch statistics, etc), this leads to a very flexible and powerful state management solution.</li>
+<li><strong>Flax-based Implementations</strong>: Writing high-quality, battle-tested code for common layers is hard. For this reason Modules in <code>treex.nn</code> are wrappers over their Flax counterparts. We keep identical signatures, enabling Flax users to feel at home but still benefiting from the simpler Pytorch-like experience Treex brings.</li>
+</ul>
+<h2 id="why-treex">Why Treex?</h2>
+<p>Despite all JAX benefits, current Module systems are not intuitive to new users and add additional complexity not present in frameworks like PyTorch or Keras. Treex takes inspiration from S4TF and delivers an intuitive experience using JAX Pytree infrastructure.</p>
+<details>
+<summary>Current Alternative's Drawbacks and Solutions</summary>
+
+Currently we have many alternatives like Flax, Haiku, Objax, that have one or more of the following drawbacks:
+
+* Module structure and parameter structure are separate, and parameters have to be manipulated around by the end-user, which is not intuitive. In Treex, parameters are stored in the modules themselves and can be accessed directly.
+* Monadic architecture adds complexity. Flax and Haiku use an `apply` method to call modules that set a context with parameters, rng, and different metadata, which adds additional overhead to the API and creates an asymmetry in how Modules are being used inside and outside a context. In Treex, modules can be called directly.
+* Among different frameworks, parameter surgery requires special consideration and is challenging to implement. Consider a standard workflow such as transfer learning, transferring parameters and state from a  pre-trained module or submodule as part of a new module; in different frameworks, we have to know precisely how to extract their parameters and how to insert them into the new parameter structure/dictionaries such that it is in agreement with the new module structure. In Treex, just as in PyTorch / Keras, we enable to pass the (sub)module to the new module, and parameters are automatically added to the new structure.
+* Multiple frameworks deviate from JAX semantics and require particular versions of `jit`, `grad`, `vmap`, etc., which makes it harder to integrate with other JAX libraries. Treex's Modules are plain old JAX PyTrees and are compatible with any JAX library that supports them.
+* Other Pytree-based approaches like Parallax and Equinox do not have a total state management solution to handle complex states as encountered in Flax. Treex has the Filter and Update API, which is very expressive and can effectively handle systems with a complex state.
+
+</details>
+
+<h2 id="installation">Installation</h2>
+<p>Install using pip:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>pip install treex
+</code></pre></div>
+
+<h2 id="status">Status</h2>
+<p>At the moment Treex is a proof of concept for what a Pytree-based Module system for JAX could look like. Testing is needed to find bugs and potential issues, however, since Treex layers are numerically equivalent to Flax this borrows some maturity and yields more confidence over its results. Feedback is much appreciated.</p>
+<p><strong>Roadmap</strong>:
+- [x] Finish prototyping core API
+- [ ] Wrap all Flax Linen Modules
+- [ ] Document public API
+- [ ] Create documentation site</p>
+<h2 id="getting-started">Getting Started</h2>
+<p>This is a small appetizer to give you a feel for how using Treex looks like, be sure to checkout the <a href="#guide">Guide section</a> below for details on more advanced usage.</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">typing</span> <span style="color: #008000; font-weight: bold">import</span> Sequence, List
+
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">jax</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">jax.numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">jnp</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">treex</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">tx</span>
+
+<span style="color: #408080; font-style: italic"># you can use tx.MLP but we will create our own as an example</span>
+<span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">MLP</span>(tx<span style="color: #666666">.</span>Module):
+    layers: List[tx<span style="color: #666666">.</span>Linear]
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, features: Sequence[<span style="color: #008000">int</span>]):
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>layers <span style="color: #666666">=</span> [
+            tx<span style="color: #666666">.</span>Linear(din, dout) 
+            <span style="color: #008000; font-weight: bold">for</span> din, dout <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">zip</span>(features[:<span style="color: #666666">-1</span>], features[<span style="color: #666666">1</span>:])
+        ]
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__call__</span>(<span style="color: #008000">self</span>, x):
+        <span style="color: #008000; font-weight: bold">for</span> linear <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>layers[:<span style="color: #666666">-1</span>]:
+            x <span style="color: #666666">=</span> jax<span style="color: #666666">.</span>nn<span style="color: #666666">.</span>relu(linear(x))
+        <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>layers[<span style="color: #666666">-1</span>](x)
+
+
+model <span style="color: #666666">=</span> MLP([<span style="color: #666666">1</span>, <span style="color: #666666">12</span>, <span style="color: #666666">8</span>, <span style="color: #666666">1</span>])<span style="color: #666666">.</span>init(<span style="color: #666666">42</span>)
+
+x <span style="color: #666666">=</span> np<span style="color: #666666">.</span>random<span style="color: #666666">.</span>uniform(<span style="color: #666666">-1</span>, <span style="color: #666666">1</span>, size<span style="color: #666666">=</span>(<span style="color: #666666">100</span>, <span style="color: #666666">1</span>))
+y <span style="color: #666666">=</span> <span style="color: #666666">1.4</span> <span style="color: #666666">*</span> x <span style="color: #666666">**</span> <span style="color: #666666">2</span> <span style="color: #666666">-</span> <span style="color: #666666">0.3</span> <span style="color: #666666">+</span> np<span style="color: #666666">.</span>random<span style="color: #666666">.</span>normal(scale<span style="color: #666666">=0.1</span>, size<span style="color: #666666">=</span>(<span style="color: #666666">100</span>, <span style="color: #666666">1</span>))
+
+<span style="color: #AA22FF">@jax</span><span style="color: #666666">.</span>jit
+<span style="color: #AA22FF">@jax</span><span style="color: #666666">.</span>grad
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">loss_fn</span>(model, x, y):
+    y_pred <span style="color: #666666">=</span> model(x)
+    <span style="color: #008000; font-weight: bold">return</span> jnp<span style="color: #666666">.</span>mean((y_pred <span style="color: #666666">-</span> y) <span style="color: #666666">**</span> <span style="color: #666666">2</span>)
+
+<span style="color: #408080; font-style: italic"># in reality use optax</span>
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">sdg</span>(param, grad):
+    <span style="color: #008000; font-weight: bold">return</span> param <span style="color: #666666">-</span> <span style="color: #666666">0.01</span> <span style="color: #666666">*</span> grad
+
+<span style="color: #408080; font-style: italic"># training loop</span>
+<span style="color: #008000; font-weight: bold">for</span> step <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">10_000</span>):
+    grads <span style="color: #666666">=</span> loss_fn(model, x, y)
+    model <span style="color: #666666">=</span> jax<span style="color: #666666">.</span>tree_map(sdg, model, grads)
+
+model <span style="color: #666666">=</span> model<span style="color: #666666">.</span>eval()
+y_pred <span style="color: #666666">=</span> model(x)
+</code></pre></div>
+
+<h2 id="guide">Guide</h2>
+<h3 id="defining-modules">Defining Modules</h3>
+<p>Treex Modules have the following characteristics:
+* They inherit from <code>tx.Module</code>.
+* Fields for parameter and submodules <strong>MUST</strong> be marked using a <em>valid</em> type annotation.</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">Linear</span>(tx<span style="color: #666666">.</span>Module):
+    w: tx<span style="color: #666666">.</span>Parameter
+    b: tx<span style="color: #666666">.</span>Parameter
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, din, dout):
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>w <span style="color: #666666">=</span> tx<span style="color: #666666">.</span>Initializer(
+            <span style="color: #008000; font-weight: bold">lambda</span> key: jax<span style="color: #666666">.</span>random<span style="color: #666666">.</span>uniform(key, shape<span style="color: #666666">=</span>(din, dout)))
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>b <span style="color: #666666">=</span> jnp<span style="color: #666666">.</span>zeros(shape<span style="color: #666666">=</span>(dout,))
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__call__</span>(<span style="color: #008000">self</span>, x):
+        <span style="color: #008000; font-weight: bold">return</span> jnp<span style="color: #666666">.</span>dot(x, <span style="color: #008000">self</span><span style="color: #666666">.</span>w) <span style="color: #666666">+</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>b
+
+linear <span style="color: #666666">=</span> Linear(<span style="color: #666666">3</span>, <span style="color: #666666">5</span>)<span style="color: #666666">.</span>init(<span style="color: #666666">42</span>)
+y <span style="color: #666666">=</span> linear(x)
+</code></pre></div>
+
+<p>Valid type annotations include:
+* Subtypes of <code>tx.TreePart</code> e.g. <code>tx.Parameter</code>, <code>tx.BatchStat</code>, etc.
+* Subtypes of <code>tx.Module</code> e.g. <code>tx.Linear</code>, custom Module types, etc.
+* Generic subtypes from the <code>typing</code> module of the previous e.g. <code>List[tx.Parameter]</code> or <code>Dict[str, tx.Linear]</code>.</p>
+<p>Type annotations that do not comform to the above rules will be ignored and the field will not be counted as part of the Pytree.</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">MLP</span>(tx<span style="color: #666666">.</span>Module):
+    layers: List[tx<span style="color: #666666">.</span>Linear]
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, features: Sequence[<span style="color: #008000">int</span>]):
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>layers <span style="color: #666666">=</span> [
+            tx<span style="color: #666666">.</span>Linear(din, dout) 
+            <span style="color: #008000; font-weight: bold">for</span> din, dout <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">zip</span>(features[:<span style="color: #666666">-1</span>], features[<span style="color: #666666">1</span>:])
+        ]
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__call__</span>(<span style="color: #008000">self</span>, x):
+        <span style="color: #008000; font-weight: bold">for</span> linear <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>layers[:<span style="color: #666666">-1</span>]:
+            x <span style="color: #666666">=</span> jax<span style="color: #666666">.</span>nn<span style="color: #666666">.</span>relu(linear(x))
+        <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>layers[<span style="color: #666666">-1</span>](x)
+
+mlp <span style="color: #666666">=</span> MLP([<span style="color: #666666">3</span>, <span style="color: #666666">5</span>, <span style="color: #666666">2</span>])<span style="color: #666666">.</span>init(<span style="color: #666666">42</span>)
+</code></pre></div>
+
+<h3 id="pytrees">Pytrees</h3>
+<p>Since Modules are pytrees they can be arguments to JAX functions such as <code>jit</code>, <code>grad</code>, <code>vmap</code>, etc, and the <code>jax.tree_*</code> function family.</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #AA22FF">@jax</span><span style="color: #666666">.</span>jit
+<span style="color: #AA22FF">@jax</span><span style="color: #666666">.</span>grad
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">loss_fn</span>(model, x, y):
+    y_pred <span style="color: #666666">=</span> model(x)
+    <span style="color: #008000; font-weight: bold">return</span> jnp<span style="color: #666666">.</span>mean((y_pred <span style="color: #666666">-</span> y) <span style="color: #666666">**</span> <span style="color: #666666">2</span>)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">sdg</span>(param, grad):
+    <span style="color: #008000; font-weight: bold">return</span> param <span style="color: #666666">-</span> <span style="color: #666666">0.01</span> <span style="color: #666666">*</span> grad
+
+model <span style="color: #666666">=</span> MLP(<span style="color: #666666">...</span>)<span style="color: #666666">.</span>init(<span style="color: #666666">42</span>)
+
+grads <span style="color: #666666">=</span> loss_fn(model, x, y)
+model <span style="color: #666666">=</span> jax<span style="color: #666666">.</span>tree_map(sdg, model, grads)
+</code></pre></div>
+
+<p>This makes Treex Modules compatible with tooling from the broader JAX ecosystem, and enables correct unification of Modules as both parameter containers and the definition of the foward computation.</p>
+<h3 id="initialization">Initialization</h3>
+<p>Initialization in Treex is done by calling the <code>init</code> method on the Module with a seed. This returns a new Module with all fields initialized.</p>
+<p>There are two initialization mechanisms in Treex. The first one is setting the fields we wish to initialize to an <code>Initializer</code> object. <code>Initializer</code>s contain functions that take a <code>key</code> and return the initial value of the field:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">MyModule</span>(tx<span style="color: #666666">.</span>Module):
+    a: tx<span style="color: #666666">.</span>Parameter
+    b: tx<span style="color: #666666">.</span>Parameter
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>):
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>a <span style="color: #666666">=</span> tx<span style="color: #666666">.</span>Initializer(
+            <span style="color: #008000; font-weight: bold">lambda</span> key: jax<span style="color: #666666">.</span>random<span style="color: #666666">.</span>uniform(key, shape<span style="color: #666666">=</span>(<span style="color: #666666">1</span>,)))
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>b <span style="color: #666666">=</span> <span style="color: #666666">2</span>
+
+module <span style="color: #666666">=</span> MyModule() 
+module <span style="color: #408080; font-style: italic"># MyModule(a=Initializer, b=2)</span>
+moduel<span style="color: #666666">.</span>initialized <span style="color: #408080; font-style: italic"># False</span>
+
+module <span style="color: #666666">=</span> module<span style="color: #666666">.</span>init(<span style="color: #666666">42</span>)  
+module <span style="color: #408080; font-style: italic"># MyModule(a=array([0.034...]), b=2)</span>
+module<span style="color: #666666">.</span>initialized <span style="color: #408080; font-style: italic"># True</span>
+</code></pre></div>
+
+<p>The second is to override the <code>module_init</code> method, which takes a <code>key</code> and can initialize any required fields. This is useful for modules that require complex initialization logic or whose field's initialization depends on each other.</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">MyModule</span>(tx<span style="color: #666666">.</span>Module):
+    a: tx<span style="color: #666666">.</span>Parameter
+    b: tx<span style="color: #666666">.</span>Parameter
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>):
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>a <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">None</span>
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>b <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">None</span>
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">module_init</span>(<span style="color: #008000">self</span>, key):
+        <span style="color: #408080; font-style: italic"># some complex initialization</span>
+        <span style="color: #666666">...</span>
+
+module <span style="color: #666666">=</span> MyModule()<span style="color: #666666">.</span>init(<span style="color: #666666">42</span>)
+module <span style="color: #408080; font-style: italic"># MyModule(a=array([0.927...]), b=array([0.749...]))</span>
+</code></pre></div>
+
+<p>We can also mix and match the two strategies, meaning that some parameters can be initialized via <code>Initializer</code>s while others via <code>module_init</code>. The rule is that <code>Initializer</code>s are always going the be called first.</p>
+<h3 id="filter-and-update-api">Filter and Update API</h3>
+<p>The <code>filter</code> method allows selecting a subtree by filtering based on a type, all leaves that are not a subclass of such type are set to a special <code>Nothing</code> value.</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">MyModule</span>(tx<span style="color: #666666">.</span>Module):
+    a: tx<span style="color: #666666">.</span>Parameter <span style="color: #666666">=</span> np<span style="color: #666666">.</span>array(<span style="color: #666666">1</span>)
+    b: tx<span style="color: #666666">.</span>BatchStat <span style="color: #666666">=</span> np<span style="color: #666666">.</span>array(<span style="color: #666666">2</span>)
+    <span style="color: #666666">...</span>
+
+module <span style="color: #666666">=</span> MyModule(<span style="color: #666666">...</span>)
+
+module<span style="color: #666666">.</span>filter(tx<span style="color: #666666">.</span>Parameter) <span style="color: #408080; font-style: italic"># MyModule(a=array([1]), b=Nothing)</span>
+module<span style="color: #666666">.</span>filter(tx<span style="color: #666666">.</span>BatchStat) <span style="color: #408080; font-style: italic"># MyModule(a=Nothing, b=array([2]))</span>
+</code></pre></div>
+
+<p><code>Nothing</code> much like <code>None</code> is an empty Pytree so it gets ignored by tree operations:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>jax<span style="color: #666666">.</span>tree_leaves(module<span style="color: #666666">.</span>filter(tx<span style="color: #666666">.</span>Parameter)) <span style="color: #408080; font-style: italic"># [array([1])]</span>
+jax<span style="color: #666666">.</span>tree_leaves(module<span style="color: #666666">.</span>filter(tx<span style="color: #666666">.</span>BatchStat)) <span style="color: #408080; font-style: italic"># [array([2])]</span>
+</code></pre></div>
+
+<p>A typical use case is to define <code>params</code> as a <code>Parameter</code> filter and pass it as the first argument to <code>grad</code> so that the gradient is computed only that particular subset and immediately update them back to the <code>model</code> before performing any computation:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #408080; font-style: italic"># we take `params` as a Parameter filter from model</span>
+<span style="color: #408080; font-style: italic"># but model itself is left untouched</span>
+params <span style="color: #666666">=</span> model<span style="color: #666666">.</span>filter(tx<span style="color: #666666">.</span>Parameter)
+
+<span style="color: #AA22FF">@jax</span><span style="color: #666666">.</span>grad 
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">loss_fn</span>(params, model, x, y):
+    <span style="color: #408080; font-style: italic"># update traced arrays by `grad` from `params`</span>
+    model <span style="color: #666666">=</span> model<span style="color: #666666">.</span>update(params)
+    <span style="color: #666666">...</span>
+
+grads <span style="color: #666666">=</span> loss_fn(params, model, x, y) 
+
+optimizer <span style="color: #666666">=</span> tx<span style="color: #666666">.</span>Optimizer(optax<span style="color: #666666">.</span>adam(<span style="color: #666666">1e-3</span>))
+optimizer <span style="color: #666666">=</span> optimizer<span style="color: #666666">.</span>init(params) <span style="color: #408080; font-style: italic"># only needs params</span>
+</code></pre></div>
+
+<h3 id="optimizer">Optimizer</h3>
+<p>Optax is an amazing library however, its optimizers are not pytrees, this means that state and computation are separate, and you cannot jit them. To solve this Treex provides an <code>tx.Optimizer</code> class that can wrap any Optax optimizer and make it a Pytree.</p>
+<p>While in optax you would define something like this:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">main</span>():
+    <span style="color: #666666">...</span>
+    optimizer <span style="color: #666666">=</span> optax<span style="color: #666666">.</span>adam(<span style="color: #666666">1e-3</span>)
+    opt_state <span style="color: #666666">=</span> optimizer<span style="color: #666666">.</span>init(params)
+    <span style="color: #666666">...</span>
+
+<span style="color: #AA22FF">@partial</span>(jax<span style="color: #666666">.</span>jit, static_argnums<span style="color: #666666">=</span>(<span style="color: #666666">4</span>,))
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">train_step</span>(model, x, y, opt_state, optimizer): <span style="color: #408080; font-style: italic"># optimizer has to be static</span>
+    <span style="color: #666666">...</span>
+    updates, opt_state <span style="color: #666666">=</span> optimizer<span style="color: #666666">.</span>update(grads, opt_state, params)
+    params <span style="color: #666666">=</span> optax<span style="color: #666666">.</span>apply_updates(params, updates)
+    <span style="color: #666666">...</span>
+    <span style="color: #008000; font-weight: bold">return</span> model, loss, opt_state
+</code></pre></div>
+
+<p>With <code>tx.Optimizer</code> you it can be simplified to:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">main</span>():
+    <span style="color: #666666">...</span>
+    optimizer <span style="color: #666666">=</span> tx<span style="color: #666666">.</span>Optimizer(optax<span style="color: #666666">.</span>adam(<span style="color: #666666">1e-3</span>))<span style="color: #666666">.</span>init(params)
+    <span style="color: #666666">...</span>
+
+jax<span style="color: #666666">.</span>jit
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">train_step</span>(model, x, y, optimizer):
+    <span style="color: #666666">...</span>
+    params <span style="color: #666666">=</span> optimizer<span style="color: #666666">.</span>update(grads, params)
+    <span style="color: #666666">...</span>
+    <span style="color: #008000; font-weight: bold">return</span> model, loss, optimizer
+</code></pre></div>
+
+<p>As you see, <code>tx.Optimizer</code> follows the same API as <code>optax.GradientTransformation</code> except that:
+1. There is no <code>opt_state</code>, instead optimizer IS the state.
+2. <code>update</code> by default applies the gradient updates to the parameters.
+3. <code>update</code> updates the internal state of the optimizer in-place.</p>
+<p>Notice that since <code>tx.Optimizer</code> is a Pytree, it was passed through <code>jit</code> without the need to specify <code>static_argnums</code>.</p>
+<h3 id="state-management">State Management</h3>
+<p>Treex takes a "direct" approach to state management, i.e., state is updated in-place by the Module whenever it needs to. For example, this module will calculate the running average of its input:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">Average</span>(tx<span style="color: #666666">.</span>Module):
+    count: tx<span style="color: #666666">.</span>State
+    total: tx<span style="color: #666666">.</span>State
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>):
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>count <span style="color: #666666">=</span> jnp<span style="color: #666666">.</span>array(<span style="color: #666666">0</span>)
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>total <span style="color: #666666">=</span> jnp<span style="color: #666666">.</span>array(<span style="color: #666666">0.0</span>)
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__call__</span>(<span style="color: #008000">self</span>, x):
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>count <span style="color: #666666">+=</span> np<span style="color: #666666">.</span>prod(x<span style="color: #666666">.</span>shape)
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>total <span style="color: #666666">+=</span> jnp<span style="color: #666666">.</span>sum(x)
+
+        <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>total <span style="color: #666666">/</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>count
+</code></pre></div>
+
+<p>Treex Modules that require random state will often keep a <code>rng</code> key internally and update it in-place when needed:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">Dropout</span>(tx<span style="color: #666666">.</span>Module):
+    rng: tx<span style="color: #666666">.</span>Rng
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, rate: <span style="color: #008000">float</span>):
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>rng <span style="color: #666666">=</span> tx<span style="color: #666666">.</span>Initializer(<span style="color: #008000; font-weight: bold">lambda</span> key: key)
+        <span style="color: #666666">...</span>
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__call__</span>(<span style="color: #008000">self</span>, x):
+        key, <span style="color: #008000">self</span><span style="color: #666666">.</span>rng <span style="color: #666666">=</span> jax<span style="color: #666666">.</span>random<span style="color: #666666">.</span>split(<span style="color: #008000">self</span><span style="color: #666666">.</span>rng)
+        <span style="color: #666666">...</span>
+</code></pre></div>
+
+<p>Finally <code>tx.Optimizer</code> also performs inplace updates inside the <code>update</code> method, here is a sketch of how it works:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">Optimizer</span>(tx<span style="color: #666666">.</span>TreeObject):
+    opt_state: tx<span style="color: #666666">.</span>OptState
+    optimizer: optax<span style="color: #666666">.</span>GradientTransformation
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">update</span>(<span style="color: #008000">self</span>, grads, params):
+        <span style="color: #666666">...</span>
+        updates, <span style="color: #008000">self</span><span style="color: #666666">.</span>opt_state <span style="color: #666666">=</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>optimizer<span style="color: #666666">.</span>update(
+            grads, <span style="color: #008000">self</span><span style="color: #666666">.</span>opt_state, params
+        )
+        <span style="color: #666666">...</span>
+</code></pre></div>
+
+<h4 id="what-is-the-catch">What is the catch?</h4>
+<p>State management is one of the most challenging things in JAX, but with the help of Treex it seems effortless, what is the catch? As always there is a trade-off to consider: Treex's approach requires to consider how to propagate state changes properly while taking into account the fact that Pytree operations create new objects, that is, since reference do not persist across calls through these functions changes might be lost. </p>
+<p>A standard solution to this problem is: <strong>always output the module to update state</strong>. For example, a typical loss function that contains a stateful model would look like this:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #AA22FF">@partial</span>(jax<span style="color: #666666">.</span>value_and_grad, has_aux<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>)
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">loss_fn</span>(params, model, x, y):
+    model <span style="color: #666666">=</span> model<span style="color: #666666">.</span>update(params)
+
+    y_pred <span style="color: #666666">=</span> model(x)
+    loss <span style="color: #666666">=</span> jnp<span style="color: #666666">.</span>mean((y_pred <span style="color: #666666">-</span> y) <span style="color: #666666">**</span> <span style="color: #666666">2</span>)
+
+    <span style="color: #008000; font-weight: bold">return</span> loss, model
+
+params <span style="color: #666666">=</span> model<span style="color: #666666">.</span>filter(tx<span style="color: #666666">.</span>Parameter)
+(loss, model), grads <span style="color: #666666">=</span> loss_fn(params, model, x, y)
+<span style="color: #666666">...</span>
+</code></pre></div>
+
+<p>Here <code>model</code> is returned along with the loss through <code>value_and_grad</code> to update <code>model</code> on the outside thus persisting any changes to the state performed on the inside.</p>
+<h3 id="training-state">Training State</h3>
+<p>Treex Modules have a <code>training: bool</code> property that specifies whether the module is in training mode or not. This property conditions the behavior of Modules such as <code>Dropout</code> and <code>BatchNorm</code>, which behave differently between training and evaluation. </p>
+<p>To switch between modes, use the <code>.train()</code> and <code>.eval()</code> methods, they return a new Module whose <code>training</code> state and the state of all of its submodules (recursively) are set to the desired value.</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #408080; font-style: italic"># training loop</span>
+<span style="color: #008000; font-weight: bold">for</span> step <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1000</span>):
+    loss, model, opt_state <span style="color: #666666">=</span> train_step(model, x, y, opt_state)
+
+<span style="color: #408080; font-style: italic"># prepare for evaluation</span>
+model <span style="color: #666666">=</span> model<span style="color: #666666">.</span>eval()
+
+<span style="color: #408080; font-style: italic"># make predictions</span>
+y_pred <span style="color: #666666">=</span> model(X_test)
+</code></pre></div>
+
+<h3 id="parameter-annotations">Parameter Annotations</h3>
+<p>The role of each parameter is defined by its annotation. While valid annotations is any type which inherits from <code>tx.TreePart</code>, the default annotations from Treex are currently organized into the following type hierarchy:</p>
+<details>
+<summary>Graph code</summary>
+
+
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>graph TD;
+    TreePart--&gt;Parameter;
+    TreePart--&gt;State;
+    State--&gt;Rng;
+    State--&gt;BatchStat;
+</code></pre></div>
+
+
+
+</details>
+
+<p><img alt="types" src="images/types.png" /></p>
+<p>This is useful because you can make specific or more general queries using <code>filter</code> depending on what you want to achive. e.g.</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>rngs <span style="color: #666666">=</span> model<span style="color: #666666">.</span>filter(tx<span style="color: #666666">.</span>Rng)
+batch_stats <span style="color: #666666">=</span> model<span style="color: #666666">.</span>filter(tx<span style="color: #666666">.</span>BatchStat)
+all_states <span style="color: #666666">=</span> model<span style="color: #666666">.</span>filter(tx<span style="color: #666666">.</span>State) <span style="color: #408080; font-style: italic"># union of the previous two</span>
+</code></pre></div>
+
+<p>You can easily define you own annotations by inheriting from directly <code>tx.TreePart</code> or any of its subclasses. As an example lets create a new <code>Cache</code> state to emulates Flax's <code>cache</code> collection:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">Cache</span>(tx<span style="color: #666666">.</span>TreePart):
+    <span style="color: #008000; font-weight: bold">pass</span>
+</code></pre></div>
+
+<p>That is it! Now you can use it in your model:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">MyModule</span>(tx<span style="color: #666666">.</span>Module):
+    memory: Cache
+    <span style="color: #666666">...</span>
+</code></pre></div>
+
+<p><strong>Tip</strong>: Your static analyzer will probably start complaining if you try to assign an <code>jnp.ndarray</code> to <code>memory</code> in this example because <code>ndarray</code>s are not <code>TreePart</code>s. While this makes sense, we want to trick the static analyzer into thinking <code>Cache</code> represents an <code>ndarray</code> and not a <code>TreePart</code>, the easiest way to do this is to use <code>typing.cast</code>:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">typing</span> <span style="color: #008000; font-weight: bold">import</span> cast, Type
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">jax.numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">jnp</span>
+
+<span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">Cache</span>(tx<span style="color: #666666">.</span>TreePart):
+    <span style="color: #008000; font-weight: bold">pass</span>
+
+Cache <span style="color: #666666">=</span> cast(Type[jnp<span style="color: #666666">.</span>ndarray], Cache)
+</code></pre></div>
+
+<p><code>cast</code> an identity function, meaning <code>Cache</code> is actually reassigned to itself, however, the static analyzer will now think its an <code>ndarray</code>. This way both the static analyzer and Treex will be happy.</p>
+<h3 id="full-example">Full Example</h3>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">functools</span> <span style="color: #008000; font-weight: bold">import</span> partial
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">jax</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">jax.numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">jnp</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">matplotlib.pyplot</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">plt</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">optax</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">treex</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">tx</span>
+
+x <span style="color: #666666">=</span> np<span style="color: #666666">.</span>random<span style="color: #666666">.</span>uniform(size<span style="color: #666666">=</span>(<span style="color: #666666">500</span>, <span style="color: #666666">1</span>))
+y <span style="color: #666666">=</span> <span style="color: #666666">1.4</span> <span style="color: #666666">*</span> x <span style="color: #666666">-</span> <span style="color: #666666">0.3</span> <span style="color: #666666">+</span> np<span style="color: #666666">.</span>random<span style="color: #666666">.</span>normal(scale<span style="color: #666666">=0.1</span>, size<span style="color: #666666">=</span>(<span style="color: #666666">500</span>, <span style="color: #666666">1</span>))
+
+<span style="color: #408080; font-style: italic"># treex already defines tx.Linear but we can define our own</span>
+<span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">Linear</span>(tx<span style="color: #666666">.</span>Module):
+    w: tx<span style="color: #666666">.</span>Parameter
+    b: tx<span style="color: #666666">.</span>Parameter
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, din, dout):
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>w <span style="color: #666666">=</span> tx<span style="color: #666666">.</span>Initializer(<span style="color: #008000; font-weight: bold">lambda</span> key: jax<span style="color: #666666">.</span>random<span style="color: #666666">.</span>uniform(key, shape<span style="color: #666666">=</span>(din, dout)))
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>b <span style="color: #666666">=</span> jnp<span style="color: #666666">.</span>zeros(shape<span style="color: #666666">=</span>(dout,))
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__call__</span>(<span style="color: #008000">self</span>, x):
+        <span style="color: #008000; font-weight: bold">return</span> jnp<span style="color: #666666">.</span>dot(x, <span style="color: #008000">self</span><span style="color: #666666">.</span>w) <span style="color: #666666">+</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>b
+
+
+model <span style="color: #666666">=</span> Linear(<span style="color: #666666">1</span>, <span style="color: #666666">1</span>)<span style="color: #666666">.</span>init(<span style="color: #666666">42</span>)
+optimizer <span style="color: #666666">=</span> tx<span style="color: #666666">.</span>Optimizer(optax<span style="color: #666666">.</span>adam(<span style="color: #666666">0.01</span>))
+optimizer <span style="color: #666666">=</span> optimizer<span style="color: #666666">.</span>init(model<span style="color: #666666">.</span>filter(tx<span style="color: #666666">.</span>Parameter))
+
+
+<span style="color: #AA22FF">@partial</span>(jax<span style="color: #666666">.</span>value_and_grad, has_aux<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>)
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">loss_fn</span>(params, model, x, y):
+    model <span style="color: #666666">=</span> model<span style="color: #666666">.</span>update(params)
+
+    y_pred <span style="color: #666666">=</span> model(x)
+    loss <span style="color: #666666">=</span> jnp<span style="color: #666666">.</span>mean((y_pred <span style="color: #666666">-</span> y) <span style="color: #666666">**</span> <span style="color: #666666">2</span>)
+
+    <span style="color: #008000; font-weight: bold">return</span> loss, model
+
+
+<span style="color: #AA22FF">@jax</span><span style="color: #666666">.</span>jit
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">train_step</span>(model, x, y, optimizer):
+    params <span style="color: #666666">=</span> model<span style="color: #666666">.</span>filter(tx<span style="color: #666666">.</span>Parameter)
+    (loss, model), grads <span style="color: #666666">=</span> loss_fn(params, model, x, y)
+
+    <span style="color: #408080; font-style: italic"># here model == params</span>
+    model <span style="color: #666666">=</span> optimizer<span style="color: #666666">.</span>update(grads, model)
+
+    <span style="color: #008000; font-weight: bold">return</span> loss, model, optimizer
+
+
+<span style="color: #008000; font-weight: bold">for</span> step <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1000</span>):
+    loss, model, optimizer <span style="color: #666666">=</span> train_step(model, x, y, optimizer)
+    <span style="color: #008000; font-weight: bold">if</span> step <span style="color: #666666">%</span> <span style="color: #666666">100</span> <span style="color: #666666">==</span> <span style="color: #666666">0</span>:
+        <span style="color: #008000">print</span>(<span style="color: #BA2121">f&quot;loss: </span><span style="color: #BB6688; font-weight: bold">{</span>loss<span style="color: #BB6688; font-weight: bold">:</span><span style="color: #BA2121">.4f</span><span style="color: #BB6688; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>)
+
+model <span style="color: #666666">=</span> model<span style="color: #666666">.</span>eval()
+
+X_test <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(x<span style="color: #666666">.</span>min(), x<span style="color: #666666">.</span>max(), <span style="color: #666666">100</span>)[:, <span style="color: #008000; font-weight: bold">None</span>]
+y_pred <span style="color: #666666">=</span> model(X_test)
+
+plt<span style="color: #666666">.</span>scatter(x, y, c<span style="color: #666666">=</span><span style="color: #BA2121">&quot;k&quot;</span>, label<span style="color: #666666">=</span><span style="color: #BA2121">&quot;data&quot;</span>)
+plt<span style="color: #666666">.</span>plot(X_test, y_pred, c<span style="color: #666666">=</span><span style="color: #BA2121">&quot;b&quot;</span>, linewidth<span style="color: #666666">=2</span>, label<span style="color: #666666">=</span><span style="color: #BA2121">&quot;prediction&quot;</span>)
+plt<span style="color: #666666">.</span>legend()
+plt<span style="color: #666666">.</span>show()
+</code></pre></div>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+      
+        
+        <a href="api/BatchNorm/" class="md-footer__link md-footer__link--next" aria-label="Next: BatchNorm" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              BatchNorm
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+        
+      </div>
+      
+  <div class="md-footer-social">
+    
+      
+      
+        
+        
+      
+      <a href="https://github.com/cgarciae" target="_blank" rel="noopener" title="github.com" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+      </a>
+    
+      
+      
+        
+        
+      
+      <a href="https://twitter.com/cgarciae88" target="_blank" rel="noopener" title="twitter.com" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
+      </a>
+    
+      
+      
+        
+        
+      
+      <a href="https://www.linkedin.com/in/cgarciae" target="_blank" rel="noopener" title="www.linkedin.com" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg>
+      </a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": ".", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "assets/javascripts/workers/search.409db549.min.js", "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.56a63758.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+      
+    
+  </body>
+</html>
