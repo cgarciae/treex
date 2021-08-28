@@ -1,4 +1,5 @@
 # isort:skip_file
+__st
 # %% [markdown]
 """
 # Treex
@@ -52,13 +53,10 @@ class NoisyLinear(tx.Module):
         # add noise for fun
         return y + 0.8 * jax.random.normal(key, shape=y.shape)
 
-    def __repr__(self) -> str:
-        return f"NoisyLinear(w={self.w}, b={self.b}, rng={self.rng})"
-
 
 model = NoisyLinear(1, 1)
 
-model
+print(model)
 
 # %% [markdown]
 """
@@ -69,7 +67,7 @@ Initialization is straightforward. The only thing you need to do is to call `ini
 import jax
 
 model = model.init(key=42)
-model
+print(model)
 
 
 # %% [markdown]
@@ -139,9 +137,8 @@ def train_step(model: NoisyLinear, optimizer: tx.Optimizer, x, y):
 Before we start training lets get some data:
 """
 
-import matplotlib.pyplot as plt
-
 # %%
+import matplotlib.pyplot as plt
 import numpy as np
 
 np.random.seed(0)
