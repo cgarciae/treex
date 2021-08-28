@@ -1,12 +1,13 @@
-from inspect import signature
-from treex.types import Initializer
 import typing as tp
+from inspect import signature
 
 import jax
 import jax.numpy as jnp
 import jax.tree_util
 import numpy as np
+
 import treex as tx
+from treex.types import Initializer
 
 Parameter = tp.cast(tp.Type[np.ndarray], tx.Parameter)
 State = tp.cast(tp.Type[tp.Union[np.ndarray, int]], tx.State)

@@ -1,15 +1,16 @@
-from functools import partial
 import os
 import typing as tp
 from datetime import datetime
+from functools import partial
 
 import dataget
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
-import treex as tx
 import optax
+
+import treex as tx
 
 Batch = tp.Mapping[str, np.ndarray]
 np.random.seed(42)

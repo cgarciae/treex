@@ -2,12 +2,13 @@ import functools
 import inspect
 import typing as tp
 
+import chex
 import jax
 import jax.numpy as jnp
 import optax
+
 from treex.module import TreeObject
 from treex.types import _State
-import chex
 
 T = tp.TypeVar("T", bound="Optimizer")
 A = tp.TypeVar("A", bound="tp.Any")
@@ -1690,8 +1691,8 @@ def _all_gradient_transformation():
 
 
 if __name__ == "__main__":
-    from pathlib import Path
     import re
+    from pathlib import Path
 
     gen_lines = []
 

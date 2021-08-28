@@ -3,9 +3,10 @@ import unittest
 import hypothesis as hp
 import jax
 import numpy as np
-import treex as tx
 from flax import linen
 from hypothesis import strategies as st
+
+import treex as tx
 
 BIAS_INITS = (
     tx.initializers.zeros,

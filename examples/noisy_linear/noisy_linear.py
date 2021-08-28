@@ -15,6 +15,7 @@ We will showcase each of the above features by creating a very contrived but com
 
 # %%
 from typing import Tuple
+
 import jax.numpy as jnp
 import numpy as np
 
@@ -137,9 +138,9 @@ def train_step(model: NoisyLinear, optimizer: tx.Optimizer, x, y):
 Before we start training lets get some data:
 """
 
+import matplotlib.pyplot as plt
 # %%
 import numpy as np
-import matplotlib.pyplot as plt
 
 np.random.seed(0)
 

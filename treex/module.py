@@ -8,9 +8,9 @@ import jax
 import jax.numpy as jnp
 import jax.tree_util
 import numpy as np
+import yaml
 from numpy.core.fromnumeric import shape
 from rich.console import Console
-import yaml
 from rich.table import Table
 from rich.text import Text
 

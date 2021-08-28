@@ -1,11 +1,13 @@
 from functools import partial
-from treex.nn import dropout
+
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import optax
+
 import treex as tx
+from treex.nn import dropout
 
 
 class MLP(tx.Module):

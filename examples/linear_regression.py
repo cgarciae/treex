@@ -1,9 +1,11 @@
 from functools import partial
+
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import optax
+
 import treex as tx
 
 x = np.random.uniform(size=(500, 1))

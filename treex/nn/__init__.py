@@ -3,4 +3,4 @@ from .conv import Conv
 from .dropout import Dropout
 from .linear import Linear
 from .mlp import MLP
-from .sequence import sequence, Sequence, Lambda
+from .sequence import Lambda, Sequence, sequence

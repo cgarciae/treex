@@ -2,6 +2,7 @@ import typing as tp
 
 import jax.numpy as jnp
 import numpy as np
+
 from treex.module import Module
 
 

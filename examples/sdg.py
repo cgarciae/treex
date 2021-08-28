@@ -1,9 +1,10 @@
-from typing import Sequence, List
+from typing import List, Sequence
 
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
+
 import treex as tx
 
 

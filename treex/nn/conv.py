@@ -1,11 +1,12 @@
 import typing as tp
-from flax.linen import linear as flax_module
+
 import jax
 import jax.numpy as jnp
 import numpy as np
+from flax.linen import linear as flax_module
 
-from treex.module import Module
 from treex import types
+from treex.module import Module
 
 
 class Conv(Module):

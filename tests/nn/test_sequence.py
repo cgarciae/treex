@@ -1,6 +1,7 @@
 import jax
 import numpy as np
 import pytest
+
 import treex as tx
 
 
