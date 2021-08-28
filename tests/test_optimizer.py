@@ -71,9 +71,3 @@ class TestOptreex:
                 jax.tree_leaves(optax_params), jax.tree_leaves(treex_params)
             )
         )
-
-    def test_wrapper(self):
-
-        params = tx.Linear(2, 3).init(42)
-        adam = tx.Optimizer.adam(0.1)
-        adam = adam.init(params)

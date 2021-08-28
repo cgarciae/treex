@@ -23,7 +23,7 @@ T = tp.TypeVar("T", bound="TreeObject")
 PAD = r"{pad}"
 
 
-class Context(threading.local):
+class _Context(threading.local):
     is_slicing: bool = False
     is_initializing: bool = False
     training: tp.Optional[bool] = None
@@ -38,7 +38,7 @@ class Context(threading.local):
         return key
 
 
-LOCAL: Context = Context()
+_LOCAL: _Context = _Context()
 
 
 class TreeObject:
@@ -63,9 +63,9 @@ class TreeObject:
                 tree[name] = value
 
             elif issubclass(annotation, types.TreePart):
-                if LOCAL.is_slicing:
+                if _LOCAL.is_slicing:
                     tree[name] = jax.tree_map(
-                        lambda x: types.ValueAnnotation(x, annotation), value
+                        lambda x: types._ValueAnnotation(x, annotation), value
                     )
                 else:
                     tree[name] = value
@@ -91,12 +91,12 @@ class TreeObject:
         for k, v in aux_data["props"].items():
             setattr(module, k, v)
 
-        if LOCAL.is_initializing and not module._initialized:
-            module.module_init(LOCAL.next_key())
+        if _LOCAL.is_initializing and not module._initialized:
+            module.module_init(_LOCAL.next_key())
             module._initialized = True
 
-        if LOCAL.training is not None:
-            module._training = LOCAL.training
+        if _LOCAL.training is not None:
+            module._training = _LOCAL.training
 
         return module
 
@@ -150,24 +150,24 @@ class Module(TreeObject):
         if isinstance(key, int):
             key = jax.random.PRNGKey(key)
 
-        old_initializing = LOCAL.is_initializing
-        old_key = LOCAL.key
+        old_initializing = _LOCAL.is_initializing
+        old_key = _LOCAL.key
 
-        LOCAL.is_initializing = True
-        LOCAL.key = key
+        _LOCAL.is_initializing = True
+        _LOCAL.key = key
 
         try:
             module = jax.tree_map(
                 lambda initializer: (
-                    initializer(LOCAL.next_key())
+                    initializer(_LOCAL.next_key())
                     if isinstance(initializer, types.Initializer)
                     else initializer
                 ),
                 self,
             )
         finally:
-            LOCAL.is_initializing = old_initializing
-            LOCAL.key = old_key
+            _LOCAL.is_initializing = old_initializing
+            _LOCAL.key = old_key
 
         return module
 
@@ -197,10 +197,10 @@ class Module(TreeObject):
             The new module with the filtered fields.
 
         """
-        flat: tp.List[types.ValueAnnotation]
+        flat: tp.List[types._ValueAnnotation]
 
-        old_slicing = LOCAL.is_slicing
-        LOCAL.is_slicing = True
+        old_slicing = _LOCAL.is_slicing
+        _LOCAL.is_slicing = True
 
         try:
             flat, treedef = jax.tree_flatten(self)
@@ -212,7 +212,7 @@ class Module(TreeObject):
             ]
             module = jax.tree_unflatten(treedef, flat_out)
         finally:
-            LOCAL.is_slicing = old_slicing
+            _LOCAL.is_slicing = old_slicing
 
         return module
 
@@ -313,13 +313,13 @@ class Module(TreeObject):
         Returns:
             The new module in with the training mode is set to the given value.
         """
-        old_training = LOCAL.training
-        LOCAL.training = mode
+        old_training = _LOCAL.training
+        _LOCAL.training = mode
 
         try:
             module = self.copy()  # trigger flatten / unflatten
         finally:
-            LOCAL.training = old_training
+            _LOCAL.training = old_training
 
         return module
 
@@ -345,8 +345,8 @@ class Module(TreeObject):
         Returns:
             A string containing the tabular representation.
         """
-        old_slicing = LOCAL.is_slicing
-        LOCAL.is_slicing = True
+        old_slicing = _LOCAL.is_slicing
+        _LOCAL.is_slicing = True
 
         try:
             flat, _ = jax.tree_flatten(self)
@@ -354,7 +354,7 @@ class Module(TreeObject):
                 {value_annotation.annotation for value_annotation in flat}
             )
         finally:
-            LOCAL.is_slicing = old_slicing
+            _LOCAL.is_slicing = old_slicing
 
         path = ()
         rows = list(

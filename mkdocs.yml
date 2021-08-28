@@ -1,0 +1,60 @@
+site_name: Treex
+repo_name: cgarciae/treex
+repo_url: https://github.com/cgarciae/treex
+site_url: https://cgarciae.github.io/treex
+nav:
+- Introduction: index.md
+- API Reference:
+    BatchNorm: api/BatchNorm.md
+    BatchStat: api/BatchStat.md
+    Conv: api/Conv.md
+    Dropout: api/Dropout.md
+    Initializer: api/Initializer.md
+    Lambda: api/Lambda.md
+    Linear: api/Linear.md
+    MLP: api/MLP.md
+    Module: api/Module.md
+    Nothing: api/Nothing.md
+    OptState: api/OptState.md
+    Optimizer: api/Optimizer.md
+    Parameter: api/Parameter.md
+    Rng: api/Rng.md
+    Sequence: api/Sequence.md
+    State: api/State.md
+    TreeObject: api/TreeObject.md
+    TreePart: api/TreePart.md
+    sequence: api/sequence.md
+extra:
+  search:
+    language: en
+  social:
+  - icon: octicons/mark-github-16
+    link: https://github.com/cgarciae
+  - icon: octicons/mark-github-16
+    link: https://github.com/charlielito
+  - icon: fontawesome/brands/twitter
+    link: https://twitter.com/cgarciae88
+  - icon: fontawesome/brands/linkedin
+    link: https://www.linkedin.com/in/cgarciae
+  - icon: fontawesome/brands/linkedin
+    link: https://www.linkedin.com/in/calvarez92
+theme:
+  name: material
+  favicon: images/favicon.png
+  icon:
+    logo: fontawesome/solid/infinity
+    repo: octicons/mark-github-16
+markdown_extensions:
+- pymdownx.arithmatex
+- admonition
+- codehilite:
+    guess_lang: false
+    use_pygments: true
+    noclasses: true
+    pygments_style: default
+plugins:
+- search
+- mkdocs-jupyter
+- mkdocstrings
+extra_javascript:
+- https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML

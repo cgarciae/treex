@@ -33,14 +33,23 @@ Rng = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Rng)
 BatchStat = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _BatchStat)
 
 
-class ValueAnnotation:
+class _ValueAnnotation:
     def __init__(self, value, annotation):
         self.value = value
         self.annotation = annotation
 
 
 class Initializer:
+    """Initialize a field from a function that expects a single argument with a PRNGKey.
+
+    Initializers are called by `Module.init` and replace the value of the field they are assigned to.
+    """
+
     def __init__(self, f: tp.Callable[[jnp.ndarray], tp.Any]):
+        """
+        Arguments:
+            f: A function that takes a PRNGKey and returns the initial value of the field.
+        """
         self.f = f
 
     def __call__(self, x: jnp.ndarray) -> np.ndarray:

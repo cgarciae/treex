@@ -1,13 +1,15 @@
+import inspect
 import shutil
 import typing as tp
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 
-import elegy
 import jax
 import jinja2
 import yaml
+
+import treex
 
 
 @dataclass
@@ -18,27 +20,42 @@ class Structure:
     members: tp.List[str]
 
 
-def get(module, name_path):
+def getinfo():
+    module = treex
+    name_path = "treex"
 
-    all_members = module.__all__ if hasattr(module, "__all__") else []
+    all_members = (
+        module.__all__
+        if hasattr(module, "__all__")
+        else [
+            name
+            for name, obj in inspect.getmembers(module)
+            if (isinstance(obj, ModuleType) and obj.__name__.startswith("treex"))
+            or (
+                hasattr(obj, "__module__")
+                and obj.__class__.__module__ != "typing"
+                and "treex" in obj.__module__
+                and (inspect.isclass(obj) or inspect.isfunction(obj))
+            )
+        ]
+    )
     all_members = sorted(all_members)
 
     outputs = {
-        name: get(module, f"{name_path}.{name}")
-        if isinstance(module, ModuleType)
-        else Structure(
+        name: Structure(
             obj=module,
             name_path=f"{name_path}.{name}",
             module_path=f"{module.__module__}.{name}",
             members=module.__all__ if hasattr(module, "__all__") else [],
         )
         for module, name in ((getattr(module, name), name) for name in all_members)
+        if hasattr(module, "__module__")
     }
 
     return {k: v for k, v in outputs.items() if v}
 
 
-docs_info = get(elegy, "elegy")
+docs_info = getinfo()
 
 # populate mkdocs
 with open("mkdocs.yml", "r") as f:
@@ -51,7 +68,7 @@ with open("mkdocs.yml", "r") as f:
 
 
 api_reference = jax.tree_map(
-    lambda s: s.name_path.replace("elegy", "api").replace(".", "/") + ".md", docs_info
+    lambda s: s.name_path.replace("treex", "api").replace(".", "/") + ".md", docs_info
 )
 
 docs["nav"][api_reference_index] = {"API Reference": api_reference}
@@ -79,7 +96,7 @@ shutil.rmtree(api_path, ignore_errors=True)
 
 for structure in jax.tree_leaves(docs_info):
     filepath: Path = api_path / (
-        structure.name_path.replace("elegy.", "").replace(".", "/") + ".md"
+        structure.name_path.replace("treex.", "").replace(".", "/") + ".md"
     )
     markdown = jinja2.Template(template).render(
         name_path=structure.name_path,

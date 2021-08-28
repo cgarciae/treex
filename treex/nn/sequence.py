@@ -9,6 +9,31 @@ from treex.module import Module
 def sequence(
     *layers: tp.Callable[[np.ndarray], np.ndarray]
 ) -> tp.Callable[[np.ndarray], np.ndarray]:
+    """
+    Creates a function that applies a sequence of callables to an input.
+
+    Example:
+    ```python
+    class Block(tx.Module):
+        linear: tx.Linear
+        batch_norm: tx.BatchNorm
+        dropout: tx.Dropout
+        ...
+
+        def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
+            return tx.sequence(
+                self.linear,
+                self.batch_norm,
+                self.dropout,
+                jax.nn.relu,
+            )(x)
+
+    ```
+
+    Arguments:
+        *layers: A sequence of callables to apply.
+    """
+
     def _sequence(x: np.ndarray) -> np.ndarray:
         for layer in layers:
             x = layer(x)
@@ -51,7 +76,7 @@ class Sequence(Module):
     ):
         """
         Arguments:
-            layers: A list of layers or callables to apply to apply in sequence.
+            *layers: A list of layers or callables to apply to apply in sequence.
         """
         self.layers = [
             layer if isinstance(layer, Module) else Lambda(layer) for layer in layers
