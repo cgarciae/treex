@@ -47,14 +47,14 @@ CallableModule = tp.cast(
 )
 
 
-class Sequence(Module):
+class Sequential(Module):
     """
     A Module that applies a sequence of Modules or functions in order.
 
     Example:
 
     ```python
-    mlp = tx.Sequence(
+    mlp = tx.Sequential(
         tx.Linear(2, 32),
         jax.nn.relu,
         tx.Linear(32, 8),
