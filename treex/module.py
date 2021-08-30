@@ -41,8 +41,6 @@ _LOCAL: _Context = _Context()
 
 
 class TreeObject:
-    _initialized: bool = False
-
     def _get_props(self) -> tp.Dict[str, tp.Any]:
         return {}
 
@@ -122,12 +120,22 @@ class TreeObject:
 
 
 class Module(TreeObject):
-
     _training: bool = True
+    _initialized: bool = False
 
     @property
     def initialized(self) -> bool:
         return self._initialized
+
+    @initialized.setter
+    def initialized(self, value: bool) -> None:
+        def set_initialized(module):
+            if isinstance(module, Module):
+                module._initialized = value
+
+            return module
+
+        module_map(set_initialized, self, inplace=True)
 
     @property
     def training(self) -> bool:
