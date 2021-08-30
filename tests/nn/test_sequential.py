@@ -7,7 +7,7 @@ import treex as tx
 
 class TestSequence:
     def test_basic(self):
-        mlp = tx.Sequence(
+        mlp = tx.Sequential(
             tx.Linear(2, 32),
             jax.nn.relu,
             tx.Linear(32, 8),
@@ -24,7 +24,7 @@ class TestSequence:
         assert y.shape == (10, 4)
 
     def test_pytree(self):
-        mlp = tx.Sequence(
+        mlp = tx.Sequential(
             tx.Linear(2, 32),
             jax.nn.relu,
             tx.Linear(32, 8),
