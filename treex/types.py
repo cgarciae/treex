@@ -22,7 +22,27 @@ class _Rng(_State):
     pass
 
 
-class _BatchStat(_State):
+class _ModelState(_State):
+    pass
+
+
+class _BatchStat(_ModelState):
+    pass
+
+
+class _Cache(_ModelState):
+    pass
+
+
+class _Log(_State):
+    pass
+
+
+class _Loss(_Log):
+    pass
+
+
+class _Metric(_Log):
     pass
 
 
@@ -30,7 +50,12 @@ class _BatchStat(_State):
 Parameter = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Parameter)
 State = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _State)
 Rng = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Rng)
+ModelState = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _ModelState)
 BatchStat = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _BatchStat)
+Cache = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Cache)
+Log = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Log)
+Loss = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Loss)
+Metric = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Metric)
 
 
 class _ValueAnnotation:

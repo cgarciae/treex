@@ -376,7 +376,12 @@ graph TD;
     TreePart-->Parameter;
     TreePart-->State;
     State-->Rng;
-    State-->BatchStat;
+    State-->ModelState;
+    ModelState-->BatchStat;
+    ModelState-->Cache;
+    TreePart-->Log;
+    Log-->Loss;
+    Log-->Metric;
 ```
 
 </details>
@@ -390,10 +395,10 @@ rngs = model.filter(tx.Rng)
 batch_stats = model.filter(tx.BatchStat)
 all_states = model.filter(tx.State) # union of the previous two
 ```
-You can easily define you own annotations by inheriting from directly `tx.TreePart` or any of its subclasses. As an example lets create a new `Cache` state to emulates Flax's `cache` collection:
+You can easily define you own annotations by inheriting from directly `tx.TreePart` or any of its subclasses. As an example this is how you would define `Cache` which is intended to emulate Flax's `cache` collection:
 
 ```python
-class Cache(tx.TreePart):
+class Cache(tx.ModelState):
     pass
 ```
 That is it! Now you can use it in your model:
@@ -408,7 +413,7 @@ class MyModule(tx.Module):
 from typing import cast, Type
 import jax.numpy as jnp
 
-class Cache(tx.TreePart):
+class Cache(tx.ModelState):
     pass
 
 Cache = cast(Type[jnp.ndarray], Cache)
