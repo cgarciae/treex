@@ -268,6 +268,19 @@ class TestTreex:
         assert module.x == 420
         assert module.initialized
 
+    def test_initialized_inplace(self):
+        class A(tx.Module):
+            def module_init(self, key):
+                self.x = 420
+
+        module = A()
+        assert not module.initialized
+
+        module.init(42, inplace=True)
+
+        assert module.x == 420
+        assert module.initialized
+
     def test_train(self):
 
         mlp = MLP(2, 3, 5).init(42)
@@ -282,7 +295,27 @@ class TestTreex:
         assert not mlp.linear1.training
         assert not mlp.linear2.training
 
-        mlp = mlp.train(True)
+        mlp = mlp.train()
+
+        assert mlp.training
+        assert mlp.linear1.training
+        assert mlp.linear2.training
+
+    def test_train_inplace(self):
+
+        mlp = MLP(2, 3, 5).init(42)
+
+        assert mlp.training
+        assert mlp.linear1.training
+        assert mlp.linear2.training
+
+        mlp.eval(inplace=True)
+
+        assert not mlp.training
+        assert not mlp.linear1.training
+        assert not mlp.linear2.training
+
+        mlp.train(inplace=True)
 
         assert mlp.training
         assert mlp.linear1.training

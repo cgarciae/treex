@@ -2,14 +2,12 @@ import inspect
 import io
 import threading
 import typing as tp
-from abc import ABC, abstractmethod
 
 import jax
 import jax.numpy as jnp
 import jax.tree_util
 import numpy as np
 import yaml
-from numpy.core.fromnumeric import shape
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
@@ -19,18 +17,19 @@ from treex import types
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
 T = tp.TypeVar("T", bound="TreeObject")
+M = tp.TypeVar("M", bound="Module")
 
 PAD = r"{pad}"
 
 
 class _Context(threading.local):
     is_slicing: bool = False
-    is_initializing: bool = False
-    training: tp.Optional[bool] = None
     key: tp.Optional[jnp.ndarray] = None
+    map_f: tp.Optional[tp.Callable[["TreeObject"], "TreeObject"]] = None
+    map_inplace: bool = False
 
     def next_key(self) -> jnp.ndarray:
-        assert self.is_initializing and self.key is not None
+        assert self.key is not None
 
         # key = self.key
         key, self.key = jax.random.split(self.key)
@@ -42,10 +41,16 @@ _LOCAL: _Context = _Context()
 
 
 class TreeObject:
+    _initialized: bool = False
+
     def _get_props(self) -> tp.Dict[str, tp.Any]:
         return {}
 
     def tree_flatten(self):
+
+        if _LOCAL.map_f is not None and _LOCAL.map_inplace:
+            _LOCAL.map_f(self)
+
         annotations = getattr(self.__class__, "__annotations__", {})
         fields = vars(self)
 
@@ -91,17 +96,16 @@ class TreeObject:
         for k, v in aux_data["props"].items():
             setattr(module, k, v)
 
-        if _LOCAL.is_initializing and not module._initialized:
-            module.module_init(_LOCAL.next_key())
-            module._initialized = True
-
-        if _LOCAL.training is not None:
-            module._training = _LOCAL.training
+        if _LOCAL.map_f is not None and not _LOCAL.map_inplace:
+            module = _LOCAL.map_f(module)
 
         return module
 
     def __init_subclass__(cls):
         jax.tree_util.register_pytree_node_class(cls)
+
+    def module_init(self, key: jnp.ndarray) -> None:
+        pass
 
     def copy(self: T) -> T:
         """
@@ -118,8 +122,8 @@ class TreeObject:
 
 
 class Module(TreeObject):
-    _initialized = False
-    _training = True
+
+    _training: bool = True
 
     @property
     def initialized(self) -> bool:
@@ -132,7 +136,7 @@ class Module(TreeObject):
     def _get_props(self) -> tp.Dict[str, tp.Any]:
         return dict(_initialized=self._initialized, _training=self._training)
 
-    def init(self: T, key: tp.Union[int, jnp.ndarray]) -> T:
+    def init(self: M, key: tp.Union[int, jnp.ndarray], inplace: bool = False) -> M:
         """
         Creates a new module with the same structure, but with its fields initialized given a seed `key`. The following
         procedure is used:
@@ -150,10 +154,15 @@ class Module(TreeObject):
         if isinstance(key, int):
             key = jax.random.PRNGKey(key)
 
-        old_initializing = _LOCAL.is_initializing
-        old_key = _LOCAL.key
+        def call_module_init(module: TreeObject) -> TreeObject:
+            if isinstance(module, Module) and not module._initialized:
+                module.module_init(_LOCAL.next_key())
+                module._initialized = True
 
-        _LOCAL.is_initializing = True
+            return module
+
+        # set context
+        old_key = _LOCAL.key
         _LOCAL.key = key
 
         try:
@@ -165,16 +174,18 @@ class Module(TreeObject):
                 ),
                 self,
             )
+            if inplace:
+                # here we update initialized fields by the above tree_map
+                self.update(module, inplace=True)
+                # now call module_init inplace
+                return module_map(call_module_init, self, inplace=True)
+            else:
+                return module_map(call_module_init, module, inplace=False)
+
         finally:
-            _LOCAL.is_initializing = old_initializing
             _LOCAL.key = old_key
 
-        return module
-
-    def module_init(self, key: jnp.ndarray) -> None:
-        pass
-
-    def filter(self: T, *filters: tp.Type) -> T:
+    def filter(self: M, *filters: tp.Type) -> M:
         """
         Creates a new module with the same structure, but leaves whose type annotations are not subtypes
         of the given filters (as determined by `issubclass`) as set to `Nothing`.
@@ -216,15 +227,7 @@ class Module(TreeObject):
 
         return module
 
-    @tp.overload
-    def update(self: T, other: T, *rest: T) -> T:
-        ...
-
-    @tp.overload
-    def update(self: T, other: T, *rest: T, inplace: bool) -> None:
-        ...
-
-    def update(self: T, other: T, *rest: T, inplace: bool = False) -> tp.Optional[T]:
+    def update(self: M, other: M, *rest: M, inplace: bool = False) -> M:
         """
         Creates a new module with the same structure, but its values
         updated based on the values from the incoming modules. Updates are performed using
@@ -300,11 +303,11 @@ class Module(TreeObject):
 
         if inplace:
             self.__dict__.update(module.__dict__)
-            return None
+            return self
         else:
             return module
 
-    def train(self: T, mode: bool = True) -> T:
+    def train(self: M, mode: bool = True, inplace: bool = False) -> M:
         """
         Creates a new module with the same structure, but with `TreeObject.training` set to the given value.
 
@@ -313,24 +316,23 @@ class Module(TreeObject):
         Returns:
             The new module in with the training mode is set to the given value.
         """
-        old_training = _LOCAL.training
-        _LOCAL.training = mode
 
-        try:
-            module = self.copy()  # trigger flatten / unflatten
-        finally:
-            _LOCAL.training = old_training
+        def set_training(module: TreeObject) -> TreeObject:
+            if isinstance(module, Module):
+                module._training = mode
 
-        return module
+            return module
 
-    def eval(self: T) -> T:
+        return module_map(set_training, self, inplace=inplace)
+
+    def eval(self: M, inplace: bool = False) -> M:
         """
         Creates a new module with the training mode set to False, equivalent to calling `train(False)`.
 
         Returns:
             The new module with the training mode set to False.
         """
-        return self.train(False)
+        return self.train(False, inplace=inplace)
 
     def tabulate(
         self, depth: int = -1, signature: bool = False, param_types: bool = True
@@ -404,6 +406,31 @@ class Module(TreeObject):
         )
 
         return _get_rich_repr(table)
+
+
+# --------------------------------------------------
+# functions
+# --------------------------------------------------
+
+
+def module_map(
+    f: tp.Callable[[TreeObject], TreeObject], obj: A, inplace: bool = False
+) -> A:
+    old_map_f = _LOCAL.map_f
+    old_map_inplace = _LOCAL.map_inplace
+
+    _LOCAL.map_f = f
+    _LOCAL.map_inplace = inplace
+
+    try:
+        if inplace:
+            jax.tree_flatten(obj)
+            return obj
+        else:
+            return jax.tree_map(lambda x: x, obj)
+    finally:
+        _LOCAL.map_f = old_map_f
+        _LOCAL.map_inplace = old_map_inplace
 
 
 # --------------------------------------------------
