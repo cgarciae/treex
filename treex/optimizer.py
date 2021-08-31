@@ -7,7 +7,7 @@ import jax
 import jax.numpy as jnp
 import optax
 
-from treex.module import TreeObject
+from treex.module import TreeObject, annotation_map, module_update
 from treex.types import _State
 
 T = tp.TypeVar("T", bound="Optimizer")
@@ -83,10 +83,15 @@ class Optimizer(TreeObject):
             A new optimizer instance.
         """
         module = self.copy()
+        params = annotation_map(lambda _: OptState, params)
         module.opt_state = module.optimizer.init(params)
         module._initialized = True
         return module
 
+    # NOTE: current strategy is to convert annotation to `OptState`, this involves
+    # 2 `annotation_map`s + a `module_update` but prints/tabulates preserve TreeObject information.
+    # An alternative would be to flatten the params and use 2 `jax.tree_flatten` + a `jax.tree_unflatten`
+    # which might be faster but prints/tabulates only show a flat list of params with no structure.
     def apply_updates(
         self, grads: A, params: tp.Optional[A] = None, return_updates: bool = False
     ) -> A:
@@ -99,21 +104,29 @@ class Optimizer(TreeObject):
             return_updates: if `True` then the updates are returned instead of being applied.
 
         Returns:
-            The updated parameters. If `return_updates` is `True` then the updates are returned instead.
+            The updated parameters. Iftree_leaves `return_updates` is `True` then the updates are returned instead.
         """
         assert self.opt_state is not None
         if not return_updates and params is None:
             raise ValueError("params must be provided if updates are being applied")
 
+        opt_grads = annotation_map(lambda _: OptState, grads)
+        opt_params = annotation_map(lambda _: OptState, params)
+
         param_updates: A
         param_updates, self.opt_state = self.optimizer.update(
-            grads, self.opt_state, params
+            opt_grads,
+            self.opt_state,
+            opt_params,
         )
 
+        output: A
         if return_updates:
-            return param_updates
+            output = param_updates
         else:
-            return optax.apply_updates(params, param_updates)
+            output = optax.apply_updates(opt_params, param_updates)
+
+        return module_update(grads, output)
 
     # THE FOLOWING METHODS ARE AUTOMATICALLY GENERATED
     # >>> DO NOT MODIFY <<<
