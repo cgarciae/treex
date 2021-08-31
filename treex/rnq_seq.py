@@ -34,6 +34,7 @@ class RNGSeq(Module):
         Arguments:
             key: An optional PRNGKey to initialize the RNGSeq with.
         """
+        super().__init__()
         self.key = (
             jax.random.PRNGKey(key)
             if isinstance(key, int)

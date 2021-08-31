@@ -2,6 +2,7 @@ import inspect
 import io
 import threading
 import typing as tp
+from abc import ABCMeta
 
 import jax
 import jax.numpy as jnp
@@ -40,9 +41,23 @@ class _Context(threading.local):
 _LOCAL: _Context = _Context()
 
 
-class TreeObject:
-    def _get_props(self) -> tp.Dict[str, tp.Any]:
-        return {}
+class CheckInitCalled(ABCMeta):
+    def __call__(cls, *args, **kwargs) -> "TreeObject":
+        obj: TreeObject = type.__call__(cls, *args, **kwargs)
+
+        if not obj._init_called:
+            raise RuntimeError(
+                f"{obj.__class__.__name__} not initialized properly, you must call `super().__init__()`"
+            )
+
+        return obj
+
+
+class TreeObject(metaclass=CheckInitCalled):
+    _init_called: bool = False
+
+    def __init__(self) -> None:
+        self._init_called = True
 
     def tree_flatten(self):
 
@@ -75,23 +90,19 @@ class TreeObject:
             else:
                 not_tree[name] = value
 
-        return tuple(tree.values()), dict(
-            tree=tree.keys(),
-            not_tree=not_tree,
-            props=self._get_props(),
-        )
+        children = (tree,)
+
+        return children, not_tree
 
     @classmethod
-    def tree_unflatten(cls, aux_data, children):
+    def tree_unflatten(cls, not_tree, children):
         module = cls.__new__(cls)
+        (tree,) = children
 
-        for i, k in enumerate(aux_data["tree"]):
-            setattr(module, k, children[i])
-
-        for k, v in aux_data["not_tree"].items():
+        for k, v in tree.items():
             setattr(module, k, v)
 
-        for k, v in aux_data["props"].items():
+        for k, v in not_tree.items():
             setattr(module, k, v)
 
         if _LOCAL.map_f is not None and not _LOCAL.map_inplace:
@@ -118,72 +129,7 @@ class TreeObject:
         rep = _get_repr(self, level=0, array_type=None, inline=False)
         return _get_rich_repr(Text.from_markup(rep))
 
-
-class Module(TreeObject):
-    _training: bool = True
-    _initialized: bool = False
-
-    @property
-    def initialized(self) -> bool:
-        return self._initialized
-
-    @property
-    def training(self) -> bool:
-        return self._training
-
-    def _get_props(self) -> tp.Dict[str, tp.Any]:
-        return dict(_initialized=self._initialized, _training=self._training)
-
-    def init(self: M, key: tp.Union[int, jnp.ndarray], inplace: bool = False) -> M:
-        """
-        Creates a new module with the same structure, but with its fields initialized given a seed `key`. The following
-        procedure is used:
-
-        1. The input `key` is split and iteratively updated before passing a derived value to any
-            process that requires initialization.
-        2. `Initializer`s are called and applied to the module first.
-        3. `TreeObject.module_init` methods are called last.
-
-        Arguments:
-            key: The seed to use for initialization.
-        Returns:
-            The new module with the fields initialized.
-        """
-        if isinstance(key, int):
-            key = jax.random.PRNGKey(key)
-
-        def call_module_init(module: TreeObject) -> TreeObject:
-            if isinstance(module, Module) and not module._initialized:
-                module.module_init(_LOCAL.next_key())
-                module._initialized = True
-
-            return module
-
-        # set contextcall_module_init
-        old_key = _LOCAL.key
-        _LOCAL.key = key
-
-        try:
-            module = jax.tree_map(
-                lambda initializer: (
-                    initializer(_LOCAL.next_key())
-                    if isinstance(initializer, types.Initializer)
-                    else initializer
-                ),
-                self,
-            )
-            if inplace:
-                # here we update initialized fields by the above tree_map
-                self.update(module, inplace=True)
-                # now call module_init inplace
-                return module_map(call_module_init, self, inplace=True)
-            else:
-                return module_map(call_module_init, module, inplace=False)
-
-        finally:
-            _LOCAL.key = old_key
-
-    def filter(self: M, *filters: tp.Type) -> M:
+    def filter(self: T, *filters: tp.Type) -> T:
         """
         Creates a new module with the same structure, but leaves whose type annotations are not subtypes
         of the given filters (as determined by `issubclass`) as set to `Nothing`.
@@ -225,7 +171,7 @@ class Module(TreeObject):
 
         return module
 
-    def update(self: M, other: M, *rest: M, inplace: bool = False) -> M:
+    def update(self: T, other: T, *rest: T, inplace: bool = False) -> T:
         """
         Creates a new module with the same structure, but its values
         updated based on the values from the incoming modules. Updates are performed using
@@ -305,33 +251,6 @@ class Module(TreeObject):
         else:
             return module
 
-    def train(self: M, mode: bool = True, inplace: bool = False) -> M:
-        """
-        Creates a new module with the same structure, but with `TreeObject.training` set to the given value.
-
-        Arguments:
-            mode: The new training mode.
-        Returns:
-            The new module in with the training mode is set to the given value.
-        """
-
-        def set_training(module: TreeObject) -> TreeObject:
-            if isinstance(module, Module):
-                module._training = mode
-
-            return module
-
-        return module_map(set_training, self, inplace=inplace)
-
-    def eval(self: M, inplace: bool = False) -> M:
-        """
-        Creates a new module with the training mode set to False, equivalent to calling `train(False)`.
-
-        Returns:
-            The new module with the training mode set to False.
-        """
-        return self.train(False, inplace=inplace)
-
     def tabulate(
         self, depth: int = -1, signature: bool = False, param_types: bool = True
     ) -> str:
@@ -406,6 +325,103 @@ class Module(TreeObject):
         return _get_rich_repr(table)
 
 
+class Module(TreeObject):
+    _training: bool
+    _initialized: bool
+
+    def __init__(self) -> None:
+        self._training = True
+        self._initialized = False
+        super().__init__()
+
+    @property
+    def initialized(self) -> bool:
+        return self._initialized
+
+    @property
+    def training(self) -> bool:
+        return self._training
+
+    def _get_props(self) -> tp.Dict[str, tp.Any]:
+        return dict(_initialized=self._initialized, _training=self._training)
+
+    def init(self: M, key: tp.Union[int, jnp.ndarray], inplace: bool = False) -> M:
+        """
+        Creates a new module with the same structure, but with its fields initialized given a seed `key`. The following
+        procedure is used:
+
+        1. The input `key` is split and iteratively updated before passing a derived value to any
+            process that requires initialization.
+        2. `Initializer`s are called and applied to the module first.
+        3. `TreeObject.module_init` methods are called last.
+
+        Arguments:
+            key: The seed to use for initialization.
+        Returns:
+            The new module with the fields initialized.
+        """
+        if isinstance(key, int):
+            key = jax.random.PRNGKey(key)
+
+        def call_module_init(module: TreeObject) -> TreeObject:
+            if isinstance(module, Module) and not module._initialized:
+                module.module_init(_LOCAL.next_key())
+                module._initialized = True
+
+            return module
+
+        # set contextcall_module_init
+        old_key = _LOCAL.key
+        _LOCAL.key = key
+
+        try:
+            module = jax.tree_map(
+                lambda initializer: (
+                    initializer(_LOCAL.next_key())
+                    if isinstance(initializer, types.Initializer)
+                    else initializer
+                ),
+                self,
+            )
+            if inplace:
+                # here we update initialized fields by the above tree_map
+                self.update(module, inplace=True)
+                # now call module_init inplace
+                return module_map(call_module_init, self, inplace=True)
+            else:
+                return module_map(call_module_init, module, inplace=False)
+
+        finally:
+            _LOCAL.key = old_key
+
+    def train(self: M, mode: bool = True, inplace: bool = False) -> M:
+        """
+        Creates a new module with the same structure, but with `TreeObject.training` set to the given value.
+
+        Arguments:
+            mode: The new training mode.
+        Returns:
+            The new module in with the training mode is set to the given value.
+        """
+
+        def set_training(module: TreeObject) -> TreeObject:
+            if isinstance(module, Module):
+                module._training = mode
+
+            return module
+
+        return module_map(set_training, self, inplace=inplace)
+
+    def eval(self: M, inplace: bool = False) -> M:
+        """
+        Creates a new module with the training mode set to False, equivalent to calling `train(False)`.
+
+        Returns:
+            The new module with the training mode set to False.
+        """
+        return self.train(False, inplace=inplace)
+
+
 # --------------------------------------------------
 # functions
 # --------------------------------------------------
@@ -466,12 +482,12 @@ def _get_repr(
     if isinstance(obj, TreeObject):
 
         annotations = getattr(obj.__class__, "__annotations__", {})
-        children, aux_data = obj.tree_flatten()
+        (tree,), _ = obj.tree_flatten()
 
         params = {}
         submodules = {}
 
-        for i, field in enumerate(aux_data["tree"]):
+        for field, value in tree.items():
             annotation = annotations.get(field, None)
             annotation = _resolve_tree_type(field, annotation)
             annotations[field] = annotation
@@ -479,9 +495,9 @@ def _get_repr(
             assert annotation is not None
 
             if issubclass(annotation, TreeObject):
-                submodules[field] = children[i]
+                submodules[field] = value
             elif issubclass(annotation, types.TreePart):
-                params[field] = children[i]
+                params[field] = value
             else:
                 raise ValueError(f"Unsupported type {annotation}")
 
@@ -502,7 +518,7 @@ def _get_repr(
         type_str = (
             f"[dim]{obj.__class__.__name__}[/]" if inline else obj.__class__.__name__
         )
-        # signature_repr = _format_module_signature(obj, aux_data["not_tree"])
+        # signature_repr = _format_module_signature(obj, not_tree)
 
         return f"{type_str}{end_dot}\n{body_str}"
 
@@ -555,14 +571,14 @@ def _get_tabulate_rows(
     include_signature,
     include_param_type,
 ) -> tp.Iterable[tp.List[tp.Any]]:
-    if isinstance(obj, TreeObject):
+    if isinstance(obj, Module):
         annotations = getattr(obj.__class__, "__annotations__", {})
-        children, aux_data = obj.tree_flatten()
+        (tree,), not_tree = obj.tree_flatten()
 
         params = {}
         submodules = {}
 
-        for i, field in enumerate(aux_data["tree"]):
+        for field, value in tree.items():
             annotation = annotations.get(field, None)
             annotation = _resolve_tree_type(field, annotation)
             annotations[field] = annotation
@@ -570,18 +586,14 @@ def _get_tabulate_rows(
             assert annotation is not None
 
             if issubclass(annotation, TreeObject):
-                submodules[field] = children[i]
+                submodules[field] = value
             elif issubclass(annotation, types.TreePart):
-                params[field] = children[i]
+                params[field] = value
             else:
                 raise ValueError(f"Unsupported type {annotation}")
 
         path_str = "".join(str(x) for x in path)
-        signature = (
-            _format_module_signature(obj, aux_data["not_tree"])
-            if include_signature
-            else {}
-        )
+        signature = _format_module_signature(obj, not_tree) if include_signature else {}
         argumentes_str = ", ".join(
             f"{arg} = {value}" for arg, value in signature.items()
         )

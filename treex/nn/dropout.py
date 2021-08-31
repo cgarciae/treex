@@ -39,6 +39,7 @@ class Dropout(Module):
             rate: the dropout probability.  (_not_ the keep rate!)
             broadcast_dims: dimensions that will share the same dropout mask
         """
+        super().__init__()
         self.module = flax_module.Dropout(
             rate=rate,
             broadcast_dims=broadcast_dims,

@@ -19,7 +19,7 @@ class Linear(tx.Module):
     n: State
 
     def __init__(self, din, dout, name="linear"):
-
+        super().__init__()
         self.din = din
         self.dout = dout
         self.w = np.random.uniform(size=(din, dout))
@@ -33,6 +33,7 @@ class MLP(tx.Module):
     linear2: Linear
 
     def __init__(self, din, dmid, dout, name="mlp"):
+        super().__init__()
         self.din = din
         self.dmid = dmid
         self.dout = dout
@@ -183,6 +184,7 @@ class TestTreex:
             params: tp.List[Parameter]
 
             def __init__(self, din, dout, name="linear"):
+                super().__init__()
 
                 self.din = din
                 self.dout = dout
@@ -211,6 +213,7 @@ class TestTreex:
             linears: tp.List[Linear]
 
             def __init__(self, din, dmid, dout, name="mlp"):
+                super().__init__()
                 self.linears = [
                     Linear(din, dmid, name="linear1"),
                     Linear(dmid, dout, name="linear2"),
@@ -327,6 +330,7 @@ class TestTreex:
             linear2: tx.Linear
 
             def __init__(self, din, dmid, dout, name="mlp"):
+                super().__init__()
                 self.linear1 = tx.Linear(din, dmid)
                 self.linear2 = tx.Linear(dmid, dout)
 
@@ -338,6 +342,7 @@ class TestTreex:
             b: tp.List[tx.Parameter]
 
             def __init__(self):
+                super().__init__()
                 self.a = {"mlps": [MLP(2, 3, 5), MLP(2, 3, 5)]}
                 self.b = [
                     tx.Initializer(lambda key: jnp.zeros((10, 4))),
@@ -360,6 +365,7 @@ class TestTreex:
             b: tp.List[tx.Parameter]
 
             def __init__(self):
+                super().__init__()
                 self.a = {"mlps": [MLP(256, 1024, 512), MLP(256, 1024, 512)]}
                 self.b = [
                     tx.Initializer(lambda key: jnp.zeros((512, 256))),

@@ -78,6 +78,7 @@ class Conv(Module):
             kernel_init: initializer for the convolutional kernel.
             bias_init: initializer for the bias.
         """
+        super().__init__()
         self.features_in = features_in
         self.module = flax_module.Conv(
             features=features_out,

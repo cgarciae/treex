@@ -54,6 +54,8 @@ class Linear(Module):
             kernel_init: initializer function for the weight matrix.
             bias_init: initializer function for the bias.
         """
+        super().__init__()
+
         self.features_in = features_in
         self.module = flax_module.Dense(
             features=features_out,
