@@ -17,6 +17,7 @@ class Linear(tx.Module):
     b: tx.Parameter
 
     def __init__(self, din, dout):
+        super().__init__()
         self.w = tx.Initializer(lambda key: jax.random.uniform(key, shape=(din, dout)))
         self.b = jnp.zeros(shape=(dout,))
 
@@ -45,7 +46,7 @@ def train_step(model, x, y, optimizer):
     (loss, model), grads = loss_fn(params, model, x, y)
 
     # here model == params
-    model = optimizer.update(grads, model)
+    model = optimizer.apply_updates(grads, model)
 
     return loss, model, optimizer
 

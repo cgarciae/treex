@@ -34,6 +34,7 @@ class NoisyLinear(tx.Module):
     name: str
 
     def __init__(self, din, dout):
+        super().__init__()
         # Initializers only expect RNG key
         self.w = tx.Initializer(lambda k: jax.random.uniform(k, shape=(din, dout)))
         self.b = tx.Initializer(lambda k: jax.random.uniform(k, shape=(dout,)))

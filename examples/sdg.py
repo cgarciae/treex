@@ -12,6 +12,7 @@ class MLP(tx.Module):
     layers: List[tx.Linear]
 
     def __init__(self, features: Sequence[int]):
+        super().__init__()
         self.layers = [
             tx.Linear(din, dout) for din, dout in zip(features[:-1], features[1:])
         ]
