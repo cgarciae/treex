@@ -7,7 +7,7 @@ import treex as tx
 
 class TestRNGSeq:
     def test_next(self):
-        rng = tx.RNGSeq().init(42)
+        rng = tx.RngSeq().init(42)
 
         internal_key = rng.key
         next_key = rng.next()
@@ -19,7 +19,7 @@ class TestRNGSeq:
         assert np.allclose(next_internal_key, jax.random.split(internal_key)[1])
 
     def test_jit(self):
-        rng = tx.RNGSeq().init(42)
+        rng = tx.RngSeq().init(42)
         internal_key = rng.key
 
         @jax.jit

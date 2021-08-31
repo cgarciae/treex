@@ -46,6 +46,10 @@ class _Metric(_Log):
     pass
 
 
+class _OptState(_State):
+    pass
+
+
 # use cast to trick static analyzers into believing these types
 Parameter = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Parameter)
 State = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _State)
@@ -56,6 +60,7 @@ Cache = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Cache)
 Log = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Log)
 Loss = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Loss)
 Metric = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Metric)
+OptState = tp.cast(tp.Type[tp.Any], _OptState)
 
 
 class _ValueAnnotation:

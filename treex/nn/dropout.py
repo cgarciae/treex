@@ -7,7 +7,7 @@ from flax.linen import stochastic as flax_module
 
 from treex import types
 from treex.module import Module
-from treex.rnq_seq import RNGSeq
+from treex.rnq_seq import RngSeq
 
 
 class Dropout(Module):
@@ -25,7 +25,7 @@ class Dropout(Module):
     via `__call__`.
     """
 
-    rng: RNGSeq
+    rng: RngSeq
 
     def __init__(
         self,
@@ -45,7 +45,7 @@ class Dropout(Module):
             broadcast_dims=broadcast_dims,
             deterministic=None,
         )
-        self.rng = RNGSeq()
+        self.rng = RngSeq()
 
     def __call__(
         self, x: np.ndarray, deterministic: tp.Optional[bool] = None, rng=None

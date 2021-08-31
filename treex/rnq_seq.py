@@ -8,7 +8,7 @@ from treex import types
 from treex.module import Module
 
 
-class RNGSeq(Module):
+class RngSeq(Module):
     """RNGSeq is simple module that can produce a sequence of PRNGKeys.
 
     Example:

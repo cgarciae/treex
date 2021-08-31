@@ -389,6 +389,7 @@ graph TD;
     TreePart-->Log;
     Log-->Loss;
     Log-->Metric;
+    State-->OptState;
 ```
 
 </details>
@@ -400,7 +401,7 @@ This is useful because you can make specific or more general queries using `filt
 ```python
 rngs = model.filter(tx.Rng)
 batch_stats = model.filter(tx.BatchStat)
-all_states = model.filter(tx.State) # union of the previous two
+all_states = model.filter(tx.State)
 ```
 You can easily define you own annotations by inheriting from directly `tx.TreePart` or any of its subclasses. As an example this is how you would define `Cache` which is intended to emulate Flax's `cache` collection:
 
