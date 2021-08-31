@@ -127,16 +127,6 @@ class Module(TreeObject):
     def initialized(self) -> bool:
         return self._initialized
 
-    @initialized.setter
-    def initialized(self, value: bool) -> None:
-        def set_initialized(module):
-            if isinstance(module, Module):
-                module._initialized = value
-
-            return module
-
-        module_map(set_initialized, self, inplace=True)
-
     @property
     def training(self) -> bool:
         return self._training
@@ -169,7 +159,7 @@ class Module(TreeObject):
 
             return module
 
-        # set context
+        # set contextcall_module_init
         old_key = _LOCAL.key
         _LOCAL.key = key
 
@@ -424,6 +414,20 @@ class Module(TreeObject):
 def module_map(
     f: tp.Callable[[TreeObject], TreeObject], obj: A, inplace: bool = False
 ) -> A:
+    """
+    Applies a function to all TreeObjects in a Pytree. Function very similar to `jax.tree_map`,
+    but works on modules instead of values.
+
+    If `inplace` is `True`, the original module is mutated.
+
+    Arguments:
+        f: The function to apply to all submodules.
+        obj: base pytree.
+        inplace: If `True`, the original TreeObjects are mutated.
+
+    Returns:
+        A new pytree with the updated TreeObjects or the same input `obj` if `inplace` is `True`.
+    """
     old_map_f = _LOCAL.map_f
     old_map_inplace = _LOCAL.map_inplace
 
