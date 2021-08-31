@@ -6,6 +6,7 @@ from flax.linen import initializers
 
 from treex.module import *
 from treex.optimizer import *
+from treex.rnq_seq import RNGSeq
 from treex.types import *
 
 from . import nn
