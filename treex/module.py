@@ -58,13 +58,14 @@ class TreeObject(metaclass=CheckInitCalled):
 
     def __init__(self) -> None:
         self._init_called = True
+        self.__annotations__ = self.__annotations__.copy()
 
     def tree_flatten(self):
 
         if _LOCAL.map_f is not None and _LOCAL.map_inplace:
             _LOCAL.map_f(self)
 
-        annotations = getattr(self.__class__, "__annotations__", {})
+        annotations = getattr(self, "__annotations__", {})
         fields = vars(self)
 
         tree = {}
@@ -226,24 +227,7 @@ class TreeObject(metaclass=CheckInitCalled):
         Returns:
             A new module with the updated values or `None` if `inplace` is `True`.
         """
-        modules = (self, other) + rest
-
-        def merge_fn(xs):
-            acc, *xs = xs
-            for x in xs:
-                if not isinstance(x, types.Nothing):
-                    acc = x
-            return acc
-
-        flats, treedefs = zip(
-            *[
-                jax.tree_flatten(m, is_leaf=lambda x: isinstance(x, types.Nothing))
-                for m in modules
-            ]
-        )
-        # flat_out = jax.tree_util.tree_map(merge_fn, *flats)
-        flat_out = [merge_fn(values) for values in zip(*flats)]
-        module = jax.tree_unflatten(treedefs[0], flat_out)
+        module = module_update(self, other, *rest)
 
         if inplace:
             self.__dict__.update(module.__dict__)
@@ -458,6 +442,58 @@ def module_map(
         _LOCAL.map_inplace = old_map_inplace
 
 
+def annotation_map(
+    f: tp.Callable[[tp.Type], tp.Type], obj: A, inplace: bool = False
+) -> A:
+    def _map_annotations(module: TreeObject) -> TreeObject:
+        module.__annotations__ = module.__annotations__.copy()
+        for field, annotation in module.__annotations__.items():
+            tree_annotation = _resolve_tree_type(field, annotation)
+            if tree_annotation is not None and issubclass(
+                tree_annotation, types.TreePart
+            ):
+                module.__annotations__[field] = f(annotation)
+
+        return module
+
+    return module_map(_map_annotations, obj, inplace=inplace)
+
+
+def module_update(module: A, other: A, *rest: A) -> A:
+    """
+    Functional version of `Module.update`, it accepts arbitray pytree structures
+    that may optionally contain `Module`s and performs the `update` logic.
+
+    Arguments:
+        module: Main pytree to update.
+        other: The pytree first to get the values to update from.
+        rest: Additional pytree to perform the update in order from left to right.
+
+    Returns:
+        A new pytree with the updated values.
+    """
+    modules = (module, other) + rest
+
+    def merge_fn(xs):
+        acc, *xs = xs
+        for x in xs:
+            if not isinstance(x, types.Nothing):
+                acc = x
+        return acc
+
+    flats, treedefs = zip(
+        *[
+            jax.tree_flatten(m, is_leaf=lambda x: isinstance(x, types.Nothing))
+            for m in modules
+        ]
+    )
+    # flat_out = jax.tree_util.tree_map(merge_fn, *flats)
+    flat_out = [merge_fn(values) for values in zip(*flats)]
+    module = jax.tree_unflatten(treedefs[0], flat_out)
+
+    return module
+
+
 # --------------------------------------------------
 # utils
 # --------------------------------------------------
@@ -478,7 +514,7 @@ def _get_repr(
 
     if isinstance(obj, TreeObject):
 
-        annotations = getattr(obj.__class__, "__annotations__", {})
+        annotations = getattr(obj, "__annotations__", {})
         (tree,), _ = obj.tree_flatten()
 
         params = {}
@@ -569,7 +605,7 @@ def _get_tabulate_rows(
     include_param_type,
 ) -> tp.Iterable[tp.List[tp.Any]]:
     if isinstance(obj, Module):
-        annotations = getattr(obj.__class__, "__annotations__", {})
+        annotations = getattr(obj, "__annotations__", {})
         (tree,), not_tree = obj.tree_flatten()
 
         params = {}
