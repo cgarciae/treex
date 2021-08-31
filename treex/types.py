@@ -62,9 +62,11 @@ Loss = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Loss)
 Metric = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Metric)
 OptState = tp.cast(tp.Type[tp.Any], _OptState)
 
+A = tp.TypeVar("A")
 
-class _ValueAnnotation:
-    def __init__(self, value, annotation):
+
+class _ValueAnnotation(tp.Generic[A]):
+    def __init__(self, value, annotation: tp.Type[A]):
         self.value = value
         self.annotation = annotation
 

@@ -82,9 +82,13 @@ class TreeObject(metaclass=CheckInitCalled):
                 tree[name] = value
 
             elif issubclass(annotation, types.TreePart):
+                _annotation = annotation  # help static analyzer
                 if _LOCAL.is_slicing:
                     tree[name] = jax.tree_map(
-                        lambda x: types._ValueAnnotation(x, annotation), value
+                        lambda x: types._ValueAnnotation[types.TreePart](
+                            x, _annotation
+                        ),
+                        value,
                     )
                 else:
                     tree[name] = value
@@ -130,7 +134,12 @@ class TreeObject(metaclass=CheckInitCalled):
         rep = _get_repr(self, level=0, array_type=None, inline=False)
         return _get_rich_repr(Text.from_markup(rep))
 
-    def filter(self: T, *filters: tp.Type) -> T:
+    def filter(
+        self: T,
+        *filters: tp.Union[
+            tp.Type["TreeObject"], tp.Callable[[tp.Type["TreeObject"]], bool]
+        ],
+    ) -> T:
         """
         Creates a new module with the same structure, but leaves whose type annotations are not subtypes
         of the given filters (as determined by `issubclass`) as set to `Nothing`.
@@ -153,7 +162,17 @@ class TreeObject(metaclass=CheckInitCalled):
             The new module with the filtered fields.
 
         """
-        flat: tp.List[types._ValueAnnotation]
+        flat: tp.List[types._ValueAnnotation[TreeObject]]
+
+        def get_filter(
+            t: tp.Type[TreeObject],
+        ) -> tp.Callable[[tp.Type[TreeObject]], bool]:
+            def _filter(x: tp.Type[TreeObject]) -> bool:
+                return issubclass(x, t)
+
+            return _filter
+
+        filters = tuple(get_filter(t) if isinstance(t, tp.Type) else t for t in filters)
 
         old_slicing = _LOCAL.is_slicing
         _LOCAL.is_slicing = True
@@ -162,7 +181,7 @@ class TreeObject(metaclass=CheckInitCalled):
             flat, treedef = jax.tree_flatten(self)
             flat_out = [
                 value_annotation.value
-                if issubclass(value_annotation.annotation, filters)
+                if any(f(value_annotation.annotation) for f in filters)
                 else types.Nothing()
                 for value_annotation in flat
             ]
@@ -823,7 +842,9 @@ def _format_size(size):
     return f"{count}{units}"
 
 
-def _resolve_tree_type(name: str, t: tp.Optional[type]) -> tp.Optional[type]:
+def _resolve_tree_type(
+    name: str, t: tp.Optional[tp.Type[tp.Any]]
+) -> tp.Optional[tp.Union[tp.Type[types.TreePart], tp.Type[TreeObject]]]:
     if t is None:
         return None
 
