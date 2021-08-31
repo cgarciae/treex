@@ -56,6 +56,7 @@ class MLP(tx.Module):
     layers: List[tx.Linear]
 
     def __init__(self, features: Sequence[int]):
+        super().__init__()
         self.layers = [
             tx.Linear(din, dout) 
             for din, dout in zip(features[:-1], features[1:])
@@ -104,6 +105,7 @@ class Linear(tx.Module):
     b: tx.Parameter
 
     def __init__(self, din, dout):
+        super().__init__()
         self.w = tx.Initializer(
             lambda key: jax.random.uniform(key, shape=(din, dout)))
         self.b = jnp.zeros(shape=(dout,))
@@ -127,6 +129,7 @@ class MLP(tx.Module):
     layers: List[tx.Linear]
 
     def __init__(self, features: Sequence[int]):
+        super().__init__()
         self.layers = [
             tx.Linear(din, dout) 
             for din, dout in zip(features[:-1], features[1:])
@@ -169,6 +172,7 @@ class MyModule(tx.Module):
     b: tx.Parameter
 
     def __init__(self):
+        super().__init__()
         self.a = tx.Initializer(
             lambda key: jax.random.uniform(key, shape=(1,)))
         self.b = 2
@@ -188,6 +192,7 @@ class MyModule(tx.Module):
     b: tx.Parameter
 
     def __init__(self):
+        super().__init__()
         self.a = None
         self.b = None
 
@@ -272,15 +277,15 @@ def main():
 jax.jit
 def train_step(model, x, y, optimizer):
     ...
-    params = optimizer.update(grads, params)
+    params = optimizer.apply_updates(grads, params)
     ...
     return model, loss, optimizer
 ```
 
-As you see, `tx.Optimizer` follows the same API as `optax.GradientTransformation` except that:
+As you see, `tx.Optimizer` follows a similar API as `optax.GradientTransformation` except that:
 1. There is no `opt_state`, instead optimizer IS the state.
-2. `update` by default applies the gradient updates to the parameters.
-3. `update` updates the internal state of the optimizer in-place.
+2. You directly use `apply_updates` to update the parameters, you can use `return_updates=True` to get the `updates` instead.
+3. `apply_updates` also updates the internal state of the optimizer in-place.
 
 Notice that since `tx.Optimizer` is a Pytree, it was passed through `jit` without the need to specify `static_argnums`.
 
@@ -292,6 +297,7 @@ class Average(tx.Module):
     total: tx.State
 
     def __init__(self):
+        super().__init__()
         self.count = jnp.array(0)
         self.total = jnp.array(0.0)
 
@@ -307,6 +313,7 @@ class Dropout(tx.Module):
     rng: tx.Rng
 
     def __init__(self, rate: float):
+        ...
         self.rng = tx.Initializer(lambda key: key)
         ...
 
@@ -314,13 +321,13 @@ class Dropout(tx.Module):
         key, self.rng = jax.random.split(self.rng)
         ...
 ```
-Finally `tx.Optimizer` also performs inplace updates inside the `update` method, here is a sketch of how it works:
+Finally `tx.Optimizer` also performs inplace updates inside the `apply_updates` method, here is a sketch of how it works:
 ```python
 class Optimizer(tx.TreeObject):
     opt_state: tx.OptState
     optimizer: optax.GradientTransformation
 
-    def update(self, grads, params):
+    def apply_updates(self, grads, params):
         ...
         updates, self.opt_state = self.optimizer.update(
             grads, self.opt_state, params
@@ -440,6 +447,7 @@ class Linear(tx.Module):
     b: tx.Parameter
 
     def __init__(self, din, dout):
+        super().__init__()
         self.w = tx.Initializer(lambda key: jax.random.uniform(key, shape=(din, dout)))
         self.b = jnp.zeros(shape=(dout,))
 

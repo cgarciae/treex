@@ -47,7 +47,7 @@ class CheckInitCalled(ABCMeta):
 
         if not obj._init_called:
             raise RuntimeError(
-                f"{obj.__class__.__name__} not initialized properly, you must call `super().__init__()`"
+                f"{obj.__class__.__name__} not initialized properly, constructor must call `super().__init__()`"
             )
 
         return obj
@@ -341,9 +341,6 @@ class Module(TreeObject):
     @property
     def training(self) -> bool:
         return self._training
-
-    def _get_props(self) -> tp.Dict[str, tp.Any]:
-        return dict(_initialized=self._initialized, _training=self._training)
 
     def init(self: M, key: tp.Union[int, jnp.ndarray], inplace: bool = False) -> M:
         """

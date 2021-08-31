@@ -63,9 +63,6 @@ class Optimizer(TreeObject):
     def initialized(self) -> bool:
         return self._initialized
 
-    def _get_props(self) -> tp.Dict[str, tp.Any]:
-        return dict(_intialized=self._initialized)
-
     def __init__(self, optimizer: optax.GradientTransformation):
         """
         Arguments:
