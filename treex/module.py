@@ -863,6 +863,13 @@ def _resolve_tree_type(
     if t is None:
         return None
 
+    if (isinstance(t, tp.Type) and issubclass(t, types._Static)) or (
+        hasattr(t, "__origin__")
+        and isinstance(t.__origin__, tp.Type)
+        and issubclass(t.__origin__, types._Static)
+    ):
+        return None
+
     tree_types = [
         x
         for x in _all_types(t)

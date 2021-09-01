@@ -7,7 +7,7 @@ import jax.tree_util
 import numpy as np
 
 import treex as tx
-from treex.types import Initializer
+from treex.module import _resolve_tree_type
 
 Parameter = tp.cast(tp.Type[np.ndarray], tx.Parameter)
 State = tp.cast(tp.Type[tp.Union[np.ndarray, int]], tx.State)
@@ -383,3 +383,40 @@ class TestTreex:
         print(rep)
 
         print(mlp.a["mlps"][1].linear2)
+
+    def test_static_resolves(self):
+
+        # test some generic resolves to tree type
+        annotation = tp.List[tx.Parameter]
+        tree_type = _resolve_tree_type("annotation", annotation)
+        assert tree_type is tx.Parameter
+
+        # test static generic resolve to None
+        annotation = tx.Static[tx.Parameter]
+        tree_type = _resolve_tree_type("annotation", annotation)
+        assert tree_type is None
+
+        # test static only resolve to None
+        annotation = tx.Static
+        tree_type = _resolve_tree_type("annotation", annotation)
+        assert tree_type is None
+
+    def test_static_annotation(self):
+        class Mod(tx.Module):
+            a: tx.Linear
+            b: tx.Static[tx.Linear]
+
+            def __init__(self):
+                super().__init__()
+                self.a = tx.Linear(3, 4)
+                self.b = tx.Linear(3, 4)
+
+        mod = Mod().init(42)
+
+        assert len(jax.tree_leaves(mod)) == 2
+
+        assert mod.a.initialized
+        assert mod.a.params is not None
+
+        assert not mod.b.initialized
+        assert mod.b.params is None

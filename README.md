@@ -226,6 +226,16 @@ jax.tree_leaves(module.filter(tx.Parameter)) # [array([1])]
 jax.tree_leaves(module.filter(tx.BatchStat)) # [array([2])]
 ```
 
+If you need to do more complex filtering, you can pass callables instead of types:
+
+```python
+# all States that are not OptStates
+module.filter(
+    lambda x: issubclass(x, tx.State) and not issubclass(x, tx.OptState)
+) 
+# MyModule(a=Nothing, b=array([2]))
+```
+
 A typical use case is to define `params` as a `Parameter` filter and pass it as the first argument to `grad` so that the gradient is computed only that particular subset and immediately update them back to the `model` before performing any computation:
 
 ```python

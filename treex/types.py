@@ -5,6 +5,8 @@ import jax.numpy as jnp
 import jax.tree_util
 import numpy as np
 
+A = tp.TypeVar("A")
+
 
 class TreePart:
     pass
@@ -50,6 +52,23 @@ class _OptState(_State):
     pass
 
 
+# value annotation
+class _ValueAnnotation(tp.Generic[A]):
+    def __init__(self, value, annotation: tp.Type[A]):
+        self.value = value
+        self.annotation = annotation
+
+
+# static
+class _Static(tp.Generic[A]):
+    pass
+
+
+class _GenericIdentity(tp.Protocol):
+    def __getitem__(self, item: tp.Type[A]) -> tp.Type[A]:
+        ...
+
+
 # use cast to trick static analyzers into believing these types
 Parameter = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Parameter)
 State = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _State)
@@ -61,14 +80,14 @@ Log = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Log)
 Loss = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Loss)
 Metric = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Metric)
 OptState = tp.cast(tp.Type[tp.Any], _OptState)
+Static = tp.Union  # for Union cast doesn't work, so we modify under the hood later
 
-A = tp.TypeVar("A")
+
+def _mod_types():
+    globals()["Static"] = _Static
 
 
-class _ValueAnnotation(tp.Generic[A]):
-    def __init__(self, value, annotation: tp.Type[A]):
-        self.value = value
-        self.annotation = annotation
+_mod_types()
 
 
 class Initializer:
