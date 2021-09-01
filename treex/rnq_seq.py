@@ -27,9 +27,9 @@ class RngSeq(Module):
     ```
     """
 
-    key: types.Rng
+    key: types.Rng[types.Initializer, jnp.ndarray]
 
-    def __init__(self, key: tp.Optional[tp.Union[jnp.ndarray, np.ndarray, int]] = None):
+    def __init__(self, key: tp.Optional[tp.Union[jnp.ndarray, int]] = None):
         """
         Arguments:
             key: An optional PRNGKey to initialize the RNGSeq with.

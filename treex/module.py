@@ -49,7 +49,10 @@ class TreeObject(metaclass=CheckInitCalled):
 
     def __init__(self) -> None:
         self._init_called = True
-        self.__annotations__ = self.__annotations__.copy()
+        self.__annotations__ = {
+            field: _resolve_tree_type(field, value)
+            for field, value in self.__annotations__.items()
+        }
 
     def tree_flatten(self):
 
@@ -64,7 +67,6 @@ class TreeObject(metaclass=CheckInitCalled):
 
         for name, value in fields.items():
             annotation = annotations.get(name, None)
-            annotation = _resolve_tree_type(name, annotation)
 
             if annotation is None:
                 not_tree[name] = value
@@ -128,7 +130,8 @@ class TreeObject(metaclass=CheckInitCalled):
     def filter(
         self: T,
         *filters: tp.Union[
-            tp.Type["types.TreePart"], tp.Callable[[tp.Type["types.TreePart"]], bool]
+            tp.Type["types.TreePart"],
+            tp.Callable[[tp.Type["types.TreePart"]], bool],
         ],
     ) -> T:
         """
@@ -168,13 +171,19 @@ class TreeObject(metaclass=CheckInitCalled):
             The new module with the filtered fields.
 
         """
-        flat: tp.List[types._ValueAnnotation[types.TreePart]]
+        flat: tp.List[
+            types._ValueAnnotation[tp.Union[types.TreePart, tp.Type[types.TreePart]]]
+        ]
 
         def _get_filter(
-            t: tp.Type[types.TreePart],
+            t: tp.Union[types.TreePart, tp.Type[types.TreePart]],
         ) -> tp.Callable[[tp.Type[types.TreePart]], bool]:
             def _filter(x: tp.Type[types.TreePart]) -> bool:
-                return issubclass(x, t)
+                return (
+                    issubclass(x, t)
+                    if isinstance(t, tp.Type)
+                    else issubclass(x, type(t))
+                )
 
             return _filter
 
@@ -473,10 +482,7 @@ def annotation_map(
     def _map_annotations(module: TreeObject) -> TreeObject:
         module.__annotations__ = module.__annotations__.copy()
         for field, annotation in module.__annotations__.items():
-            tree_annotation = _resolve_tree_type(field, annotation)
-            if tree_annotation is not None and issubclass(
-                tree_annotation, types.TreePart
-            ):
+            if issubclass(annotation, types.TreePart):
                 module.__annotations__[field] = f(annotation)
 
         return module
@@ -546,11 +552,7 @@ def _get_repr(
         submodules = {}
 
         for field, value in tree.items():
-            annotation = annotations.get(field, None)
-            annotation = _resolve_tree_type(field, annotation)
-            annotations[field] = annotation
-
-            assert annotation is not None
+            annotation: type = annotations[field]
 
             if issubclass(annotation, TreeObject):
                 submodules[field] = value
@@ -637,11 +639,7 @@ def _get_tabulate_rows(
         submodules = {}
 
         for field, value in tree.items():
-            annotation = annotations.get(field, None)
-            annotation = _resolve_tree_type(field, annotation)
-            annotations[field] = annotation
-
-            assert annotation is not None
+            annotation = annotations[field]
 
             if issubclass(annotation, TreeObject):
                 submodules[field] = value
@@ -848,29 +846,26 @@ def _format_size(size):
     return f"{count}{units}"
 
 
-def _resolve_tree_type(
-    name: str, t: tp.Optional[tp.Type[tp.Any]]
-) -> tp.Optional[tp.Union[tp.Type[types.TreePart], tp.Type[TreeObject]]]:
-    if t is None:
-        return None
+def _safe_issubclass(a, b) -> bool:
+    return issubclass(a, b) if isinstance(a, tp.Type) else issubclass(type(a), b)
 
-    if (isinstance(t, tp.Type) and issubclass(t, types._Static)) or (
-        hasattr(t, "__origin__")
-        and isinstance(t.__origin__, tp.Type)
-        and issubclass(t.__origin__, types._Static)
-    ):
-        return None
+
+def _generic_issubclass(__cls, __class_or_tuple) -> bool:
+    return _safe_issubclass(__cls, __class_or_tuple) or (
+        hasattr(__cls, "__origin__")
+        and _safe_issubclass(__cls.__origin__, __class_or_tuple)
+    )
+
+
+def _resolve_tree_type(name: str, t: tp.Any) -> tp.Any:
 
     tree_types = [
-        x
-        for x in _all_types(t)
-        if isinstance(x, tp.Type)
-        if issubclass(x, (types.TreePart, TreeObject))
+        x for x in _all_types(t) if _generic_issubclass(x, (types.TreePart, TreeObject))
     ]
 
     if len(tree_types) > 1:
         # if its a type with many TreeObject subtypes just mark them all as TreeObject
-        if all(issubclass(x, TreeObject) for x in tree_types):
+        if all(_generic_issubclass(x, TreeObject) for x in tree_types):
             return TreeObject
         else:
             raise TypeError(
@@ -879,11 +874,20 @@ def _resolve_tree_type(
     elif len(tree_types) == 1:
         return tree_types[0]
     else:
-        return None
+        return (
+            t
+            if isinstance(t, type)
+            else t.__origin__
+            if hasattr(t, "__origin__")
+            else type(t)
+        )
 
 
 def _all_types(t: tp.Type) -> tp.Iterable[tp.Type]:
+
     if hasattr(t, "__args__"):
+        yield t.__origin__
+
         for arg in t.__args__:
             yield from _all_types(arg)
     else:

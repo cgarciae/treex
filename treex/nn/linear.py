@@ -21,7 +21,7 @@ class Linear(Module):
     """
 
     # pytree
-    params: tp.Optional[tp.Mapping[str, types.Parameter]]
+    params: types.Parameter[tp.Mapping[str, jnp.ndarray], None]
 
     # props
     features_in: int

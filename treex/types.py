@@ -1,4 +1,5 @@
 import typing as tp
+from abc import ABCMeta
 
 import jax
 import jax.numpy as jnp
@@ -8,7 +9,12 @@ import numpy as np
 A = tp.TypeVar("A")
 
 
-class TreePart:
+class IdentityGeneric(ABCMeta):
+    def __getitem__(cls: tp.Type[A], *key: tp.Any) -> tp.Type[A]:
+        return cls
+
+
+class TreePart(metaclass=IdentityGeneric):
     pass
 
 
@@ -52,6 +58,10 @@ class _OptState(_State):
     pass
 
 
+class _Static(metaclass=IdentityGeneric):
+    pass
+
+
 # value annotation
 class _ValueAnnotation(tp.Generic[A]):
     def __init__(self, value, annotation: tp.Type[A]):
@@ -59,35 +69,39 @@ class _ValueAnnotation(tp.Generic[A]):
         self.annotation = annotation
 
 
-# static
-class _Static(tp.Generic[A]):
-    pass
-
-
-class _GenericIdentity(tp.Protocol):
-    def __getitem__(self, item: tp.Type[A]) -> tp.Type[A]:
-        ...
-
-
 # use cast to trick static analyzers into believing these types
-Parameter = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Parameter)
-State = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _State)
-Rng = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Rng)
-ModelState = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _ModelState)
-BatchStat = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _BatchStat)
-Cache = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Cache)
-Log = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Log)
-Loss = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Loss)
-Metric = tp.cast(tp.Type[tp.Union[np.ndarray, "Initializer"]], _Metric)
-OptState = tp.cast(tp.Type[tp.Any], _OptState)
-Static = tp.Union  # for Union cast doesn't work, so we modify under the hood later
+Parameter = tp.Union  # static
+globals()["Parameter"] = _Parameter  # real
 
+State = tp.Union  # static
+globals()["State"] = _State  # real
 
-def _mod_types():
-    globals()["Static"] = _Static
+Rng = tp.Union  # static
+globals()["Rng"] = _Rng  # real
 
+ModelState = tp.Union  # static
+globals()["ModelState"] = _ModelState  # real
 
-_mod_types()
+BatchStat = tp.Union  # static
+globals()["BatchStat"] = _BatchStat  # real
+
+Cache = tp.Union  # static
+globals()["Cache"] = _Cache  # real
+
+Log = tp.Union  # static
+globals()["Log"] = _Log  # real
+
+Loss = tp.Union  # static
+globals()["Loss"] = _Loss  # real
+
+Metric = tp.Union  # static
+globals()["Metric"] = _Metric  # real
+
+OptState = tp.Union  # static
+globals()["OptState"] = _OptState  # real
+
+Static = tp.Union  # static
+globals()["Static"] = _Static  # real
 
 
 class Initializer:
