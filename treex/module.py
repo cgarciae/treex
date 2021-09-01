@@ -24,18 +24,9 @@ PAD = r"{pad}"
 
 
 class _Context(threading.local):
-    is_slicing: bool = False
-    key: tp.Optional[jnp.ndarray] = None
+    get_value_annotations: bool = False
     map_f: tp.Optional[tp.Callable[["TreeObject"], "TreeObject"]] = None
     map_inplace: bool = False
-
-    def next_key(self) -> jnp.ndarray:
-        assert self.key is not None
-
-        # key = self.key
-        key, self.key = jax.random.split(self.key)
-
-        return key
 
 
 _LOCAL: _Context = _Context()
@@ -83,7 +74,7 @@ class TreeObject(metaclass=CheckInitCalled):
 
             elif issubclass(annotation, types.TreePart):
                 _annotation = annotation  # help static analyzer
-                if _LOCAL.is_slicing:
+                if _LOCAL.get_value_annotations:
                     tree[name] = jax.tree_map(
                         lambda x: types._ValueAnnotation[types.TreePart](
                             x, _annotation
@@ -179,7 +170,7 @@ class TreeObject(metaclass=CheckInitCalled):
         """
         flat: tp.List[types._ValueAnnotation[types.TreePart]]
 
-        def get_filter(
+        def _get_filter(
             t: tp.Type[types.TreePart],
         ) -> tp.Callable[[tp.Type[types.TreePart]], bool]:
             def _filter(x: tp.Type[types.TreePart]) -> bool:
@@ -187,10 +178,12 @@ class TreeObject(metaclass=CheckInitCalled):
 
             return _filter
 
-        filters = tuple(get_filter(t) if isinstance(t, tp.Type) else t for t in filters)
+        filters = tuple(
+            _get_filter(f) if isinstance(f, tp.Type) else f for f in filters
+        )
 
-        old_slicing = _LOCAL.is_slicing
-        _LOCAL.is_slicing = True
+        old_get_value_annotations = _LOCAL.get_value_annotations
+        _LOCAL.get_value_annotations = True
 
         try:
             flat, treedef = jax.tree_flatten(self)
@@ -202,7 +195,7 @@ class TreeObject(metaclass=CheckInitCalled):
             ]
             module = jax.tree_unflatten(treedef, flat_out)
         finally:
-            _LOCAL.is_slicing = old_slicing
+            _LOCAL.get_value_annotations = old_get_value_annotations
 
         return module
 
@@ -282,8 +275,8 @@ class TreeObject(metaclass=CheckInitCalled):
         Returns:
             A string containing the tabular representation.
         """
-        old_slicing = _LOCAL.is_slicing
-        _LOCAL.is_slicing = True
+        old_get_value_annotations = _LOCAL.get_value_annotations
+        _LOCAL.get_value_annotations = True
 
         try:
             flat, _ = jax.tree_flatten(self)
@@ -291,7 +284,7 @@ class TreeObject(metaclass=CheckInitCalled):
                 {value_annotation.annotation for value_annotation in flat}
             )
         finally:
-            _LOCAL.is_slicing = old_slicing
+            _LOCAL.get_value_annotations = old_get_value_annotations
 
         path = ()
         rows = list(
@@ -378,36 +371,34 @@ class Module(TreeObject):
         if isinstance(key, int):
             key = jax.random.PRNGKey(key)
 
+        def next_key() -> jnp.ndarray:
+            nonlocal key
+            assert isinstance(key, jnp.ndarray)
+            next_key, key = jax.random.split(key)
+            return next_key
+
         def call_module_init(module: TreeObject) -> TreeObject:
             if isinstance(module, Module) and not module._initialized:
-                module.module_init(_LOCAL.next_key())
+                module.module_init(next_key())
                 module._initialized = True
 
             return module
 
-        # set contextcall_module_init
-        old_key = _LOCAL.key
-        _LOCAL.key = key
-
-        try:
-            module = jax.tree_map(
-                lambda initializer: (
-                    initializer(_LOCAL.next_key())
-                    if isinstance(initializer, types.Initializer)
-                    else initializer
-                ),
-                self,
-            )
-            if inplace:
-                # here we update initialized fields by the above tree_map
-                self.update(module, inplace=True)
-                # now call module_init inplace
-                return module_map(call_module_init, self, inplace=True)
-            else:
-                return module_map(call_module_init, module, inplace=False)
-
-        finally:
-            _LOCAL.key = old_key
+        module = jax.tree_map(
+            lambda initializer: (
+                initializer(next_key())
+                if isinstance(initializer, types.Initializer)
+                else initializer
+            ),
+            self,
+        )
+        if inplace:
+            # here we update initialized fields by the above tree_map
+            self.update(module, inplace=True)
+            # now call module_init inplace
+            return module_map(call_module_init, self, inplace=True)
+        else:
+            return module_map(call_module_init, module, inplace=False)
 
     def train(self: M, mode: bool = True, inplace: bool = False) -> M:
         """
