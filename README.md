@@ -383,7 +383,7 @@ model = model.eval()
 y_pred = model(X_test)
 ```
 ### Parameter Annotations
-The role of each parameter is defined by its annotation. While valid annotations is any type which inherits from `tx.TreePart`, the default annotations from Treex are currently organized into the following type hierarchy:
+The role of each field is defined by its annotation. While any valid annotations is just type which inherits from `tx.TreePart`, the default annotations from Treex are organized into the following hierarchy:
 
 <details>
 <summary>Graph code</summary>
