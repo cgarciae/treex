@@ -414,7 +414,7 @@ batch_stats = model.filter(tx.BatchStat)
 all_states = model.filter(tx.State)
 ```
 #### Static Analysis
-All `TreePart` instances included in Treex like `Parameter` and `State` currently behave as a `typing.Union` in the eyes of static analyzers. This means that it will think the following types resolve to:
+All `TreePart` instances included in Treex like `Parameter` and `State` currently behave as a `typing.Union` in the eyes of static analyzers. This means that they will think the following types resolve to:
 
 ```python
 a: tx.Parameter[int] # int
@@ -427,7 +427,7 @@ Given the propreties of `Union`, the following two annotation as statically equi
 a: tx.Parameter[List[int]] # List[int]
 b: List[tx.Parameter[int]] # List[int]
 ```
-Its up to the user to choose which makes more sense, Treex internally only cares whether or not there is a `TreePart` somewhere in the type, in this case it will resolve that the two fields are Parameters (it will infact strip all other information).
+This happens because the union of single type is like an identity, thus its up to the user to choose which makes more sense, Treex internally only cares whether or not there is a `TreePart` subclass somewhere in the type. In this case Treex will resolve that the two fields are Parameters and will strip all other information.
 
 #### Custom Annotations
 You can easily define you own annotations by inheriting from directly `tx.TreePart` or any of its subclasses. As an example this is how you would define `Cache` which is intended to emulate Flax's `cache` collection:
@@ -445,7 +445,7 @@ class MyModule(tx.Module):
 ```
 
 ##### Union Behaviour
-Will the previous code your static analyzer will probably start complaining if you try to assign an `jnp.ndarray` to `memory` because `ndarray`s are not `Cache`s. While this makes sense, we want to trick the static analyzer into thinking `Cache` represents an `Union`, currently the only way to do this is to use do something like this:
+With the previous code your static analyzer will probably start complaining if you try to assign an `jnp.ndarray` to `memory` because `ndarray`s are not `Cache`s. While this makes sense, we want to trick the static analyzer into thinking `Cache` represents an `Union`. Currently the only way to do this is to use do something like this:
 
 ```python
 from typing import cast, Type
@@ -462,7 +462,7 @@ class MyModule(tx.Module):
     memory: Cache[jnp.ndarray] # Union[ndarray] = ndarray
     ...
 ```
-Hopefully a better way is found in the future, however, this will keep the static analyzer happy as it will think `cache` is annotated as `ndarray` while Treex will get the correct annotation metadata.
+Hopefully a better way is found in the future, however, this will keep the static analyzers happy as they will think `cache` is an `ndarray` while Treex will get the correct annotation metadata.
 
 ### Full Example
 

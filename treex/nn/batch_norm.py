@@ -23,7 +23,7 @@ class BatchNorm(Module):
     """
 
     # pytree
-    params: tp.Optional[tp.Mapping[str, types.Parameter[jnp.ndarray]]]
+    params: types.Parameter[tp.Mapping[str, jnp.ndarray], None]
     batch_stats: types.BatchStat[tp.Mapping[str, jnp.ndarray], None]
 
     # props
