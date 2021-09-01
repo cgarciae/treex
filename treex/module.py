@@ -137,12 +137,18 @@ class TreeObject(metaclass=CheckInitCalled):
     def filter(
         self: T,
         *filters: tp.Union[
-            tp.Type["TreeObject"], tp.Callable[[tp.Type["TreeObject"]], bool]
+            tp.Type["types.TreePart"], tp.Callable[[tp.Type["types.TreePart"]], bool]
         ],
     ) -> T:
         """
-        Creates a new module with the same structure, but leaves whose type annotations are not subtypes
-        of the given filters (as determined by `issubclass`) as set to `Nothing`.
+        Creates a new module with the same structure, but sets to `Nothing` leaves that
+        do not match any of the given filters. If a `TreePart` type `t` is given, the filter
+
+        ```python
+        _filter(x: Type[TreePart]) = issubclass(x, t)
+        ```
+
+        will be created for that type.
 
         Example:
         ```python
@@ -156,18 +162,27 @@ class TreeObject(metaclass=CheckInitCalled):
         module.filter(tx.BatchStat) # MyModule(a=Nothing, b=2)
         ```
 
+        More fancy filters can be created by using callables:
+        ```python
+        # all States that are not OptStates
+        module.filter(
+            lambda x: issubclass(x, tx.State) and not issubclass(x, tx.OptState)
+        )
+        # MyModule(a=Nothing, b=2)
+        ```
+
         Arguments:
             filters: Types to filter by, membership is determined by `issubclass`.
         Returns:
             The new module with the filtered fields.
 
         """
-        flat: tp.List[types._ValueAnnotation[TreeObject]]
+        flat: tp.List[types._ValueAnnotation[types.TreePart]]
 
         def get_filter(
-            t: tp.Type[TreeObject],
-        ) -> tp.Callable[[tp.Type[TreeObject]], bool]:
-            def _filter(x: tp.Type[TreeObject]) -> bool:
+            t: tp.Type[types.TreePart],
+        ) -> tp.Callable[[tp.Type[types.TreePart]], bool]:
+            def _filter(x: tp.Type[types.TreePart]) -> bool:
                 return issubclass(x, t)
 
             return _filter
