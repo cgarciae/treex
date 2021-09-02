@@ -7,11 +7,10 @@ import jax.numpy as jnp
 import optax
 
 from treex import types
-from treex.module import TreeObject, annotation_map, module_update
+from treex.tree_object import TreeObject, annotation_map, module_update
 
-T = tp.TypeVar("T", bound="Optimizer")
+O = tp.TypeVar("O", bound="Optimizer")
 A = tp.TypeVar("A", bound="tp.Any")
-C = tp.TypeVar("C")
 
 
 class Optimizer(TreeObject):
@@ -64,7 +63,7 @@ class Optimizer(TreeObject):
         self.opt_state = None
         self.optimizer = optimizer
 
-    def init(self: T, params: tp.Any) -> T:
+    def init(self: O, params: tp.Any) -> O:
         """
         Initialize the optimizer from an initial set of parameters.
 
@@ -80,7 +79,7 @@ class Optimizer(TreeObject):
         module._initialized = True
         return module
 
-    # NOTE: current strategy is to convert annotation to `types.OptState`, this involves
+    # NOTE: current strategy is to convert annotation to `OptState`, this involves
     # 2 `annotation_map`s + a `module_update` but prints/tabulates preserve TreeObject information.
     # An alternative would be to flatten the params and use 2 `jax.tree_flatten` + a `jax.tree_unflatten`
     # which might be faster but prints/tabulates only show a flat list of params with no structure.

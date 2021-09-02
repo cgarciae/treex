@@ -14,7 +14,7 @@ class IdentityGeneric(ABCMeta):
         return cls
 
 
-class TreePart(metaclass=IdentityGeneric):
+class TreePart(object, metaclass=IdentityGeneric):
     pass
 
 
@@ -42,7 +42,15 @@ class _Cache(_ModelState):
     pass
 
 
-class _Log(_State):
+class _OptState(_State):
+    pass
+
+
+class _Static(metaclass=IdentityGeneric):
+    pass
+
+
+class _Log(TreePart):
     pass
 
 
@@ -52,21 +60,6 @@ class _Loss(_Log):
 
 class _Metric(_Log):
     pass
-
-
-class _OptState(_State):
-    pass
-
-
-class _Static(metaclass=IdentityGeneric):
-    pass
-
-
-# value annotation
-class _ValueAnnotation(tp.Generic[A]):
-    def __init__(self, value, annotation: tp.Type[A]):
-        self.value = value
-        self.annotation = annotation
 
 
 # use cast to trick static analyzers into believing these types
@@ -88,6 +81,12 @@ globals()["BatchStat"] = _BatchStat  # real
 Cache = tp.Union  # static
 globals()["Cache"] = _Cache  # real
 
+OptState = tp.Union  # static
+globals()["OptState"] = _OptState  # real
+
+Static = tp.Union  # static
+globals()["Static"] = _Static  # real
+
 Log = tp.Union  # static
 globals()["Log"] = _Log  # real
 
@@ -97,11 +96,34 @@ globals()["Loss"] = _Loss  # real
 Metric = tp.Union  # static
 globals()["Metric"] = _Metric  # real
 
-OptState = tp.Union  # static
-globals()["OptState"] = _OptState  # real
 
-Static = tp.Union  # static
-globals()["Static"] = _Static  # real
+class _ValueAnnotation(tp.Generic[A]):
+    def __init__(self, value, annotation: tp.Type[A]):
+        self.value = value
+        self.annotation = annotation
+
+
+class Named(tp.Generic[A]):
+    def __init__(self, name: str, value: A):
+        super().__init__()
+        self.name = name
+        self.value = value
+
+    def tree_flatten(self):
+        tree = (self.value,)
+        static = (self.name,)
+
+        return tree, static
+
+    @classmethod
+    def tree_unflatten(cls, static, tree):
+        module = cls.__new__(cls)
+        module.name = static[0]
+        module.value = tree[0]
+        return module
+
+    def __init_subclass__(cls):
+        jax.tree_util.register_pytree_node_class(cls)
 
 
 class Initializer:

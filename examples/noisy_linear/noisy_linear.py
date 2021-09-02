@@ -1,5 +1,5 @@
 # isort:skip_file
-__st
+"__st"
 # %% [markdown]
 """
 # Treex

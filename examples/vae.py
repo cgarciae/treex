@@ -13,14 +13,7 @@ import optax
 import treex as tx
 
 Batch = tp.Mapping[str, np.ndarray]
-np.random.seed(42)
-
-
-class _Loss(tx.TreePart):
-    pass
-
-
-Loss = tp.cast(tp.Type[jnp.ndarray], _Loss)
+np.random.seed(420)
 
 
 def kl_divergence(mean: jnp.ndarray, std: jnp.ndarray) -> jnp.ndarray:
@@ -36,7 +29,7 @@ class Encoder(tx.Module):
     linear_mean: tx.Linear
     linear_std: tx.Linear
     rng: tx.RngSeq
-    kl_loss: Loss
+    kl_loss: tx.Loss[jnp.ndarray]
 
     def __init__(
         self,
@@ -51,7 +44,7 @@ class Encoder(tx.Module):
         self.rng = tx.RngSeq()
         self.kl_loss = jnp.array(0.0)
 
-    def __call__(self, x: np.ndarray) -> jnp.ndarray:
+    def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
         x = x.reshape((x.shape[0], -1))  # flatten
         x = self.linear1(x)
         x = jax.nn.relu(x)
@@ -127,7 +120,7 @@ def loss_fn(params: VAE, model: VAE, x: np.ndarray) -> tp.Tuple[jnp.ndarray, VAE
     x_pred = model(x)
 
     crossentropy_loss = jnp.mean(optax.sigmoid_binary_cross_entropy(x_pred, x))
-    aux_losses = jax.tree_leaves(model.filter(Loss))
+    aux_losses = jax.tree_leaves(model.filter(tx.Loss))
 
     loss = crossentropy_loss + sum(aux_losses, 0.0)
 
@@ -193,7 +186,7 @@ plt.figure()
 plt.plot(epoch_losses)
 
 # visualize reconstructions
-idxs = np.random.randint(0, len(X_test), size=(5,))
+idxs = np.random.choice(5, len(X_test))
 x_sample = X_test[idxs]
 x_pred = model.reconstruct(x_sample)
 
@@ -205,7 +198,7 @@ for i in range(5):
     plt.imshow(x_pred[i], cmap="gray")
 
 # visualize samples from latent space
-z_samples = np.random.normal(size=(12, latent_size))
+z_samples = np.random.normal(size=(10, latent_size))
 samples = model.generate(z_samples)
 
 plt.figure()

@@ -1,5 +1,5 @@
 import typing as tp
-from inspect import signature
+from inspect import istraceback, signature
 
 import jax
 import jax.numpy as jnp
@@ -7,7 +7,7 @@ import jax.tree_util
 import numpy as np
 
 import treex as tx
-from treex.module import _resolve_tree_type
+from treex.tree_object import _resolve_tree_type
 
 
 class Linear(tx.Module):
@@ -425,3 +425,21 @@ class TestTreex:
 
         assert not mod.b.initialized
         assert mod.b.params is None
+
+    def test_logs(self):
+        class M(tx.Module):
+            a: tx.Parameter[float]
+            loss: tx.Loss
+
+            def __init__(self):
+                super().__init__()
+                self.a = 1.0
+                self.loss = tx.Loss("loss", 2.0)
+
+        module = M().init(42)
+
+        module = module.filter(tx.Parameter)
+
+        assert module.a == 1.0
+        assert isinstance(module.loss, tx.Loss)
+        assert isinstance(module.loss.value, tx.Nothing)
