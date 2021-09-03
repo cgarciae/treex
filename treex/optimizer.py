@@ -2,24 +2,15 @@ import functools
 import inspect
 import typing as tp
 
-import chex
 import jax
 import jax.numpy as jnp
 import optax
 
-from treex.module import TreeObject
-from treex.types import _State
+from treex import types
+from treex.tree_object import TreeObject, annotation_map, module_update
 
-T = tp.TypeVar("T", bound="Optimizer")
+O = tp.TypeVar("O", bound="Optimizer")
 A = tp.TypeVar("A", bound="tp.Any")
-C = tp.TypeVar("C")
-
-
-class _OptState(_State):
-    pass
-
-
-OptState = tp.cast(tp.Type[tp.Any], _OptState)
 
 
 class Optimizer(TreeObject):
@@ -54,7 +45,7 @@ class Optimizer(TreeObject):
         to get the param updates instead.
     """
 
-    opt_state: tp.Optional[OptState]
+    opt_state: types.OptState[tp.Any, None]
     optimizer: optax.GradientTransformation
 
     _initialized: bool = False
@@ -63,18 +54,16 @@ class Optimizer(TreeObject):
     def initialized(self) -> bool:
         return self._initialized
 
-    def _get_props(self) -> tp.Dict[str, tp.Any]:
-        return dict(_intialized=self._initialized)
-
     def __init__(self, optimizer: optax.GradientTransformation):
         """
         Arguments:
             optimizer: An optax optimizer.
         """
+        super().__init__()
         self.opt_state = None
         self.optimizer = optimizer
 
-    def init(self: T, params: tp.Any) -> T:
+    def init(self: O, params: tp.Any) -> O:
         """
         Initialize the optimizer from an initial set of parameters.
 
@@ -85,12 +74,17 @@ class Optimizer(TreeObject):
             A new optimizer instance.
         """
         module = self.copy()
+        params = annotation_map(lambda _: types.OptState, params)
         module.opt_state = module.optimizer.init(params)
         module._initialized = True
         return module
 
-    def update(
-        self, grads: A, params: tp.Optional[A] = None, apply_updates: bool = True
+    # NOTE: current strategy is to convert annotation to `OptState`, this involves
+    # 2 `annotation_map`s + a `module_update` but prints/tabulates preserve TreeObject information.
+    # An alternative would be to flatten the params and use 2 `jax.tree_flatten` + a `jax.tree_unflatten`
+    # which might be faster but prints/tabulates only show a flat list of params with no structure.
+    def apply_updates(
+        self, grads: A, params: tp.Optional[A] = None, return_updates: bool = False
     ) -> A:
         """
         Applies the parameters updates and updates the optimizers internal state inplace.
@@ -98,24 +92,32 @@ class Optimizer(TreeObject):
         Arguments:
             grads: the gradients to perform the update.
             params: the parameters to update. If `None` then `apply_updates` has to be `False`.
-            apply_updates: whether to apply the updates to the parameters.
+            return_updates: if `True` then the updates are returned instead of being applied.
 
         Returns:
-            The updated parameters. If `apply_updates` is `False` then the updates are returned instead.
+            The updated parameters. Iftree_leaves `return_updates` is `True` then the updates are returned instead.
         """
         assert self.opt_state is not None
-        if apply_updates and params is None:
-            raise ValueError("params must be provided to apply update")
+        if not return_updates and params is None:
+            raise ValueError("params must be provided if updates are being applied")
+
+        opt_grads = annotation_map(lambda _: types.OptState, grads)
+        opt_params = annotation_map(lambda _: types.OptState, params)
 
         param_updates: A
         param_updates, self.opt_state = self.optimizer.update(
-            grads, self.opt_state, params
+            opt_grads,
+            self.opt_state,
+            opt_params,
         )
 
-        if apply_updates:
-            return optax.apply_updates(params, param_updates)
+        output: A
+        if return_updates:
+            output = param_updates
+        else:
+            output = optax.apply_updates(opt_params, param_updates)
 
-        return param_updates
+        return module_update(grads, output)
 
     # THE FOLOWING METHODS ARE AUTOMATICALLY GENERATED
     # >>> DO NOT MODIFY <<<

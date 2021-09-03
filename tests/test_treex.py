@@ -1,5 +1,5 @@
 import typing as tp
-from inspect import signature
+from inspect import istraceback, signature
 
 import jax
 import jax.numpy as jnp
@@ -7,19 +7,16 @@ import jax.tree_util
 import numpy as np
 
 import treex as tx
-from treex.types import Initializer
-
-Parameter = tp.cast(tp.Type[np.ndarray], tx.Parameter)
-State = tp.cast(tp.Type[tp.Union[np.ndarray, int]], tx.State)
+from treex.tree_object import _resolve_tree_type
 
 
 class Linear(tx.Module):
-    w: Parameter
-    b: Parameter
-    n: State
+    w: tx.Parameter[np.ndarray]
+    b: tx.Parameter[np.ndarray]
+    n: tx.State[int]
 
     def __init__(self, din, dout, name="linear"):
-
+        super().__init__()
         self.din = din
         self.dout = dout
         self.w = np.random.uniform(size=(din, dout))
@@ -33,6 +30,7 @@ class MLP(tx.Module):
     linear2: Linear
 
     def __init__(self, din, dmid, dout, name="mlp"):
+        super().__init__()
         self.din = din
         self.dmid = dmid
         self.dout = dout
@@ -61,7 +59,7 @@ class TestTreex:
 
     def test_flatten_slice(self):
 
-        mlp = MLP(2, 3, 5).filter(State)
+        mlp = MLP(2, 3, 5).filter(tx.State)
 
         flat = jax.tree_leaves(mlp)
 
@@ -69,7 +67,7 @@ class TestTreex:
 
     def test_flatten_slice_merging(self):
 
-        mlp = MLP(2, 3, 5).filter(State)
+        mlp = MLP(2, 3, 5).filter(tx.State)
 
         flat = jax.tree_flatten(mlp, lambda x: isinstance(x, tx.Nothing))[0]
 
@@ -106,7 +104,7 @@ class TestTreex:
         mlp = MLP(2, 3, 5)
 
         # params
-        mlp_params = mlp.filter(Parameter)
+        mlp_params = mlp.filter(tx.Parameter)
 
         assert not isinstance(mlp_params.linear1.w, tx.Nothing)
         assert not isinstance(mlp_params.linear1.b, tx.Nothing)
@@ -117,7 +115,7 @@ class TestTreex:
         assert isinstance(mlp_params.linear2.n, tx.Nothing)
 
         # states
-        mlp_states = mlp.filter(State)
+        mlp_states = mlp.filter(tx.State)
 
         assert isinstance(mlp_states.linear1.w, tx.Nothing)
         assert isinstance(mlp_states.linear1.b, tx.Nothing)
@@ -131,8 +129,8 @@ class TestTreex:
 
         mlp = MLP(2, 3, 5)
 
-        mlp_params = mlp.filter(Parameter)
-        mlp_states = mlp.filter(State)
+        mlp_params = mlp.filter(tx.Parameter)
+        mlp_states = mlp.filter(tx.State)
 
         mlp_next = mlp_params.update(mlp_states)
 
@@ -148,8 +146,8 @@ class TestTreex:
 
         mlp = MLP(2, 3, 5)
 
-        mlp_params = mlp.filter(Parameter)
-        mlp_states = mlp.filter(State)
+        mlp_params = mlp.filter(tx.Parameter)
+        mlp_states = mlp.filter(tx.State)
 
         mlp_params.update(mlp_states, inplace=True)
 
@@ -165,8 +163,8 @@ class TestTreex:
 
         mlp = MLP(2, 3, 5)
 
-        mlp_params = mlp.filter(Parameter)
-        mlp_states = mlp.filter(State)
+        mlp_params = mlp.filter(tx.Parameter)
+        mlp_states = mlp.filter(tx.State)
 
         mlp_params.update(mlp_states)
 
@@ -180,9 +178,10 @@ class TestTreex:
 
     def test_list(self):
         class LinearList(tx.Module):
-            params: tp.List[Parameter]
+            params: tx.Parameter[tp.List[np.ndarray]]
 
             def __init__(self, din, dout, name="linear"):
+                super().__init__()
 
                 self.din = din
                 self.dout = dout
@@ -211,6 +210,7 @@ class TestTreex:
             linears: tp.List[Linear]
 
             def __init__(self, din, dmid, dout, name="mlp"):
+                super().__init__()
                 self.linears = [
                     Linear(din, dmid, name="linear1"),
                     Linear(dmid, dout, name="linear2"),
@@ -327,6 +327,7 @@ class TestTreex:
             linear2: tx.Linear
 
             def __init__(self, din, dmid, dout, name="mlp"):
+                super().__init__()
                 self.linear1 = tx.Linear(din, dmid)
                 self.linear2 = tx.Linear(dmid, dout)
 
@@ -335,9 +336,10 @@ class TestTreex:
     def test_repr(self):
         class MyModule(tx.Module):
             a: tp.Dict[str, tp.List[MLP]]
-            b: tp.List[tx.Parameter]
+            b: tx.Parameter[tp.List[tp.Union[tx.Initializer, jnp.ndarray]]]
 
             def __init__(self):
+                super().__init__()
                 self.a = {"mlps": [MLP(2, 3, 5), MLP(2, 3, 5)]}
                 self.b = [
                     tx.Initializer(lambda key: jnp.zeros((10, 4))),
@@ -357,9 +359,10 @@ class TestTreex:
     def test_tabulate(self):
         class MyModule(tx.Module):
             a: tp.Dict[str, tp.List[MLP]]
-            b: tp.List[tx.Parameter]
+            b: tx.Parameter[tp.List[tp.Union[jnp.ndarray, tx.Initializer]]]
 
             def __init__(self):
+                super().__init__()
                 self.a = {"mlps": [MLP(256, 1024, 512), MLP(256, 1024, 512)]}
                 self.b = [
                     tx.Initializer(lambda key: jnp.zeros((512, 256))),
@@ -377,3 +380,126 @@ class TestTreex:
         print(rep)
 
         print(mlp.a["mlps"][1].linear2)
+
+    def test_resolves(self):
+
+        # test some generic resolves to tree type
+        annotation = tx.Parameter[tp.List[tp.Any]]
+        tree_type = _resolve_tree_type("annotation", annotation)
+        assert tree_type is tx.Parameter
+
+        # test static generic resolve to None
+        annotation = tx.Static[tx.Parameter[tp.Any]]
+        tree_type = _resolve_tree_type("annotation", annotation)
+        assert tree_type is tx.Static
+
+        # test static only resolve to None
+        annotation = tx.Static
+        tree_type = _resolve_tree_type("annotation", annotation)
+        assert tree_type is tx.Static
+
+        annotation = tp.List[int]
+        tree_type = _resolve_tree_type("annotation", annotation)
+        assert tree_type is list
+
+        annotation = tp.List[tx.Parameter[int]]
+        tree_type = _resolve_tree_type("annotation", annotation)
+        assert tree_type is tx.Parameter
+
+    def test_static_annotation(self):
+        class Mod(tx.Module):
+            a: tx.Linear
+            b: tx.Static[tx.Linear]
+
+            def __init__(self):
+                super().__init__()
+                self.a = tx.Linear(3, 4)
+                self.b = tx.Linear(3, 4)
+
+        mod = Mod().init(42)
+
+        assert len(jax.tree_leaves(mod)) == 2
+
+        assert mod.a.initialized
+        assert mod.a.params is not None
+
+        assert not mod.b.initialized
+        assert mod.b.params is None
+
+    def test_auto_annotations(self):
+        class MLP(tx.Module):
+            def __init__(self, din, dmid, dout, name="mlp"):
+                super().__init__()
+                self.din = din
+                self.dmid = dmid
+                self.dout = dout
+                self.name = name
+
+                self.linear1 = Linear(din, dmid, name="linear1")
+                self.linear2 = Linear(dmid, dout, name="linear2")
+
+        mlp = MLP(2, 3, 5).init(42)
+
+        assert "linear1" in mlp.__annotations__
+
+    def test_auto_annotations_inserted(self):
+        class MLP(tx.Module):
+            def __init__(self, din, dmid, dout, name="mlp"):
+                super().__init__()
+                self.din = din
+                self.dmid = dmid
+                self.dout = dout
+                self.name = name
+
+                self.linear1 = Linear(din, dmid, name="linear1")
+                self.linear2 = Linear(dmid, dout, name="linear2")
+
+        mlp = MLP(2, 3, 5).init(42)
+
+        mlp.linear3 = Linear(7, 8, name="linear3").init(42)
+
+        rep = repr(mlp)
+
+        assert "linear3" in rep
+
+    def test_auto_annotations_static(self):
+        class MLP(tx.Module):
+            linear2: tx.Static[Linear]
+
+            def __init__(self, din, dmid, dout, name="mlp"):
+                super().__init__()
+                self.din = din
+                self.dmid = dmid
+                self.dout = dout
+                self.name = name
+
+                self.linear1 = Linear(din, dmid, name="linear1")
+                self.linear2 = Linear(dmid, dout, name="linear2")
+
+        mlp = MLP(2, 3, 5).init(42)
+
+        rep = repr(mlp)
+
+        assert "linear1" in rep
+        assert "linear2" not in rep
+
+    def test_annotations_missing_field_no_error(self):
+        class MLP(tx.Module):
+            linear3: Linear  # missing field
+
+            def __init__(self, din, dmid, dout, name="mlp"):
+                super().__init__()
+                self.din = din
+                self.dmid = dmid
+                self.dout = dout
+                self.name = name
+
+                self.linear1 = Linear(din, dmid, name="linear1")
+                self.linear2 = Linear(dmid, dout, name="linear2")
+
+        mlp = MLP(2, 3, 5).init(42)
+
+        rep = repr(mlp)
+
+        assert "linear1" in rep
+        assert "linear2" in rep

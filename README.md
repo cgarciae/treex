@@ -56,6 +56,7 @@ class MLP(tx.Module):
     layers: List[tx.Linear]
 
     def __init__(self, features: Sequence[int]):
+        super().__init__()
         self.layers = [
             tx.Linear(din, dout) 
             for din, dout in zip(features[:-1], features[1:])
@@ -100,10 +101,11 @@ Treex Modules have the following characteristics:
 
 ```python
 class Linear(tx.Module):
-    w: tx.Parameter
-    b: tx.Parameter
+    w: tx.Parameter[tx.Initializer, jnp.ndarray]
+    b: tx.Parameter[jnp.ndarray]
 
     def __init__(self, din, dout):
+        super().__init__()
         self.w = tx.Initializer(
             lambda key: jax.random.uniform(key, shape=(din, dout)))
         self.b = jnp.zeros(shape=(dout,))
@@ -127,6 +129,7 @@ class MLP(tx.Module):
     layers: List[tx.Linear]
 
     def __init__(self, features: Sequence[int]):
+        super().__init__()
         self.layers = [
             tx.Linear(din, dout) 
             for din, dout in zip(features[:-1], features[1:])
@@ -139,6 +142,41 @@ class MLP(tx.Module):
 
 mlp = MLP([3, 5, 2]).init(42)
 ```
+
+#### Auto-annotations
+Adding all proper type annotations for complex modules can be tedious, a two layer CNN can look like this:
+
+```python
+class CNN(tx.Module):
+    conv1: tx.Conv
+    bn1: tx.BatchNorm
+    dropout1: tx.Dropout
+    conv2: tx.Conv
+    bn2: tx.BatchNorm
+    dropout2: tx.Dropout
+
+    def __init__(self):
+        super().__init__()
+        self.conv1 = tx.Conv(28, 32, [3, 3])
+        self.bn1 = tx.BatchNorm(32)
+        self.dropout1 = tx.Dropout(0.5)
+        self.conv2 = tx.Conv(32, 64, [3, 3])
+        self.bn2 = tx.BatchNorm(64)
+        self.dropout2 = tx.Dropout(0.5)
+```
+For this reason, Treex will automatically detect all fields whose values are `TreeObject` instances and add the the type annotation for you. This reduces the previous example to:
+```python
+class CNN(tx.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = tx.Conv(28, 32, [3, 3])
+        self.bn1 = tx.BatchNorm(32)
+        self.dropout1 = tx.Dropout(0.5)
+        self.conv2 = tx.Conv(32, 64, [3, 3])
+        self.bn2 = tx.BatchNorm(64)
+        self.dropout2 = tx.Dropout(0.5)
+```
+Note that this won't work if e.g. you have a field with a list or dictionary of Modules, for that you have to use proper type annotations.
 
 ### Pytrees
 Since Modules are pytrees they can be arguments to JAX functions such as `jit`, `grad`, `vmap`, etc, and the `jax.tree_*` function family.
@@ -165,10 +203,11 @@ Initialization in Treex is done by calling the `init` method on the Module with 
 There are two initialization mechanisms in Treex. The first one is setting the fields we wish to initialize to an `Initializer` object. `Initializer`s contain functions that take a `key` and return the initial value of the field:
 ```python
 class MyModule(tx.Module):
-    a: tx.Parameter
-    b: tx.Parameter
+    a: tx.Parameter[tx.Initializer, jnp.ndarray]
+    b: tx.Parameter[int]
 
     def __init__(self):
+        super().__init__()
         self.a = tx.Initializer(
             lambda key: jax.random.uniform(key, shape=(1,)))
         self.b = 2
@@ -184,10 +223,11 @@ module.initialized # True
 The second is to override the `module_init` method, which takes a `key` and can initialize any required fields. This is useful for modules that require complex initialization logic or whose field's initialization depends on each other.
 ```python
 class MyModule(tx.Module):
-    a: tx.Parameter
-    b: tx.Parameter
+    a: Optional[tx.Parameter[jnp.ndarray]]  # ndarray | None
+    b: tx.Parameter[jnp.ndarray, None]      # ndarray | None
 
     def __init__(self):
+        super().__init__()
         self.a = None
         self.b = None
 
@@ -205,8 +245,8 @@ We can also mix and match the two strategies, meaning that some parameters can b
 The `filter` method allows selecting a subtree by filtering based on a type, all leaves that are not a subclass of such type are set to a special `Nothing` value.
 ```python
 class MyModule(tx.Module):
-    a: tx.Parameter = np.array(1)
-    b: tx.BatchStat = np.array(2)
+    a: tx.Parameter[np.ndarray] = np.array(1)
+    b: tx.BatchStat[np.ndarray] = np.array(2)
     ...
 
 module = MyModule(...)
@@ -219,6 +259,16 @@ module.filter(tx.BatchStat) # MyModule(a=Nothing, b=array([2]))
 ```python
 jax.tree_leaves(module.filter(tx.Parameter)) # [array([1])]
 jax.tree_leaves(module.filter(tx.BatchStat)) # [array([2])]
+```
+
+If you need to do more complex filtering, you can pass callables instead of types:
+
+```python
+# all States that are not OptStates
+module.filter(
+    lambda x: issubclass(x, tx.State) and not issubclass(x, tx.OptState)
+) 
+# MyModule(a=Nothing, b=array([2]))
 ```
 
 A typical use case is to define `params` as a `Parameter` filter and pass it as the first argument to `grad` so that the gradient is computed only that particular subset and immediately update them back to the `model` before performing any computation:
@@ -272,15 +322,15 @@ def main():
 jax.jit
 def train_step(model, x, y, optimizer):
     ...
-    params = optimizer.update(grads, params)
+    params = optimizer.apply_updates(grads, params)
     ...
     return model, loss, optimizer
 ```
 
-As you see, `tx.Optimizer` follows the same API as `optax.GradientTransformation` except that:
+As you see, `tx.Optimizer` follows a similar API as `optax.GradientTransformation` except that:
 1. There is no `opt_state`, instead optimizer IS the state.
-2. `update` by default applies the gradient updates to the parameters.
-3. `update` updates the internal state of the optimizer in-place.
+2. You directly use `apply_updates` to update the parameters, you can use `return_updates=True` to get the `updates` instead.
+3. `apply_updates` also updates the internal state of the optimizer in-place.
 
 Notice that since `tx.Optimizer` is a Pytree, it was passed through `jit` without the need to specify `static_argnums`.
 
@@ -288,10 +338,11 @@ Notice that since `tx.Optimizer` is a Pytree, it was passed through `jit` withou
 Treex takes a "direct" approach to state management, i.e., state is updated in-place by the Module whenever it needs to. For example, this module will calculate the running average of its input:
 ```python
 class Average(tx.Module):
-    count: tx.State
-    total: tx.State
+    count: tx.State[jnp.ndarray]
+    total: tx.State[jnp.ndarray]
 
     def __init__(self):
+        super().__init__()
         self.count = jnp.array(0)
         self.total = jnp.array(0.0)
 
@@ -304,9 +355,10 @@ class Average(tx.Module):
 Treex Modules that require random state will often keep a `rng` key internally and update it in-place when needed:
 ```python
 class Dropout(tx.Module):
-    rng: tx.Rng
+    rng: tx.Rng[tx.Initializer, jnp.ndarray]  # Initializer | ndarray
 
     def __init__(self, rate: float):
+        ...
         self.rng = tx.Initializer(lambda key: key)
         ...
 
@@ -314,13 +366,13 @@ class Dropout(tx.Module):
         key, self.rng = jax.random.split(self.rng)
         ...
 ```
-Finally `tx.Optimizer` also performs inplace updates inside the `update` method, here is a sketch of how it works:
+Finally `tx.Optimizer` also performs inplace updates inside the `apply_updates` method, here is a sketch of how it works:
 ```python
 class Optimizer(tx.TreeObject):
-    opt_state: tx.OptState
+    opt_state: tx.OptState[Any]
     optimizer: optax.GradientTransformation
 
-    def update(self, grads, params):
+    def apply_updates(self, grads, params):
         ...
         updates, self.opt_state = self.optimizer.update(
             grads, self.opt_state, params
@@ -366,7 +418,7 @@ model = model.eval()
 y_pred = model(X_test)
 ```
 ### Parameter Annotations
-The role of each parameter is defined by its annotation. While valid annotations is any type which inherits from `tx.TreePart`, the default annotations from Treex are currently organized into the following type hierarchy:
+The role of each field is defined by its annotation. While any valid annotations is just type which inherits from `tx.TreePart`, the default annotations from Treex are organized into the following hierarchy:
 
 <details>
 <summary>Graph code</summary>
@@ -376,7 +428,13 @@ graph TD;
     TreePart-->Parameter;
     TreePart-->State;
     State-->Rng;
-    State-->BatchStat;
+    State-->ModelState;
+    ModelState-->BatchStat;
+    ModelState-->Cache;
+    TreePart-->Log;
+    Log-->Loss;
+    Log-->Metric;
+    State-->OptState;
 ```
 
 </details>
@@ -388,32 +446,58 @@ This is useful because you can make specific or more general queries using `filt
 ```python
 rngs = model.filter(tx.Rng)
 batch_stats = model.filter(tx.BatchStat)
-all_states = model.filter(tx.State) # union of the previous two
+all_states = model.filter(tx.State)
 ```
-You can easily define you own annotations by inheriting from directly `tx.TreePart` or any of its subclasses. As an example lets create a new `Cache` state to emulates Flax's `cache` collection:
+#### Static Analysis
+All `TreePart` instances included in Treex like `Parameter` and `State` currently behave as a `typing.Union` in the eyes of static analyzers. This means that they will think the following types resolve to:
 
 ```python
-class Cache(tx.TreePart):
+a: tx.Parameter[int] # int
+b: tx.Parameter[int, float] # int | float
+```
+
+Given the propreties of `Union`, the following two annotation as statically equivalent:
+
+```python
+a: tx.Parameter[List[int]] # List[int]
+b: List[tx.Parameter[int]] # List[int]
+```
+This happens because the union of single type is like an identity, thus its up to the user to choose which makes more sense, Treex internally only cares whether or not there is a `TreePart` subclass somewhere in the type. In this case Treex will resolve that the two fields are Parameters and will strip all other information.
+
+#### Custom Annotations
+You can easily define you own annotations by inheriting from directly `tx.TreePart` or any of its subclasses. As an example this is how you would define `Cache` which is intended to emulate Flax's `cache` collection:
+
+
+```python
+class Cache(tx.ModelState):
     pass
 ```
 That is it! Now you can use it in your model:
 ```python
 class MyModule(tx.Module):
-    memory: Cache
+    memory: Cache[jnp.ndarray]
     ...
 ```
-**Tip**: Your static analyzer will probably start complaining if you try to assign an `jnp.ndarray` to `memory` in this example because `ndarray`s are not `TreePart`s. While this makes sense, we want to trick the static analyzer into thinking `Cache` represents an `ndarray` and not a `TreePart`, the easiest way to do this is to use `typing.cast`:
+
+##### Union Behaviour
+With the previous code your static analyzer will probably start complaining if you try to assign an `jnp.ndarray` to `memory` because `ndarray`s are not `Cache`s. While this makes sense, we want to trick the static analyzer into thinking `Cache` represents an `Union`. Currently the only way to do this is to use do something like this:
 
 ```python
 from typing import cast, Type
 import jax.numpy as jnp
 
-class Cache(tx.TreePart):
+class _Cache(tx.ModelState):
     pass
 
-Cache = cast(Type[jnp.ndarray], Cache)
+Cache = Union  # static information
+globals()['Cache'] = _Cache  # real annotation
+
+
+class MyModule(tx.Module):
+    memory: Cache[jnp.ndarray] # Union[ndarray] = ndarray
+    ...
 ```
-`cast` an identity function, meaning `Cache` is actually reassigned to itself, however, the static analyzer will now think its an `ndarray`. This way both the static analyzer and Treex will be happy.
+Hopefully a better way is found in the future, however, this will keep the static analyzers happy as they will think `cache` is an `ndarray` while Treex will get the correct annotation metadata.
 
 ### Full Example
 
@@ -431,10 +515,11 @@ y = 1.4 * x - 0.3 + np.random.normal(scale=0.1, size=(500, 1))
 
 # treex already defines tx.Linear but we can define our own
 class Linear(tx.Module):
-    w: tx.Parameter
-    b: tx.Parameter
+    w: tx.Parameter[tx.Initializer, jnp.ndarray]
+    b: tx.Parameter[jnp.ndarray]
 
     def __init__(self, din, dout):
+        super().__init__()
         self.w = tx.Initializer(lambda key: jax.random.uniform(key, shape=(din, dout)))
         self.b = jnp.zeros(shape=(dout,))
 
@@ -463,7 +548,7 @@ def train_step(model, x, y, optimizer):
     (loss, model), grads = loss_fn(params, model, x, y)
 
     # here model == params
-    model = optimizer.update(grads, model)
+    model = optimizer.apply_updates(grads, model)
 
     return loss, model, optimizer
 
@@ -482,5 +567,4 @@ plt.scatter(x, y, c="k", label="data")
 plt.plot(X_test, y_pred, c="b", linewidth=2, label="prediction")
 plt.legend()
 plt.show()
-
 ```

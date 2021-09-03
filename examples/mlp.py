@@ -16,6 +16,7 @@ class MLP(tx.Module):
     linear2: tx.Linear
 
     def __init__(self, din, dmid, dout, dropout: float = 0.5):
+        super().__init__()
         self.linear1 = tx.Linear(din, dmid)
         self.dropout1 = tx.Dropout(dropout)
         self.linear2 = tx.Linear(dmid, dout)
@@ -40,7 +41,7 @@ def train_step(model, x, y, optimizer):
     params = model.filter(tx.Parameter)
     (loss, model), grads = loss_fn(params, model, x, y)
 
-    new_params = optimizer.update(grads, params)
+    new_params = optimizer.apply_updates(grads, params)
     model = model.update(new_params)
 
     return loss, model, optimizer

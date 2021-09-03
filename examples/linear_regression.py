@@ -13,10 +13,11 @@ y = 1.4 * x - 0.3 + np.random.normal(scale=0.1, size=(500, 1))
 
 # treex already defines tx.Linear but we can define our own
 class Linear(tx.Module):
-    w: tx.Parameter
-    b: tx.Parameter
+    w: tx.Parameter[tx.Initializer, jnp.ndarray]
+    b: tx.Parameter[jnp.ndarray]
 
     def __init__(self, din, dout):
+        super().__init__()
         self.w = tx.Initializer(lambda key: jax.random.uniform(key, shape=(din, dout)))
         self.b = jnp.zeros(shape=(dout,))
 
@@ -45,7 +46,7 @@ def train_step(model, x, y, optimizer):
     (loss, model), grads = loss_fn(params, model, x, y)
 
     # here model == params
-    model = optimizer.update(grads, model)
+    model = optimizer.apply_updates(grads, model)
 
     return loss, model, optimizer
 

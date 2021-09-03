@@ -1,5 +1,5 @@
 # isort:skip_file
-__st
+"__st"
 # %% [markdown]
 """
 # Treex
@@ -34,6 +34,7 @@ class NoisyLinear(tx.Module):
     name: str
 
     def __init__(self, din, dout):
+        super().__init__()
         # Initializers only expect RNG key
         self.w = tx.Initializer(lambda k: jax.random.uniform(k, shape=(din, dout)))
         self.b = tx.Initializer(lambda k: jax.random.uniform(k, shape=(dout,)))
@@ -124,7 +125,7 @@ def train_step(model: NoisyLinear, optimizer: tx.Optimizer, x, y):
     (loss, model), grads = loss_fn(params, model, x, y)
 
     # apply optax update
-    new_params = optimizer.update(grads, params)
+    new_params = optimizer.apply_updates(grads, params)
 
     # update new_params
     model = model.update(new_params)

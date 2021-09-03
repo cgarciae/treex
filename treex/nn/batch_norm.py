@@ -23,8 +23,8 @@ class BatchNorm(Module):
     """
 
     # pytree
-    params: tp.Optional[tp.Mapping[str, types.Parameter]]
-    batch_stats: tp.Optional[tp.Mapping[str, types.BatchStat]]
+    params: types.Parameter[tp.Mapping[str, jnp.ndarray], None]
+    batch_stats: types.BatchStat[tp.Mapping[str, jnp.ndarray], None]
 
     # props
     features_in: int
@@ -74,6 +74,7 @@ class BatchNorm(Module):
                 the examples on the first two and last two devices. See `jax.lax.psum`
                 for more details.
         """
+        super().__init__()
         self.features_in = features_in
         self.module = flax_module.BatchNorm(
             use_running_average=None,

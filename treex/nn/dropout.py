@@ -7,6 +7,7 @@ from flax.linen import stochastic as flax_module
 
 from treex import types
 from treex.module import Module
+from treex.rnq_seq import RngSeq
 
 
 class Dropout(Module):
@@ -24,7 +25,7 @@ class Dropout(Module):
     via `__call__`.
     """
 
-    rng: types.Rng
+    rng: RngSeq
 
     def __init__(
         self,
@@ -38,12 +39,13 @@ class Dropout(Module):
             rate: the dropout probability.  (_not_ the keep rate!)
             broadcast_dims: dimensions that will share the same dropout mask
         """
+        super().__init__()
         self.module = flax_module.Dropout(
             rate=rate,
             broadcast_dims=broadcast_dims,
             deterministic=None,
         )
-        self.rng = types.Initializer(lambda key: key)
+        self.rng = RngSeq()
 
     def __call__(
         self, x: np.ndarray, deterministic: tp.Optional[bool] = None, rng=None
@@ -67,8 +69,7 @@ class Dropout(Module):
         deterministic = not training
 
         if rng is None:
-            assert isinstance(self.rng, jnp.ndarray)
-            rng, self.rng = jax.random.split(self.rng)
+            rng = self.rng.next()
 
         # call apply
         output = self.module.apply(
