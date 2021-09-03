@@ -97,12 +97,6 @@ Metric = tp.Union  # static
 globals()["Metric"] = _Metric  # real
 
 
-class _ValueAnnotation(tp.Generic[A]):
-    def __init__(self, value, annotation: tp.Type[A]):
-        self.value = value
-        self.annotation = annotation
-
-
 class Named(tp.Generic[A]):
     def __init__(self, name: str, value: A):
         super().__init__()

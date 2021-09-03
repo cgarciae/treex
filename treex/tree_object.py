@@ -3,6 +3,7 @@ import io
 import threading
 import typing as tp
 from abc import ABCMeta
+from dataclasses import dataclass
 
 import jax
 import jax.numpy as jnp
@@ -31,6 +32,20 @@ class _Context(threading.local):
 _LOCAL: _Context = _Context()
 
 
+class FieldInfo:
+    def __init__(
+        self,
+        name: str,
+        value: tp.Any,
+        annotation: tp.Type[types.TreePart],
+        module: "TreeObject",
+    ):
+        self.name = name
+        self.value = value
+        self.annotation = annotation
+        self.module = module
+
+
 class CheckInitCalled(ABCMeta):
     def __call__(cls, *args, **kwargs) -> "TreeObject":
         obj: TreeObject = type.__call__(cls, *args, **kwargs)
@@ -39,6 +54,11 @@ class CheckInitCalled(ABCMeta):
             raise RuntimeError(
                 f"{obj.__class__.__name__} not initialized properly, constructor must call `super().__init__()`"
             )
+
+        # auto-annotations
+        for field, value in vars(obj).items():
+            if field not in obj.__annotations__ and isinstance(value, TreeObject):
+                obj.__annotations__[field] = type(value)
 
         return obj
 
@@ -80,8 +100,11 @@ class TreeObject(metaclass=CheckInitCalled):
                 _annotation = annotation  # help static analyzer
                 if _LOCAL.get_value_annotations:
                     tree[field] = jax.tree_map(
-                        lambda x: types._ValueAnnotation[types.TreePart](
-                            x, _annotation
+                        lambda x: FieldInfo(
+                            name=field,
+                            value=x,
+                            annotation=_annotation,
+                            module=self,
                         ),
                         value,
                     )
@@ -129,19 +152,11 @@ class TreeObject(metaclass=CheckInitCalled):
         rep = _get_repr(self, level=0, array_type=None, inline=False)
         return _get_rich_repr(Text.from_markup(rep))
 
-    # TODO: richer filters, this might support queries like: all Parameters whos modules are trainable.
-    # - refactor _ValueAnnotation to FieldInfo(name, value, annotation, module)
-    # - update tree_flatten to add such information
-    # - change `*filters` signagure to:
-    #       Union[
-    #           Type[TreePart],
-    #           Callable[[FieldInfo]], bool],
-    #       ]
     def filter(
         self: T,
         *filters: tp.Union[
             tp.Type["types.TreePart"],
-            tp.Callable[[tp.Type["types.TreePart"]], bool],
+            tp.Callable[[FieldInfo], bool],
         ],
     ) -> T:
         """
@@ -167,29 +182,30 @@ class TreeObject(metaclass=CheckInitCalled):
         ```
 
         More fancy filters can be created by using callables:
+
         ```python
         # all States that are not OptStates
         module.filter(
-            lambda x: issubclass(x, tx.State) and not issubclass(x, tx.OptState)
+            lambda field: issubclass(field.annotation, tx.State)
+            and not issubclass(field.annotation, tx.OptState)
         )
         # MyModule(a=Nothing, b=2)
         ```
 
         Arguments:
-            filters: Types to filter by, membership is determined by `issubclass`.
+            filters: Types to filter by, membership is determined by `issubclass`, or
+                callables that take in a `FieldInfo` and return a `bool`.
         Returns:
             The new module with the filtered fields.
 
         """
-        flat: tp.List[
-            types._ValueAnnotation[tp.Union[types.TreePart, tp.Type[types.TreePart]]]
-        ]
+        flat: tp.List[FieldInfo]
 
         def _get_filter(
-            t: tp.Union[types.TreePart, tp.Type[types.TreePart]],
-        ) -> tp.Callable[[tp.Type[types.TreePart]], bool]:
-            def _filter(x: tp.Type[types.TreePart]) -> bool:
-                return isinstance(t, tp.Type) and issubclass(x, t)
+            t: tp.Type[types.TreePart],
+        ) -> tp.Callable[[FieldInfo], bool]:
+            def _filter(info: FieldInfo) -> bool:
+                return isinstance(t, tp.Type) and issubclass(info.annotation, t)
 
             return _filter
 
@@ -203,10 +219,8 @@ class TreeObject(metaclass=CheckInitCalled):
         try:
             flat, treedef = jax.tree_flatten(self)
             flat_out = [
-                value_annotation.value
-                if any(f(value_annotation.annotation) for f in filters)
-                else types.Nothing()
-                for value_annotation in flat
+                info.value if any(f(info) for f in filters) else types.Nothing()
+                for info in flat
             ]
             module = jax.tree_unflatten(treedef, flat_out)
         finally:
