@@ -57,6 +57,7 @@ def predict(model: tx.Sequential, x: jnp.ndarray):
 def main(
     epochs: int = 5,
     batch_size: int = 32,
+    steps_per_epoch: int = -1,
 ):
 
     model = tx.Sequential(
@@ -93,7 +94,9 @@ def main(
         losses = []
         accs = []
         model = model.train()
-        for step in range(len(X_train) // batch_size):
+        for step in range(
+            len(X_train) // batch_size if steps_per_epoch < 1 else steps_per_epoch
+        ):
             idx = np.random.choice(len(X_train), batch_size)
             x = X_train[idx]
             y = y_train[idx]

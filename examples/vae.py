@@ -145,6 +145,7 @@ def main(
     batch_size: int = 32,
     hidden_size: int = 128,
     latent_size: int = 128,
+    steps_per_epoch: int = -1,
 ):
     image_shape = (28, 28)
 
@@ -169,7 +170,9 @@ def main(
     for epoch in range(epochs):
         losses = []
         model = model.train()
-        for step in range(len(X_train) // batch_size):
+        for step in range(
+            len(X_train) // batch_size if steps_per_epoch < 1 else steps_per_epoch
+        ):
             idx = np.random.choice(len(X_train), batch_size)
             x = X_train[idx]
             loss, model, optimizer = train_step(model, optimizer, x)
