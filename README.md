@@ -143,6 +143,41 @@ class MLP(tx.Module):
 mlp = MLP([3, 5, 2]).init(42)
 ```
 
+#### Auto-annotations
+Adding all proper type annotations for complex modules can be tedious, a two layer CNN can look like this:
+
+```python
+class CNN(tx.Module):
+    conv1: tx.Conv
+    bn1: tx.BatchNorm
+    dropout1: tx.Dropout
+    conv2: tx.Conv
+    bn2: tx.BatchNorm
+    dropout2: tx.Dropout
+
+    def __init__(self):
+        super().__init__()
+        self.conv1 = tx.Conv(28, 32, [3, 3])
+        self.bn1 = tx.BatchNorm(32)
+        self.dropout1 = tx.Dropout(0.5)
+        self.conv2 = tx.Conv(32, 64, [3, 3])
+        self.bn2 = tx.BatchNorm(64)
+        self.dropout2 = tx.Dropout(0.5)
+```
+For this reason, Treex will automatically detect all fields whose values are `TreeObject` instances and add the the type annotation for you. This reduces the previous example to:
+```python
+class CNN(tx.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = tx.Conv(28, 32, [3, 3])
+        self.bn1 = tx.BatchNorm(32)
+        self.dropout1 = tx.Dropout(0.5)
+        self.conv2 = tx.Conv(32, 64, [3, 3])
+        self.bn2 = tx.BatchNorm(64)
+        self.dropout2 = tx.Dropout(0.5)
+```
+Note that this won't work if e.g. you have a field with a list or dictionary of Modules, for that you have to use proper type annotations.
+
 ### Pytrees
 Since Modules are pytrees they can be arguments to JAX functions such as `jit`, `grad`, `vmap`, etc, and the `jax.tree_*` function family.
 ```python

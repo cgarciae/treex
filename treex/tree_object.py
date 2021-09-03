@@ -18,7 +18,6 @@ from treex import types
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
 T = tp.TypeVar("T", bound="TreeObject")
-M = tp.TypeVar("M", bound="Module")
 
 PAD = r"{pad}"
 
@@ -59,34 +58,37 @@ class TreeObject(metaclass=CheckInitCalled):
         if _LOCAL.map_f is not None and _LOCAL.map_inplace:
             _LOCAL.map_f(self)
 
-        annotations = getattr(self, "__annotations__", {})
         fields = vars(self)
 
         tree = {}
         not_tree = {}
 
-        for name, value in fields.items():
-            annotation = annotations.get(name, None)
+        for field, value in fields.items():
+            # auto-annotations
+            if field not in self.__annotations__ and isinstance(value, TreeObject):
+                self.__annotations__[field] = type(value)
+
+            annotation = self.__annotations__.get(field, None)
 
             if annotation is None:
-                not_tree[name] = value
+                not_tree[field] = value
 
             elif issubclass(annotation, TreeObject):
-                tree[name] = value
+                tree[field] = value
 
             elif issubclass(annotation, types.TreePart):
                 _annotation = annotation  # help static analyzer
                 if _LOCAL.get_value_annotations:
-                    tree[name] = jax.tree_map(
+                    tree[field] = jax.tree_map(
                         lambda x: types._ValueAnnotation[types.TreePart](
                             x, _annotation
                         ),
                         value,
                     )
                 else:
-                    tree[name] = value
+                    tree[field] = value
             else:
-                not_tree[name] = value
+                not_tree[field] = value
 
         children = (tree,)
 
@@ -127,6 +129,14 @@ class TreeObject(metaclass=CheckInitCalled):
         rep = _get_repr(self, level=0, array_type=None, inline=False)
         return _get_rich_repr(Text.from_markup(rep))
 
+    # TODO: richer filters, this might support queries like: all Parameters whos modules are trainable.
+    # - refactor _ValueAnnotation to FieldInfo(name, value, annotation, module)
+    # - update tree_flatten to add such information
+    # - change `*filters` signagure to:
+    #       Union[
+    #           Type[TreePart],
+    #           Callable[[FieldInfo]], bool],
+    #       ]
     def filter(
         self: T,
         *filters: tp.Union[
@@ -179,11 +189,7 @@ class TreeObject(metaclass=CheckInitCalled):
             t: tp.Union[types.TreePart, tp.Type[types.TreePart]],
         ) -> tp.Callable[[tp.Type[types.TreePart]], bool]:
             def _filter(x: tp.Type[types.TreePart]) -> bool:
-                return (
-                    issubclass(x, t)
-                    if isinstance(t, tp.Type)
-                    else issubclass(x, type(t))
-                )
+                return isinstance(t, tp.Type) and issubclass(x, t)
 
             return _filter
 

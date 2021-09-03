@@ -426,20 +426,80 @@ class TestTreex:
         assert not mod.b.initialized
         assert mod.b.params is None
 
-    def test_logs(self):
-        class M(tx.Module):
-            a: tx.Parameter[float]
-            loss: tx.Loss
-
-            def __init__(self):
+    def test_auto_annotations(self):
+        class MLP(tx.Module):
+            def __init__(self, din, dmid, dout, name="mlp"):
                 super().__init__()
-                self.a = 1.0
-                self.loss = tx.Loss("loss", 2.0)
+                self.din = din
+                self.dmid = dmid
+                self.dout = dout
+                self.name = name
 
-        module = M().init(42)
+                self.linear1 = Linear(din, dmid, name="linear1")
+                self.linear2 = Linear(dmid, dout, name="linear2")
 
-        module = module.filter(tx.Parameter)
+        mlp = MLP(2, 3, 5).init(42)
 
-        assert module.a == 1.0
-        assert isinstance(module.loss, tx.Loss)
-        assert isinstance(module.loss.value, tx.Nothing)
+        assert "linear1" in mlp.__annotations__
+
+    def test_auto_annotations_inserted(self):
+        class MLP(tx.Module):
+            def __init__(self, din, dmid, dout, name="mlp"):
+                super().__init__()
+                self.din = din
+                self.dmid = dmid
+                self.dout = dout
+                self.name = name
+
+                self.linear1 = Linear(din, dmid, name="linear1")
+                self.linear2 = Linear(dmid, dout, name="linear2")
+
+        mlp = MLP(2, 3, 5).init(42)
+
+        mlp.linear3 = Linear(7, 8, name="linear3").init(42)
+
+        rep = repr(mlp)
+
+        assert "linear3" in rep
+
+    def test_auto_annotations_static(self):
+        class MLP(tx.Module):
+            linear2: tx.Static[Linear]
+
+            def __init__(self, din, dmid, dout, name="mlp"):
+                super().__init__()
+                self.din = din
+                self.dmid = dmid
+                self.dout = dout
+                self.name = name
+
+                self.linear1 = Linear(din, dmid, name="linear1")
+                self.linear2 = Linear(dmid, dout, name="linear2")
+
+        mlp = MLP(2, 3, 5).init(42)
+
+        rep = repr(mlp)
+
+        assert "linear1" in rep
+        assert "linear2" not in rep
+
+    def test_annotations_missing_field_no_error(self):
+        class MLP(tx.Module):
+            linear3: Linear  # missing field
+
+            def __init__(self, din, dmid, dout, name="mlp"):
+                super().__init__()
+                self.din = din
+                self.dmid = dmid
+                self.dout = dout
+                self.name = name
+
+                self.linear1 = Linear(din, dmid, name="linear1")
+                self.linear2 = Linear(dmid, dout, name="linear2")
+
+        mlp = MLP(2, 3, 5).init(42)
+
+        rep = repr(mlp)
+
+        assert "linear1" in rep
+        assert "linear2" in rep

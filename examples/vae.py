@@ -1,6 +1,4 @@
-import os
 import typing as tp
-from datetime import datetime
 from functools import partial
 
 import dataget
@@ -9,6 +7,7 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import optax
+import typer
 
 import treex as tx
 
@@ -141,73 +140,79 @@ def train_step(
 
 
 # define parameters
-epochs = 5
-batch_size = 32
-image_shape = (28, 28)
-hidden_size = 128
-latent_size = 128
+def main(
+    epochs: int = 5,
+    batch_size: int = 32,
+    hidden_size: int = 128,
+    latent_size: int = 128,
+):
+    image_shape = (28, 28)
 
-model = VAE(
-    image_shape=image_shape,
-    hidden_size=hidden_size,
-    latent_size=latent_size,
-).init(42)
+    model = VAE(
+        image_shape=image_shape,
+        hidden_size=hidden_size,
+        latent_size=latent_size,
+    ).init(42)
 
-optimizer = tx.Optimizer(optax.adam(1e-3))
-optimizer = optimizer.init(model.filter(tx.Parameter))
+    optimizer = tx.Optimizer(optax.adam(1e-3))
+    optimizer = optimizer.init(model.filter(tx.Parameter))
+
+    # load data
+    X_train, _1, X_test, _2 = dataget.image.mnist().get()
+    X_train = (X_train > 0).astype(jnp.float32)
+    X_test = (X_test > 0).astype(jnp.float32)
+
+    print("X_train:", X_train.shape, X_train.dtype)
+    print("X_test:", X_test.shape, X_test.dtype)
+
+    epoch_losses = []
+    for epoch in range(epochs):
+        losses = []
+        model = model.train()
+        for step in range(len(X_train) // batch_size):
+            idx = np.random.choice(len(X_train), batch_size)
+            x = X_train[idx]
+            loss, model, optimizer = train_step(model, optimizer, x)
+            losses.append(loss)
+
+        epoch_loss = jnp.mean(jnp.stack(losses))
+        epoch_losses.append(epoch_loss)
+        print(f"[{epoch}] loss={epoch_loss}")
+
+    model = model.eval()
+
+    # plot loss curve
+    plt.figure()
+    plt.plot(epoch_losses)
+
+    # visualize reconstructions
+    idxs = np.random.choice(5, len(X_test))
+    x_sample = X_test[idxs]
+    x_pred = model.reconstruct(x_sample)
+
+    plt.figure()
+    for i in range(5):
+        plt.subplot(2, 5, i + 1)
+        plt.imshow(x_sample[i], cmap="gray")
+        plt.subplot(2, 5, 5 + i + 1)
+        plt.imshow(x_pred[i], cmap="gray")
+
+    # visualize samples from latent space
+    z_samples = np.random.normal(size=(10, latent_size))
+    samples = model.generate(z_samples)
+
+    plt.figure()
+    plt.title("Generative Samples")
+    for i in range(5):
+        plt.subplot(2, 5, 2 * i + 1)
+        plt.imshow(samples[i], cmap="gray")
+        plt.subplot(2, 5, 2 * i + 2)
+        plt.imshow(samples[i + 1], cmap="gray")
+
+    plt.show()
+    plt.close()
 
 
-# load data
-X_train, _1, X_test, _2 = dataget.image.mnist().get()
-X_train = (X_train > 0).astype(jnp.float32)
-X_test = (X_test > 0).astype(jnp.float32)
+if __name__ == "__main__":
 
-print("X_train:", X_train.shape, X_train.dtype)
-print("X_test:", X_test.shape, X_test.dtype)
-
-epoch_losses = []
-for epoch in range(epochs):
-    losses = []
-    model = model.train()
-    for step in range(len(X_train) // batch_size):
-        idx = np.random.choice(len(X_train), batch_size)
-        x = X_train[idx]
-        loss, model, optimizer = train_step(model, optimizer, x)
-        losses.append(loss)
-
-    epoch_loss = jnp.mean(jnp.stack(losses))
-    epoch_losses.append(epoch_loss)
-    print(f"[{epoch}] loss={epoch_loss}")
-
-model = model.eval()
-
-# plot loss curve
-plt.figure()
-plt.plot(epoch_losses)
-
-# visualize reconstructions
-idxs = np.random.choice(5, len(X_test))
-x_sample = X_test[idxs]
-x_pred = model.reconstruct(x_sample)
-
-plt.figure()
-for i in range(5):
-    plt.subplot(2, 5, i + 1)
-    plt.imshow(x_sample[i], cmap="gray")
-    plt.subplot(2, 5, 5 + i + 1)
-    plt.imshow(x_pred[i], cmap="gray")
-
-# visualize samples from latent space
-z_samples = np.random.normal(size=(10, latent_size))
-samples = model.generate(z_samples)
-
-plt.figure()
-plt.title("Generative Samples")
-for i in range(5):
-    plt.subplot(2, 5, 2 * i + 1)
-    plt.imshow(samples[i], cmap="gray")
-    plt.subplot(2, 5, 2 * i + 2)
-    plt.imshow(samples[i + 1], cmap="gray")
-
-plt.show()
-plt.close()
+    typer.run(main)
