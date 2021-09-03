@@ -144,16 +144,19 @@ mlp = MLP([3, 5, 2]).init(42)
 ```
 
 #### Auto-annotations
-Adding all proper type annotations for complex modules can be tedious, a two layer CNN can look like this:
+Adding all proper type annotations for complex modules can be tedious if you have many submodules, for this reason, Treex will automatically detect all fields whose values are `TreeObject` instances and add the the type annotation for you.
 
 ```python
 class CNN(tx.Module):
-    conv1: tx.Conv
-    bn1: tx.BatchNorm
-    dropout1: tx.Dropout
-    conv2: tx.Conv
-    bn2: tx.BatchNorm
-    dropout2: tx.Dropout
+
+    # Given the fields bellow, these annotations will be added automatically:
+    # ----------------------
+    # conv1: tx.Conv
+    # bn1: tx.BatchNorm
+    # dropout1: tx.Dropout
+    # conv2: tx.Conv
+    # bn2: tx.BatchNorm
+    # dropout2: tx.Dropout
 
     def __init__(self):
         super().__init__()
@@ -164,22 +167,12 @@ class CNN(tx.Module):
         self.bn2 = tx.BatchNorm(64)
         self.dropout2 = tx.Dropout(0.5)
 ```
-For this reason, Treex will automatically detect all fields whose values are `TreeObject` instances and add the the type annotation for you. This reduces the previous example to:
-```python
-class CNN(tx.Module):
-    def __init__(self):
-        super().__init__()
-        self.conv1 = tx.Conv(28, 32, [3, 3])
-        self.bn1 = tx.BatchNorm(32)
-        self.dropout1 = tx.Dropout(0.5)
-        self.conv2 = tx.Conv(32, 64, [3, 3])
-        self.bn2 = tx.BatchNorm(64)
-        self.dropout2 = tx.Dropout(0.5)
-```
-Note that this won't work if e.g. you have a field with a list or dictionary of Modules, for that you have to use proper type annotations.
+
+Note that this won't work if e.g. you have a field with e.g. a list/dict of Modules, for that you have to use proper type annotations.
 
 ### Pytrees
 Since Modules are pytrees they can be arguments to JAX functions such as `jit`, `grad`, `vmap`, etc, and the `jax.tree_*` function family.
+
 ```python
 @jax.jit
 @jax.grad
@@ -223,6 +216,7 @@ module.initialized # True
 The second is to override the `module_init` method, which takes a `key` and can initialize any required fields. This is useful for modules that require complex initialization logic or whose field's initialization depends on each other.
 ```python
 class MyModule(tx.Module):
+    # these annotations are equivalent:
     a: Optional[tx.Parameter[jnp.ndarray]]  # ndarray | None
     b: tx.Parameter[jnp.ndarray, None]      # ndarray | None
 
@@ -270,7 +264,7 @@ module.filter(
 ) 
 # MyModule(a=Nothing, b=array([2]))
 ```
-
+#### Practical use case
 A typical use case is to define `params` as a `Parameter` filter and pass it as the first argument to `grad` so that the gradient is computed only that particular subset and immediately update them back to the `model` before performing any computation:
 
 ```python
@@ -292,7 +286,7 @@ optimizer = optimizer.init(params) # only needs params
 
 ### Optimizer
 
-Optax is an amazing library however, its optimizers are not pytrees, this means that state and computation are separate, and you cannot jit them. To solve this Treex provides an `tx.Optimizer` class that can wrap any Optax optimizer and make it a Pytree.
+Optax is an amazing library however, its optimizers are not pytrees, this means that their state and computation are separate and you cannot jit them. To solve this Treex provides a `tx.Optimizer` class that can wrap any Optax optimizer.
 
 While in optax you would define something like this:
 ```python
@@ -319,7 +313,7 @@ def main():
     optimizer = tx.Optimizer(optax.adam(1e-3)).init(params)
     ...
 
-jax.jit
+jax.jit # no static_argnums needed
 def train_step(model, x, y, optimizer):
     ...
     params = optimizer.apply_updates(grads, params)
@@ -329,10 +323,10 @@ def train_step(model, x, y, optimizer):
 
 As you see, `tx.Optimizer` follows a similar API as `optax.GradientTransformation` except that:
 1. There is no `opt_state`, instead optimizer IS the state.
-2. You directly use `apply_updates` to update the parameters, you can use `return_updates=True` to get the `updates` instead.
+2. You use `apply_updates` to update the parameters, if you want the `updates` instead you can set `return_updates=True`.
 3. `apply_updates` also updates the internal state of the optimizer in-place.
 
-Notice that since `tx.Optimizer` is a Pytree, it was passed through `jit` without the need to specify `static_argnums`.
+Notice that since `tx.Optimizer` is a Pytree it was passed through `jit` naturally without the need to specify `static_argnums`.
 
 ### State Management
 Treex takes a "direct" approach to state management, i.e., state is updated in-place by the Module whenever it needs to. For example, this module will calculate the running average of its input:
@@ -380,6 +374,7 @@ class Optimizer(tx.TreeObject):
         ...
 ```
 #### What is the catch?
+<!-- TODO: Add a list of rules to follow around jitted functions -->
 State management is one of the most challenging things in JAX, but with the help of Treex it seems effortless, what is the catch? As always there is a trade-off to consider: Treex's approach requires to consider how to propagate state changes properly while taking into account the fact that Pytree operations create new objects, that is, since reference do not persist across calls through these functions changes might be lost. 
 
 A standard solution to this problem is: **always output the module to update state**. For example, a typical loss function that contains a stateful model would look like this:
@@ -479,8 +474,10 @@ class MyModule(tx.Module):
     ...
 ```
 
-##### Union Behaviour
-With the previous code your static analyzer will probably start complaining if you try to assign an `jnp.ndarray` to `memory` because `ndarray`s are not `Cache`s. While this makes sense, we want to trick the static analyzer into thinking `Cache` represents an `Union`. Currently the only way to do this is to use do something like this:
+##### Making annotations behave like Union
+With the previous code your static analyzer will probably start complaining if you try to assign an `jnp.ndarray` to `memory` because `ndarray`s are not `Cache`s. While this makes sense, we want to trick the static analyzer into thinking `Cache` represents an `Union`, since in general `Union[A] = A` we will get the `ndarray` type we need. 
+
+Currently the only way to do this is to use do something like this:
 
 ```python
 from typing import cast, Type
@@ -497,7 +494,7 @@ class MyModule(tx.Module):
     memory: Cache[jnp.ndarray] # Union[ndarray] = ndarray
     ...
 ```
-Hopefully a better way is found in the future, however, this will keep the static analyzers happy as they will think `cache` is an `ndarray` while Treex will get the correct annotation metadata.
+Hopefully a better way is found in the future, however, this will keep the static analyzers happy as they will think `cache` is an `ndarray` while Treex will get the correct `_Cache` annotation metadata.
 
 ### Full Example
 
