@@ -32,13 +32,13 @@ pip install treex
 ```
 
 ## Status
-At the moment Treex is a proof of concept for what a Pytree-based Module system for JAX could look like. Testing is needed to find bugs and potential issues, however, since Treex layers are numerically equivalent to Flax this borrows some maturity and yields more confidence over its results. Feedback is much appreciated.
+Treex is in an early stage, things might brake between versions but we will respect semanting versioning. While more testing is needed, since Treex layers are numerically equivalent to Flax this borrows some maturity and yields more confidence over its results. Feedback is much appreciated.
 
 **Roadmap**:
 - [x] Finish prototyping core API
 - [ ] Wrap all Flax Linen Modules
-- [ ] Document public API
-- [ ] Create documentation site
+- [x] Document public API
+- [x] Create documentation site
 
 
 ## Getting Started
