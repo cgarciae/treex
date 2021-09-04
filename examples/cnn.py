@@ -49,7 +49,6 @@ def train_step(
 
 @jax.jit
 def predict(model: tx.Sequential, x: jnp.ndarray):
-    print("JITTING")
     return model(x).argmax(axis=1)
 
 
