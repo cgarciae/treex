@@ -216,27 +216,26 @@ module.initialized # True
 The second is to override the `module_init` method, which takes a `key` and can initialize any required fields. This is useful for modules that require complex initialization logic or whose field's initialization depends on each other.
 ```python
 class MyModule(tx.Module):
-    # these annotations are equivalent:
-    a: Optional[tx.Parameter[jnp.ndarray]]  # ndarray | None
-    b: tx.Parameter[jnp.ndarray, None]      # ndarray | None
+    a: tx.Parameter[jnp.ndarray, tx.Initializer]
+    b: tx.Parameter[jnp.ndarray, None]
 
     def __init__(self):
         super().__init__()
-        self.a = None
+        self.a = tx.Initializer(
+            lambda key: jax.random.uniform(key, shape=(1,)))
         self.b = None
 
     def module_init(self, key):
-        # some complex initialization
-        ...
+        # self.a is already initialized at this point
+        self.b = 10.0 * self.a + jax.random.normal(key, shape=(1,))
 
 module = MyModule().init(42)
-module # MyModule(a=array([0.927...]), b=array([0.749...]))
+module # MyModule(a=array([0.3]), b=array([3.2]))
 ```
-We can also mix and match the two strategies, meaning that some parameters can be initialized via `Initializer`s while others via `module_init`. The rule is that `Initializer`s are always going the be called first.
-
+As shown here, field `Initializer`s are always called before `module_init`.
 
 ### Filter and Update API
-The `filter` method allows selecting a subtree by filtering based on a type, all leaves that are not a subclass of such type are set to a special `Nothing` value.
+The `filter` method allows you to select a subtree by filtering based on a `TreeType` type, all leaves whose type annotations are a subclass of such type are kept, the rest are set to a special `Nothing` value.
 ```python
 class MyModule(tx.Module):
     a: tx.Parameter[np.ndarray] = np.array(1)
@@ -255,22 +254,28 @@ jax.tree_leaves(module.filter(tx.Parameter)) # [array([1])]
 jax.tree_leaves(module.filter(tx.BatchStat)) # [array([2])]
 ```
 
-If you need to do more complex filtering, you can pass callables instead of types:
+If you need to do more complex filtering, you can pass callables with the signature `FieldInfo -> bool` instead of types:
 
 ```python
 # all States that are not OptStates
 module.filter(
-    lambda x: issubclass(x, tx.State) and not issubclass(x, tx.OptState)
+    lambda field: issubclass(field.annotation, tx.State) 
+    and not issubclass(field.annotation, tx.OptState)
 ) 
 # MyModule(a=Nothing, b=array([2]))
 ```
-#### Practical use case
-A typical use case is to define `params` as a `Parameter` filter and pass it as the first argument to `grad` so that the gradient is computed only that particular subset and immediately update them back to the `model` before performing any computation:
+
+#### Use cases
+##### grad & optimizers
+A typical use case is to define `params` as a `Parameter` filter and pass it as the first argument to `grad` or `value_and_grad` and as the target to optimizers:
 
 ```python
 # we take `params` as a Parameter filter from model
 # but model itself is left untouched
 params = model.filter(tx.Parameter)
+
+optimizer = tx.Optimizer(optax.adam(1e-3))
+optimizer = optimizer.init(params)
 
 @jax.grad 
 def loss_fn(params, model, x, y):
@@ -278,10 +283,19 @@ def loss_fn(params, model, x, y):
     model = model.update(params)
     ...
 
-grads = loss_fn(params, model, x, y) 
+grads = loss_fn(params, model, x, y)
+params = optimizer.apply_updates(grads, params)
+```
+Note that inside `loss_fn` the `params` are immediately merged back into `model` via `update` so they are used in the actual computation.
 
-optimizer = tx.Optimizer(optax.adam(1e-3))
-optimizer = optimizer.init(params) # only needs params
+##### Sychronizing Distributed State
+`filter` can also be used to synchronize specific state like batch statistics (BatchNorm) in distributed (pmap-ed) functions:
+
+```python
+# assume we are inside a pmap with axis_name="device"
+batch_stats = model.filter(tx.BatchStat)
+batch_stats = jax.lax.pmean(batch_stats, axis_name="device")
+model = model.update(batch_stats)
 ```
 
 ### Optimizer
