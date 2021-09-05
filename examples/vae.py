@@ -189,7 +189,7 @@ def main(
     plt.plot(epoch_losses)
 
     # visualize reconstructions
-    idxs = np.random.choice(5, len(X_test))
+    idxs = np.random.choice(len(X_test), 10)
     x_sample = X_test[idxs]
     x_pred = model.reconstruct(x_sample)
 

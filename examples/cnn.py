@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import optax
 import typer
+from tqdm import tqdm
 
 import treex as tx
 
@@ -15,7 +16,6 @@ Batch = tp.Mapping[str, np.ndarray]
 np.random.seed(420)
 
 
-@partial(jax.value_and_grad, has_aux=True)
 def loss_fn(
     params: tx.Sequential, model: tx.Sequential, x: jnp.ndarray, y: jnp.ndarray
 ) -> tp.Tuple[jnp.ndarray, tp.Tuple[tx.Sequential, jnp.ndarray]]:
@@ -39,12 +39,25 @@ def train_step(
     model: tx.Sequential, optimizer: tx.Optimizer, x: jnp.ndarray, y: jnp.ndarray
 ) -> tp.Tuple[jnp.ndarray, tx.Sequential, tx.Optimizer, jnp.ndarray]:
     params = model.filter(tx.Parameter)
-    (loss, (model, acc_batch)), grads = loss_fn(params, model, x, y)
+
+    (loss, (model, acc_batch)), grads = jax.value_and_grad(loss_fn, has_aux=True)(
+        params, model, x, y
+    )
 
     params = optimizer.apply_updates(grads, params)
     model = model.update(params)
 
     return loss, model, optimizer, acc_batch
+
+
+@jax.jit
+def test_step(
+    model: tx.Sequential, x: jnp.ndarray, y: jnp.ndarray
+) -> tp.Tuple[jnp.ndarray, jnp.ndarray]:
+
+    loss, (model, acc_batch) = loss_fn(model, model, x, y)
+
+    return loss, acc_batch
 
 
 @jax.jit
@@ -86,41 +99,82 @@ def main(
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)
 
-    epoch_losses = []
-    epoch_accs = []
+    epoch_train_losses = []
+    epoch_train_accs = []
+    epoch_test_losses = []
+    epoch_test_accs = []
 
     for epoch in range(epochs):
-        losses = []
-        accs = []
+        # ---------------------------------------
+        # train
+        # ---------------------------------------
+        train_losses = []
+        train_accs = []
         model = model.train()
-        for step in range(
-            len(X_train) // batch_size if steps_per_epoch < 1 else steps_per_epoch
+        for step in tqdm(
+            range(
+                len(X_train) // batch_size if steps_per_epoch < 1 else steps_per_epoch
+            ),
+            desc="training",
+            unit="batch",
+            leave=False,
         ):
             idx = np.random.choice(len(X_train), batch_size)
             x = X_train[idx]
             y = y_train[idx]
-            loss, model, optimizer, acc_batch = train_step(model, optimizer, x, y)
-            losses.append(loss)
-            accs.append(acc_batch)
+            loss, model, optimizer, acc = train_step(model, optimizer, x, y)
+            train_losses.append(loss)
+            train_accs.append(acc)
 
-        epoch_loss = jnp.mean(jnp.stack(losses))
-        epoch_acc = jnp.mean(jnp.stack(accs))
-        epoch_losses.append(epoch_loss)
-        epoch_accs.append(epoch_acc)
-        print(f"[{epoch}] loss={epoch_loss}, acc={epoch_acc}")
+        epoch_train_loss = jnp.mean(jnp.stack(train_losses))
+        epoch_train_acc = jnp.mean(jnp.stack(train_accs))
+        epoch_train_losses.append(epoch_train_loss)
+        epoch_train_accs.append(epoch_train_acc)
+
+        # ---------------------------------------
+        # test
+        # ---------------------------------------
+        test_losses = []
+        test_accs = []
+        model = model.eval()
+        for step in tqdm(
+            range(
+                len(X_test) // batch_size if steps_per_epoch < 1 else steps_per_epoch
+            ),
+            desc="testing",
+            unit="batch",
+            leave=False,
+        ):
+            idx = np.random.choice(len(X_test), batch_size)
+            x = X_test[idx]
+            y = y_test[idx]
+            loss, acc = test_step(model, x, y)
+            test_losses.append(loss)
+            test_accs.append(acc)
+
+        epoch_test_loss = jnp.mean(jnp.stack(test_losses))
+        epoch_test_acc = jnp.mean(jnp.stack(test_accs))
+        epoch_test_losses.append(epoch_test_loss)
+        epoch_test_accs.append(epoch_test_acc)
+
+        print(
+            f"[{epoch}] loss_train={epoch_train_loss}, acc_train={epoch_train_acc}, loss_test={epoch_test_loss}, acc_test={epoch_test_acc}"
+        )
 
     model = model.eval()
 
     # plot loss curve
     plt.figure()
-    plt.plot(epoch_losses)
+    plt.plot(epoch_train_losses)
+    plt.plot(epoch_test_losses)
 
     # plot acc curve
     plt.figure()
-    plt.plot(epoch_accs)
+    plt.plot(epoch_train_accs)
+    plt.plot(epoch_test_accs)
 
     # visualize reconstructions
-    idxs = np.random.choice(10, len(X_test))
+    idxs = np.random.choice(len(X_test), 10)
     x_sample = X_test[idxs]
 
     y_pred = predict(model, x_sample)

@@ -74,15 +74,15 @@ class Optimizer(TreeObject):
             A new optimizer instance.
         """
         module = self.copy()
-        params = annotation_map(lambda _: types.OptState, params)
+        params = jax.tree_leaves(params)
         module.opt_state = module.optimizer.init(params)
         module._initialized = True
         return module
 
-    # NOTE: current strategy is to convert annotation to `OptState`, this involves
-    # 2 `annotation_map`s + a `module_update` but prints/tabulates preserve TreeObject information.
-    # An alternative would be to flatten the params and use 2 `jax.tree_flatten` + a `jax.tree_unflatten`
-    # which might be faster but prints/tabulates only show a flat list of params with no structure.
+    # NOTE: params are flattened because:
+    # - The flat list is not a TreeObject, thus all of its internal parameters in the list are marked as
+    # OptState by a single annotation (no need to rewrite the module's annotations)
+    # - It ignores the static part of TreeObjects which if changed Optax yields an error.
     def apply_updates(
         self, grads: A, params: tp.Optional[A] = None, return_updates: bool = False
     ) -> A:
@@ -104,6 +104,9 @@ class Optimizer(TreeObject):
         opt_grads = annotation_map(lambda _: types.OptState, grads)
         opt_params = annotation_map(lambda _: types.OptState, params)
 
+        opt_grads, treedef = jax.tree_flatten(opt_grads)
+        opt_params = jax.tree_leaves(opt_params)
+
         param_updates: A
         param_updates, self.opt_state = self.optimizer.update(
             opt_grads,
@@ -117,7 +120,7 @@ class Optimizer(TreeObject):
         else:
             output = optax.apply_updates(opt_params, param_updates)
 
-        return module_update(grads, output)
+        return jax.tree_unflatten(treedef, output)
 
     # THE FOLOWING METHODS ARE AUTOMATICALLY GENERATED
     # >>> DO NOT MODIFY <<<

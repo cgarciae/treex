@@ -1,8 +1,10 @@
+import dataclasses
 import inspect
 import io
 import threading
 import typing as tp
 from abc import ABCMeta
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 import jax
@@ -23,13 +25,23 @@ T = tp.TypeVar("T", bound="TreeObject")
 PAD = r"{pad}"
 
 
+@dataclass
 class _Context(threading.local):
     get_value_annotations: bool = False
     map_f: tp.Optional[tp.Callable[["TreeObject"], "TreeObject"]] = None
     map_inplace: bool = False
 
+    def __enter__(self):
+        global _CONTEXT
+        self._old_context = _CONTEXT
+        _CONTEXT = self
 
-_LOCAL: _Context = _Context()
+    def __exit__(self, *args):
+        global _CONTEXT
+        _CONTEXT = self._old_context
+
+
+_CONTEXT: _Context = _Context()
 
 
 class FieldInfo:
@@ -75,8 +87,8 @@ class TreeObject(metaclass=CheckInitCalled):
 
     def tree_flatten(self):
 
-        if _LOCAL.map_f is not None and _LOCAL.map_inplace:
-            _LOCAL.map_f(self)
+        if _CONTEXT.map_f is not None and _CONTEXT.map_inplace:
+            _CONTEXT.map_f(self)
 
         fields = vars(self)
 
@@ -98,7 +110,7 @@ class TreeObject(metaclass=CheckInitCalled):
 
             elif issubclass(annotation, types.TreePart):
                 _annotation = annotation  # help static analyzer
-                if _LOCAL.get_value_annotations:
+                if _CONTEXT.get_value_annotations:
                     tree[field] = jax.tree_map(
                         lambda x: FieldInfo(
                             name=field,
@@ -128,8 +140,8 @@ class TreeObject(metaclass=CheckInitCalled):
         for k, v in not_tree.items():
             setattr(module, k, v)
 
-        if _LOCAL.map_f is not None and not _LOCAL.map_inplace:
-            module = _LOCAL.map_f(module)
+        if _CONTEXT.map_f is not None and not _CONTEXT.map_inplace:
+            module = _CONTEXT.map_f(module)
 
         return module
 
@@ -213,18 +225,14 @@ class TreeObject(metaclass=CheckInitCalled):
             _get_filter(f) if isinstance(f, tp.Type) else f for f in filters
         )
 
-        old_get_value_annotations = _LOCAL.get_value_annotations
-        _LOCAL.get_value_annotations = True
+        with _Context(get_value_annotations=True):
 
-        try:
             flat, treedef = jax.tree_flatten(self)
             flat_out = [
                 info.value if any(f(info) for f in filters) else types.Nothing()
                 for info in flat
             ]
             module = jax.tree_unflatten(treedef, flat_out)
-        finally:
-            _LOCAL.get_value_annotations = old_get_value_annotations
 
         return module
 
@@ -304,16 +312,12 @@ class TreeObject(metaclass=CheckInitCalled):
         Returns:
             A string containing the tabular representation.
         """
-        old_get_value_annotations = _LOCAL.get_value_annotations
-        _LOCAL.get_value_annotations = True
 
-        try:
+        with _Context(get_value_annotations=True):
             flat, _ = jax.tree_flatten(self)
             tree_part_types: tp.Tuple[tp.Type[types.TreePart], ...] = tuple(
                 {value_annotation.annotation for value_annotation in flat}
             )
-        finally:
-            _LOCAL.get_value_annotations = old_get_value_annotations
 
         path = ()
         rows = list(
@@ -387,21 +391,13 @@ def module_map(
     Returns:
         A new pytree with the updated TreeObjects or the same input `obj` if `inplace` is `True`.
     """
-    old_map_f = _LOCAL.map_f
-    old_map_inplace = _LOCAL.map_inplace
 
-    _LOCAL.map_f = f
-    _LOCAL.map_inplace = inplace
-
-    try:
+    with _Context(map_f=f, map_inplace=inplace):
         if inplace:
             jax.tree_flatten(obj)
             return obj
         else:
             return jax.tree_map(lambda x: x, obj)
-    finally:
-        _LOCAL.map_f = old_map_f
-        _LOCAL.map_inplace = old_map_inplace
 
 
 def annotation_map(
