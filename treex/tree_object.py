@@ -105,6 +105,9 @@ class TreeObject(metaclass=CheckInitCalled):
             if annotation is None:
                 not_tree[field] = value
 
+            elif not isinstance(annotation, tp.Type):
+                not_tree[field] = value
+
             elif issubclass(annotation, TreeObject):
                 tree[field] = value
 

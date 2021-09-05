@@ -47,6 +47,7 @@ class Optimizer(TreeObject):
 
     opt_state: types.OptState[tp.Any, None]
     optimizer: optax.GradientTransformation
+    _n_params: tp.Optional[int]
 
     _initialized: bool = False
 
@@ -62,6 +63,7 @@ class Optimizer(TreeObject):
         super().__init__()
         self.opt_state = None
         self.optimizer = optimizer
+        self._n_params = None
 
     def init(self: O, params: tp.Any) -> O:
         """
@@ -76,6 +78,7 @@ class Optimizer(TreeObject):
         module = self.copy()
         params = jax.tree_leaves(params)
         module.opt_state = module.optimizer.init(params)
+        module._n_params = len(params)
         module._initialized = True
         return module
 
@@ -97,15 +100,24 @@ class Optimizer(TreeObject):
         Returns:
             The updated parameters. Iftree_leaves `return_updates` is `True` then the updates are returned instead.
         """
+        if not self.initialized:
+            raise RuntimeError("Optimizer is not initialized")
+
         assert self.opt_state is not None
         if not return_updates and params is None:
             raise ValueError("params must be provided if updates are being applied")
 
-        opt_grads = annotation_map(lambda _: types.OptState, grads)
-        opt_params = annotation_map(lambda _: types.OptState, params)
+        opt_grads, treedef = jax.tree_flatten(grads)
+        opt_params = jax.tree_leaves(params)
 
-        opt_grads, treedef = jax.tree_flatten(opt_grads)
-        opt_params = jax.tree_leaves(opt_params)
+        if len(opt_params) != self._n_params:
+            raise ValueError(
+                f"params must have length {self._n_params}, got {len(opt_params)}"
+            )
+        if len(opt_grads) != self._n_params:
+            raise ValueError(
+                f"grads must have length {self._n_params}, got {len(opt_grads)}"
+            )
 
         param_updates: A
         param_updates, self.opt_state = self.optimizer.update(
