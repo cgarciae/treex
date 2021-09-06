@@ -449,7 +449,9 @@ graph TD;
 
 </details>
 
-![types](images/types.png)
+<!-- Uncomment to test during development -->
+<!-- ![types](images/types.png) -->
+![types](https://raw.githubusercontent.com/cgarciae/treex/master/images/types.png)
 
 This is useful because you can make specific or more general queries using `filter` depending on what you want to achive. e.g.
 
