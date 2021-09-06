@@ -41,7 +41,7 @@ class _Context(threading.local):
         _CONTEXT = self._old_context
 
 
-_CONTEXT: _Context = _Context()
+_CONTEXT = _Context()
 
 
 class FieldInfo:
