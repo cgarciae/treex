@@ -784,11 +784,46 @@ def _generic_issubclass(__cls, __class_or_tuple) -> bool:
     )
 
 
+def _remove_generic(_cls):
+    return (
+        _cls
+        if isinstance(_cls, type)
+        else _cls.__origin__
+        if hasattr(_cls, "__origin__")
+        else type(_cls)
+    )
+
+
 def _resolve_tree_type(name: str, t: tp.Any) -> tp.Any:
 
     tree_types = [
-        x for x in _all_types(t) if _generic_issubclass(x, (types.TreePart, TreeObject))
+        x
+        for x in _all_types(t)
+        if _generic_issubclass(x, (types.TreePart, TreeObject, types.Static))
     ]
+
+    if _generic_issubclass(t, types.Static):
+        if any(
+            _generic_issubclass(x, (types.TreePart, types.Static))
+            for x in tree_types[1:]
+        ):
+            raise TypeError(
+                f"Generic Static annotation cannot contain TreePart or Static types, got '{name}': {t}"
+            )
+        return types.Static
+
+    elif _generic_issubclass(t, types.TreePart):
+        if len(tree_types) > 1:
+            raise TypeError(
+                f"TreePart annotations cannot contain TreeParts, TreeObject, or Static types, got '{name}': {t}"
+            )
+        return _remove_generic(t)
+    elif any(
+        _generic_issubclass(x, (types.TreePart, types.Static)) for x in tree_types[1:]
+    ):
+        raise TypeError(
+            f"TreePart or Static annotations have to be the top-level annotation, they cannot be used inside Generic types, got '{name}': {t}"
+        )
 
     if len(tree_types) > 1:
         # if its a type with many TreeObject subtypes just mark them all as TreeObject
@@ -796,18 +831,12 @@ def _resolve_tree_type(name: str, t: tp.Any) -> tp.Any:
             return TreeObject
         else:
             raise TypeError(
-                f"Multiple tree parts found in annotation for field '{name}': {tree_types}"
+                f"Multiple tree parts found in annotation for field '{name}': {t}"
             )
     elif len(tree_types) == 1:
         return tree_types[0]
     else:
-        return (
-            t
-            if isinstance(t, type)
-            else t.__origin__
-            if hasattr(t, "__origin__")
-            else type(t)
-        )
+        return _remove_generic(t)
 
 
 def _all_types(t: tp.Type) -> tp.Iterable[tp.Type]:

@@ -7,11 +7,14 @@ import jax.tree_util
 import numpy as np
 
 A = tp.TypeVar("A")
+B = tp.TypeVar("B")
+
+_GenericAlias = type(tp.List[int])  # int is just a dummy type, it could be anything
 
 
 class IdentityGeneric(ABCMeta):
-    def __getitem__(cls: tp.Type[A], *key: tp.Any) -> tp.Type[A]:
-        return cls
+    def __getitem__(cls, *keys: tp.Any):
+        return _GenericAlias(cls, keys)
 
 
 class TreePart(object, metaclass=IdentityGeneric):
@@ -154,3 +157,15 @@ class Nothing:
 
     def __eq__(self, o: object) -> bool:
         return isinstance(o, Nothing)
+
+
+class Hashable(tp.Generic[A]):
+    """A hashable immutable wrapper around non-hashable values"""
+
+    value: A
+
+    def __init__(self, value: A):
+        self.__dict__["value"] = value
+
+    def __setattr__(self, name: str, value: tp.Any) -> None:
+        raise AttributeError(f"Hashable is immutable")

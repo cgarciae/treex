@@ -120,9 +120,10 @@ y = linear(x)
 Valid type annotations include:
 * Subtypes of `tx.TreePart` e.g. `tx.Parameter`, `tx.BatchStat`, etc.
 * Subtypes of `tx.Module` e.g. `tx.Linear`, custom Module types, etc.
-* Generic subtypes from the `typing` module of the previous e.g. `List[tx.Parameter]` or `Dict[str, tx.Linear]`.
+* Generic subtypes from the `typing` module containing `TreeObject` subtypes e.g. `List[tx.Linear]` or `Dict[str, tx.Conv]`.
+* Generic types cannot contain `tx.TreePart` subtypes e.g. this is not allowed `Tuple[int, tx.Parameter[float]]`.
 
-Type annotations that do not comform to the above rules will be ignored and the field will not be counted as part of the Pytree.
+Fields with annotations that do not comform to the above rules will be counted as static or yield an error when invalid.
 
 ```python
 class MLP(tx.Module):
@@ -168,7 +169,7 @@ class CNN(tx.Module):
         self.dropout2 = tx.Dropout(0.5)
 ```
 
-Note that this won't work if e.g. you have a field with e.g. a list/dict of Modules, for that you have to use proper type annotations.
+Note that this won't work if you have a field with e.g. a list/dict of Modules, for that you have to use proper type annotations.
 
 ### Pytrees
 Since Modules are pytrees they can be arguments to JAX functions such as `jit`, `grad`, `vmap`, etc, and the `jax.tree_*` function family.
@@ -509,6 +510,40 @@ class MyModule(tx.Module):
     ...
 ```
 Hopefully a better way is found in the future, however, this will keep the static analyzers happy as they will think `cache` is an `ndarray` while Treex will get the correct `_Cache` annotation metadata.
+
+### Non-hashable static fields
+If you want to have a static field that contains a non-hashable value like a numpy or jax array, you can use `tx.Hashable` to wrap around it such that it:
+
+```python
+class MyModule(tx.Module):
+    table: tx.Hashable[np.ndarray]
+    ...
+
+    def __init__(self, table: np.ndarray):
+        self.table = tx.Hashable(table)
+        ...
+    
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        table = self.table.value
+        ...
+```
+The hash from `Hashable` will only depend on object identity but not on the actual `value`, therefore you should treat it as an immutable, if you want to update its value you should create a new `Hashable` instance:
+
+```python
+table = np.ones((10, 10))
+module = MyModule(table)
+
+# use module as an argument for a jit-ed function
+...
+
+module.table = tx.Hashable(np.zeros((10, 10)))
+
+# jit-ed function will recompile now
+...
+```
+If you are somehow able to mutate `value` directly JAX won't know about this and `jit` won't recompile.
+
+**Note:** Currently JAX does not complain when you have a static field is a numpy array, however, in case you mutate such field and pass its module through jit again you will get a deprecation warning saying this situation will be an error in the future.
 
 ### Full Example
 

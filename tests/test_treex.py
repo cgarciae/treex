@@ -5,6 +5,7 @@ import jax
 import jax.numpy as jnp
 import jax.tree_util
 import numpy as np
+import pytest
 
 import treex as tx
 from treex.tree_object import _resolve_tree_type
@@ -388,12 +389,12 @@ class TestTreex:
         tree_type = _resolve_tree_type("annotation", annotation)
         assert tree_type is tx.Parameter
 
-        # test static generic resolve to None
-        annotation = tx.Static[tx.Parameter[tp.Any]]
+        # test static generic
+        annotation = tx.Static[tx.Linear]
         tree_type = _resolve_tree_type("annotation", annotation)
         assert tree_type is tx.Static
 
-        # test static only resolve to None
+        # test static only
         annotation = tx.Static
         tree_type = _resolve_tree_type("annotation", annotation)
         assert tree_type is tx.Static
@@ -405,6 +406,21 @@ class TestTreex:
         annotation = tp.List[tx.Parameter[int]]
         tree_type = _resolve_tree_type("annotation", annotation)
         assert tree_type is tx.Parameter
+
+        with pytest.raises(TypeError):
+            annotation = tx.Parameter[tp.List[tx.State[int]]]
+            _resolve_tree_type("annotation", annotation)
+
+        with pytest.raises(TypeError):
+            annotation = tx.Parameter[tp.List[tx.Linear]]
+            _resolve_tree_type("annotation", annotation)
+
+        with pytest.raises(TypeError):
+            annotation = tp.Tuple[tx.Parameter, tp.List[tx.Linear]]
+            _resolve_tree_type("annotation", annotation)
+
+        annotation = tx.Static[tp.List[tx.Linear]]
+        _resolve_tree_type("annotation", annotation)
 
     def test_static_annotation(self):
         class Mod(tx.Module):
@@ -503,3 +519,35 @@ class TestTreex:
 
         assert "linear1" in rep
         assert "linear2" in rep
+
+    def test_hashable(self):
+        class M(tx.Module):
+            a: tx.Hashable[np.ndarray]
+
+            def __init__(self):
+                super().__init__()
+                self.a = tx.Hashable(np.ones((3, 4), dtype=np.float32))
+
+        m = M().init(42)
+
+        N = 0
+
+        @jax.jit
+        def f(x):
+            nonlocal N
+            N += 1
+            return x
+
+        m = f(m)
+        assert N == 1
+
+        m = f(m)
+        assert N == 1
+
+        m.a = tx.Hashable(np.zeros((3, 4), dtype=np.float32))
+
+        m = f(m)
+        assert N == 2
+
+        m = f(m)
+        assert N == 2
