@@ -7,10 +7,11 @@ from flax.linen import stochastic as flax_module
 
 from treex import types
 from treex.module import Module
+from treex.nn.flax_module import FlaxModule
 from treex.rnq_seq import RngSeq
 
 
-class Dropout(Module):
+class Dropout(FlaxModule):
     """Create a dropout layer.
 
     `Dropout` is implemented as a wrapper over `flax.linen.Dropout`, its constructor
@@ -25,12 +26,10 @@ class Dropout(Module):
     via `__call__`.
     """
 
-    rng: RngSeq
-
     def __init__(
         self,
         rate: float,
-        broadcast_dims: tp.Iterable[int] = (),
+        broadcast_dims: tp.Sequence[int] = (),
     ):
         """
         Create a dropout layer.
@@ -39,13 +38,27 @@ class Dropout(Module):
             rate: the dropout probability.  (_not_ the keep rate!)
             broadcast_dims: dimensions that will share the same dropout mask
         """
-        super().__init__()
-        self.module = flax_module.Dropout(
-            rate=rate,
-            broadcast_dims=broadcast_dims,
-            deterministic=None,
+        if len(broadcast_dims) > 0:
+            ndims = max(broadcast_dims) + 1
+        else:
+            ndims = 1
+
+        shape = list(range(1, ndims + 1))
+
+        super().__init__(
+            module=flax_module.Dropout(
+                rate=rate,
+                broadcast_dims=broadcast_dims,
+                deterministic=None,
+            ),
+            sample_inputs=types.Inputs(
+                jnp.ones(shape=shape, dtype=jnp.float32),
+                False,
+                jax.random.PRNGKey(0),
+            ),
+            mutable=[],
+            rngs=[],
         )
-        self.rng = RngSeq()
 
     def __call__(
         self, x: np.ndarray, deterministic: tp.Optional[bool] = None, rng=None
@@ -63,20 +76,10 @@ class Dropout(Module):
         Returns:
             The masked inputs reweighted to preserve mean.
         """
-        variables = dict()
-
         training = not deterministic if deterministic is not None else self.training
         deterministic = not training
 
         if rng is None:
-            rng = self.rng.next()
+            rng = self.rng_seq.next()
 
-        # call apply
-        output = self.module.apply(
-            variables,
-            x,
-            deterministic=deterministic,
-            rng=rng,
-        )
-
-        return tp.cast(jnp.ndarray, output)
+        return super().__call__(x, deterministic=deterministic, rng=rng)

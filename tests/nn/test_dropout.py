@@ -21,7 +21,7 @@ class DropoutTest(unittest.TestCase):
         ),
     )
     @hp.settings(deadline=None, max_examples=20)
-    def test_equivalence(
+    def test_dropout_equivalence(
         self,
         batch_size,
         length,

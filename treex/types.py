@@ -169,3 +169,12 @@ class Hashable(tp.Generic[A]):
 
     def __setattr__(self, name: str, value: tp.Any) -> None:
         raise AttributeError(f"Hashable is immutable")
+
+
+class Inputs:
+    args: tp.Tuple[tp.Any, ...]
+    kwargs: tp.Dict[str, tp.Any]
+
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs

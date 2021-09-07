@@ -60,7 +60,16 @@ class FieldInfo:
 
 class CheckInitCalled(ABCMeta):
     def __call__(cls, *args, **kwargs) -> "TreeObject":
-        obj: TreeObject = type.__call__(cls, *args, **kwargs)
+        obj: TreeObject = cls.__new__(cls)
+
+        # copy annotations before __init__ is called
+        obj.__annotations__ = {
+            field: _resolve_tree_type(field, value)
+            for field, value in obj.__annotations__.items()
+        }
+
+        obj.__init__(*args, **kwargs)
+        # obj: TreeObject = type.__call__(cls, *args, **kwargs)
 
         if not obj._init_called:
             raise RuntimeError(
@@ -80,10 +89,6 @@ class TreeObject(metaclass=CheckInitCalled):
 
     def __init__(self) -> None:
         self._init_called = True
-        self.__annotations__ = {
-            field: _resolve_tree_type(field, value)
-            for field, value in self.__annotations__.items()
-        }
 
     def tree_flatten(self):
 
