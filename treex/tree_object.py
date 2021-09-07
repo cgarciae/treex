@@ -27,7 +27,7 @@ PAD = r"{pad}"
 
 @dataclass
 class _Context(threading.local):
-    get_value_annotations: bool = False
+    add_field_info: bool = False
     map_f: tp.Optional[tp.Callable[["TreeObject"], "TreeObject"]] = None
     map_inplace: bool = False
 
@@ -113,7 +113,7 @@ class TreeObject(metaclass=CheckInitCalled):
 
             elif issubclass(annotation, types.TreePart):
                 _annotation = annotation  # help static analyzer
-                if _CONTEXT.get_value_annotations:
+                if _CONTEXT.add_field_info:
                     tree[field] = jax.tree_map(
                         lambda x: FieldInfo(
                             name=field,
@@ -214,28 +214,16 @@ class TreeObject(metaclass=CheckInitCalled):
             The new module with the filtered fields.
 
         """
-        flat: tp.List[FieldInfo]
-
-        def _get_filter(
-            t: tp.Type[types.TreePart],
-        ) -> tp.Callable[[FieldInfo], bool]:
-            def _filter(info: FieldInfo) -> bool:
-                return isinstance(t, tp.Type) and issubclass(info.annotation, t)
-
-            return _filter
 
         filters = tuple(
             _get_filter(f) if isinstance(f, tp.Type) else f for f in filters
         )
 
-        with _Context(get_value_annotations=True):
+        def apply_filters(info: FieldInfo) -> tp.Any:
+            return info.value if any(f(info) for f in filters) else types.Nothing()
 
-            flat, treedef = jax.tree_flatten(self)
-            flat_out = [
-                info.value if any(f(info) for f in filters) else types.Nothing()
-                for info in flat
-            ]
-            module = jax.tree_unflatten(treedef, flat_out)
+        with _Context(add_field_info=True):
+            module = jax.tree_map(apply_filters, self)
 
         return module
 
@@ -316,7 +304,7 @@ class TreeObject(metaclass=CheckInitCalled):
             A string containing the tabular representation.
         """
 
-        with _Context(get_value_annotations=True):
+        with _Context(add_field_info=True):
             flat, _ = jax.tree_flatten(self)
             tree_part_types: tp.Tuple[tp.Type[types.TreePart], ...] = tuple(
                 {value_annotation.annotation for value_annotation in flat}
@@ -432,22 +420,16 @@ def module_update(module: A, other: A, *rest: A) -> A:
     """
     modules = (module, other) + rest
 
-    def merge_fn(xs):
+    def merge_fn(*xs):
         acc, *xs = xs
         for x in xs:
             if not isinstance(x, types.Nothing):
                 acc = x
         return acc
 
-    flats, treedefs = zip(
-        *[
-            jax.tree_flatten(m, is_leaf=lambda x: isinstance(x, types.Nothing))
-            for m in modules
-        ]
+    module = jax.tree_map(
+        merge_fn, *modules, is_leaf=lambda x: isinstance(x, types.Nothing)
     )
-    # flat_out = jax.tree_util.tree_map(merge_fn, *flats)
-    flat_out = [merge_fn(values) for values in zip(*flats)]
-    module = jax.tree_unflatten(treedefs[0], flat_out)
 
     return module
 
@@ -455,6 +437,15 @@ def module_update(module: A, other: A, *rest: A) -> A:
 # --------------------------------------------------
 # utils
 # --------------------------------------------------
+
+
+def _get_filter(
+    t: tp.Type[types.TreePart],
+) -> tp.Callable[[FieldInfo], bool]:
+    def _filter(info: FieldInfo) -> bool:
+        return isinstance(t, tp.Type) and issubclass(info.annotation, t)
+
+    return _filter
 
 
 def _get_rich_repr(table):
