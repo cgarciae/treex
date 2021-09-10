@@ -236,7 +236,7 @@ module # MyModule(a=array([0.3]), b=array([3.2]))
 As shown here, field `Initializer`s are always called before `module_init`.
 
 ### Filter and Update API
-The `filter` method allows you to select a subtree by filtering based on a `TreeType` type, all leaves whose type annotations are a subclass of such type are kept, the rest are set to a special `Nothing` value.
+The `filter` method allows you to select a subtree by filtering based on a `TreePart` type, all leaves whose type annotations are a subclass of such type are kept, the rest are set to a special `Nothing` value.
 ```python
 class MyModule(tx.Module):
     a: tx.Parameter[np.ndarray] = np.array(1)
@@ -435,16 +435,17 @@ The role of each field is defined by its annotation. While any valid parameter a
 
 ```mermaid
 graph TD;
-    TreePart-->Parameter;
     TreePart-->State;
+    TreePart-->Parameter;
     State-->Rng;
     State-->ModelState;
+    State-->OptState;
     ModelState-->BatchStat;
     ModelState-->Cache;
     TreePart-->Log;
     Log-->Loss;
     Log-->Metric;
-    State-->OptState;
+    TreePart-->DifferentiableHyperParam;
 ```
 
 </details>
