@@ -751,6 +751,8 @@ def _add_padding(rows):
                     line.format(
                         pad=" " * (max_length - len(line.rstrip().split(PAD)[0]))
                     )
+                    if PAD in line
+                    else line
                     for line in row[col].rstrip().split("\n")
                 )
 

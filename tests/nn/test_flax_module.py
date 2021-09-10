@@ -97,7 +97,7 @@ class TestFlaxModule:
 
                 return x
 
-        x = np.ones((2, 5, 8), dtype=np.float32)
+        x = np.random.uniform(size=(2, 5, 8))
         training = True
 
         flax_module = SomeModule()
@@ -141,5 +141,27 @@ class TestFlaxModule:
         variables = variables.copy(updates)
         y_treex = treex_module(x, training)
         assert np.allclose(flax_key, treex_module.rng_seq.key)
+
+        assert np.allclose(y_treex, y_flax)
+
+        # eval
+        assert all(
+            np.allclose(a, b)
+            for a, b in zip(
+                jax.tree_leaves(variables["batch_stats"]),
+                jax.tree_leaves(treex_module.filter(tx.BatchStat)),
+            )
+        )
+
+        training = False
+        y_flax = flax_module.apply(
+            variables,
+            x,
+            training,
+            mutable=False,
+        )
+        # variables = variables.copy(updates)
+        treex_module = treex_module.eval()
+        y_treex = treex_module(x, training)
 
         assert np.allclose(y_treex, y_flax)
