@@ -155,6 +155,8 @@ def main(
         latent_size=latent_size,
     ).init(42)
 
+    print(model.tabulate())
+
     optimizer = tx.Optimizer(optax.adam(1e-3))
     optimizer = optimizer.init(model.filter(tx.Parameter))
 
