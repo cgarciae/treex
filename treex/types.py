@@ -25,6 +25,10 @@ class _Parameter(TreePart):
     pass
 
 
+class _DifferentiableHyperParam(TreePart):
+    pass
+
+
 class _State(TreePart):
     pass
 
@@ -68,6 +72,9 @@ class _Metric(_Log):
 # use cast to trick static analyzers into believing these types
 Parameter = tp.Union  # static
 globals()["Parameter"] = _Parameter  # real
+
+DifferentiableHyperParam = tp.Union  # static
+globals()["DifferentiableHyperParam"] = _DifferentiableHyperParam  # real
 
 State = tp.Union  # static
 globals()["State"] = _State  # real

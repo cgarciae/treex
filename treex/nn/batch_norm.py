@@ -23,18 +23,35 @@ class BatchNorm(Module):
     """
 
     # pytree
-    params: types.Parameter[tp.Mapping[str, jnp.ndarray], None]
-    batch_stats: types.BatchStat[tp.Mapping[str, jnp.ndarray], None]
+    mean: types.BatchStat[jnp.ndarray, None]
+    var: types.BatchStat[jnp.ndarray, None]
+    scale: types.Parameter[jnp.ndarray, None]
+    bias: types.Parameter[jnp.ndarray, None]
+    momentum: types.DifferentiableHyperParam[jnp.ndarray]
 
     # props
     features_in: int
-    module: flax_module.BatchNorm
+    axis: int = -1
+    epsilon: float
+    dtype: flax_module.Dtype
+    use_bias: bool
+    use_scale: bool
+    bias_init: tp.Callable[
+        [flax_module.PRNGKey, flax_module.Shape, flax_module.Dtype],
+        flax_module.Array,
+    ]
+    scale_init: tp.Callable[
+        [flax_module.PRNGKey, flax_module.Shape, flax_module.Dtype],
+        flax_module.Array,
+    ]
+    axis_name: tp.Optional[str]
+    axis_index_groups: tp.Any
 
     def __init__(
         self,
         features_in: int,
         axis: int = -1,
-        momentum: float = 0.99,
+        momentum: tp.Union[float, jnp.ndarray] = 0.99,
         epsilon: float = 1e-5,
         dtype: flax_module.Dtype = jnp.float32,
         use_bias: bool = True,
@@ -76,21 +93,37 @@ class BatchNorm(Module):
         """
         super().__init__()
         self.features_in = features_in
-        self.module = flax_module.BatchNorm(
+        self.axis = axis
+        self.momentum = jnp.asarray(momentum)
+        self.epsilon = epsilon
+        self.dtype = dtype
+        self.use_bias = use_bias
+        self.use_scale = use_scale
+        self.bias_init = bias_init
+        self.scale_init = scale_init
+        self.axis_name = axis_name
+        self.axis_index_groups = axis_index_groups
+
+        self.mean = None
+        self.var = None
+        self.scale = None
+        self.bias = None
+
+    @property
+    def module(self) -> flax_module.BatchNorm:
+        return flax_module.BatchNorm(
             use_running_average=None,
-            axis=axis,
-            momentum=momentum,
-            epsilon=epsilon,
-            dtype=dtype,
-            use_bias=use_bias,
-            use_scale=use_scale,
-            bias_init=bias_init,
-            scale_init=scale_init,
-            axis_name=axis_name,
-            axis_index_groups=axis_index_groups,
+            axis=self.axis,
+            momentum=self.momentum,
+            epsilon=self.epsilon,
+            dtype=self.dtype,
+            use_bias=self.use_bias,
+            use_scale=self.use_scale,
+            bias_init=self.bias_init,
+            scale_init=self.scale_init,
+            axis_name=self.axis_name,
+            axis_index_groups=self.axis_index_groups,
         )
-        self.params = None
-        self.batch_stats = None
 
     def module_init(self, key: jnp.ndarray):
 
@@ -101,13 +134,20 @@ class BatchNorm(Module):
 
         x = jax.random.uniform(key, shape=shape)
 
-        variables = self.module.init(key, x, use_running_average=True)
+        variables = self.module.init(key, x, use_running_average=True).unfreeze()
 
         # Extract collections
         if "params" in variables:
-            self.params = variables["params"].unfreeze()
+            params = variables["params"]
 
-        self.batch_stats = variables["batch_stats"].unfreeze()
+            if self.use_bias:
+                self.bias = params["bias"]
+
+            if self.use_scale:
+                self.scale = params["scale"]
+
+        self.mean = variables["batch_stats"]["mean"]
+        self.var = variables["batch_stats"]["var"]
 
     def __call__(
         self, x: np.ndarray, use_running_average: tp.Optional[bool] = None
@@ -122,11 +162,22 @@ class BatchNorm(Module):
         Returns:
             Normalized inputs (the same shape as inputs).
         """
-        assert self.batch_stats is not None, "BatchNorm module not initialized"
+        assert self.initialized, "Module not initialized"
+
+        params = {}
+
+        if self.use_bias:
+            params["bias"] = self.bias
+
+        if self.use_scale:
+            params["scale"] = self.scale
 
         variables = dict(
-            params=self.params if self.params is not None else {},
-            batch_stats=self.batch_stats,
+            batch_stats=dict(
+                mean=self.mean,
+                var=self.var,
+            ),
+            params=params,
         )
         # use_running_average = True means batch_stats will not be mutated
         # self.training = True means batch_stats will be mutated
@@ -143,9 +194,11 @@ class BatchNorm(Module):
             mutable=["batch_stats"] if training else [],
             use_running_average=not training,
         )
+        variables = variables.unfreeze()
 
         # update batch_stats
         if "batch_stats" in variables:
-            self.batch_stats = variables["batch_stats"].unfreeze()
+            self.mean = variables["batch_stats"]["mean"]
+            self.var = variables["batch_stats"]["var"]
 
         return tp.cast(jnp.ndarray, output)

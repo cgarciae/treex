@@ -21,11 +21,29 @@ class Conv(Module):
     """
 
     # pytree
-    params: types.Parameter[tp.Mapping[str, jnp.ndarray], None]
+    kernel: types.Parameter[jnp.ndarray, None]
+    bias: types.Parameter[jnp.ndarray, None]
 
     # props
     features_in: int
-    module: flax_module.Conv
+    features_out: int
+    kernel_size: tp.Union[int, tp.Iterable[int]]
+    strides: tp.Optional[tp.Iterable[int]]
+    padding: tp.Union[str, tp.Iterable[tp.Tuple[int, int]]]
+    input_dilation: tp.Optional[tp.Iterable[int]]
+    kernel_dilation: tp.Optional[tp.Iterable[int]]
+    feature_group_count: int
+    use_bias: bool
+    dtype: flax_module.Dtype
+    precision: tp.Any
+    kernel_init: tp.Callable[
+        [flax_module.PRNGKey, flax_module.Shape, flax_module.Dtype],
+        flax_module.Array,
+    ]
+    bias_init: tp.Callable[
+        [flax_module.PRNGKey, flax_module.Shape, flax_module.Dtype],
+        flax_module.Array,
+    ]
 
     def __init__(
         self,
@@ -80,21 +98,38 @@ class Conv(Module):
         """
         super().__init__()
         self.features_in = features_in
-        self.module = flax_module.Conv(
-            features=features_out,
-            kernel_size=kernel_size,
-            strides=strides,
-            padding=padding,
-            input_dilation=input_dilation,
-            kernel_dilation=kernel_dilation,
-            feature_group_count=feature_group_count,
-            use_bias=use_bias,
-            dtype=dtype,
-            precision=precision,
-            kernel_init=kernel_init,
-            bias_init=bias_init,
+        self.features_out = features_out
+        self.kernel_size = kernel_size
+        self.strides = strides
+        self.padding = padding
+        self.input_dilation = input_dilation
+        self.kernel_dilation = kernel_dilation
+        self.feature_group_count = feature_group_count
+        self.use_bias = use_bias
+        self.dtype = dtype
+        self.precision = precision
+        self.kernel_init = kernel_init
+        self.bias_init = bias_init
+
+        self.kernel = None
+        self.bias = None
+
+    @property
+    def module(self) -> flax_module.Conv:
+        return flax_module.Conv(
+            features=self.features_out,
+            kernel_size=self.kernel_size,
+            strides=self.strides,
+            padding=self.padding,
+            input_dilation=self.input_dilation,
+            kernel_dilation=self.kernel_dilation,
+            feature_group_count=self.feature_group_count,
+            use_bias=self.use_bias,
+            dtype=self.dtype,
+            precision=self.precision,
+            kernel_init=self.kernel_init,
+            bias_init=self.bias_init,
         )
-        self.params = None
 
     def module_init(self, key: jnp.ndarray):
         if isinstance(self.module.kernel_size, int):
@@ -111,10 +146,13 @@ class Conv(Module):
 
         x = jax.random.uniform(key, shape=shape)
 
-        variables = self.module.init(key, x)
+        variables = self.module.init(key, x).unfreeze()
 
         # Extract collections
-        self.params = variables["params"].unfreeze()
+        self.kernel = variables["params"]["kernel"]
+
+        if self.use_bias:
+            self.bias = variables["params"]["bias"]
 
     def __call__(self, x: np.ndarray) -> jnp.ndarray:
         """Applies a convolution to the inputs.
@@ -125,8 +163,13 @@ class Conv(Module):
         Returns:
             The convolved data.
         """
-        assert self.params is not None, "Module not initialized"
+        assert self.initialized, "Module not initialized"
 
-        variables = dict(params=self.params)
-        output = self.module.apply(variables, x)
+        params = dict(kernel=self.kernel)
+
+        if self.use_bias:
+            params["bias"] = self.bias
+
+        output = self.module.apply(dict(params=params), x)
+
         return tp.cast(jnp.ndarray, output)

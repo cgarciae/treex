@@ -77,17 +77,14 @@ class BatchNormTest(unittest.TestCase):
         variables = flax_module.init(flax_key, x)
         treex_module = treex_module.init(key)
 
-        if "params" in variables:
-            assert set(variables["params"]) == set(treex_module.params)
-            assert all(
-                np.allclose(variables["params"][name], treex_module.params[name])
-                for name in variables["params"]
-            )
+        if use_bias:
+            assert np.allclose(variables["params"]["bias"], treex_module.bias)
 
-        assert all(
-            np.allclose(variables["batch_stats"][name], treex_module.batch_stats[name])
-            for name in variables["batch_stats"]
-        )
+        if use_scale:
+            assert np.allclose(variables["params"]["scale"], treex_module.scale)
+
+        assert np.allclose(variables["batch_stats"]["mean"], treex_module.mean)
+        assert np.allclose(variables["batch_stats"]["var"], treex_module.var)
 
         y_flax, updates = flax_module.apply(variables, x, mutable=["batch_stats"])
         variables = variables.copy(updates)
@@ -96,15 +93,14 @@ class BatchNormTest(unittest.TestCase):
 
         assert np.allclose(y_flax, y_treex)
 
-        if "params" in variables:
-            assert all(
-                np.allclose(variables["params"][name], treex_module.params[name])
-                for name in variables["params"]
-            )
-        assert all(
-            np.allclose(variables["batch_stats"][name], treex_module.batch_stats[name])
-            for name in variables["batch_stats"]
-        )
+        if use_bias:
+            assert np.allclose(variables["params"]["bias"], treex_module.bias)
+
+        if use_scale:
+            assert np.allclose(variables["params"]["scale"], treex_module.scale)
+
+        assert np.allclose(variables["batch_stats"]["mean"], treex_module.mean)
+        assert np.allclose(variables["batch_stats"]["var"], treex_module.var)
 
     def test_call(self):
         x = np.random.uniform(size=(10, 2))
@@ -120,18 +116,19 @@ class BatchNormTest(unittest.TestCase):
 
         flat = jax.tree_leaves(module)
 
-        assert len(flat) == 4
+        assert len(flat) == 5
 
     def test_slice(self):
         module = tx.BatchNorm(2).init(42)
 
         flat = jax.tree_leaves(module.filter(tx.Parameter))
-
         assert len(flat) == 2
 
         flat = jax.tree_leaves(module.filter(tx.BatchStat))
-
         assert len(flat) == 2
+
+        flat = jax.tree_leaves(module.filter(tx.DifferentiableHyperParam))
+        assert len(flat) == 1
 
     def test_jit(self):
         x = np.random.uniform(size=(10, 2))

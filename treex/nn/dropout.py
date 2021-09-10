@@ -25,7 +25,12 @@ class Dropout(Module):
     via `__call__`.
     """
 
+    # pytree
     rng: RngSeq
+
+    # static
+    rate: float
+    broadcast_dims: tp.Iterable[int]
 
     def __init__(
         self,
@@ -40,12 +45,17 @@ class Dropout(Module):
             broadcast_dims: dimensions that will share the same dropout mask
         """
         super().__init__()
-        self.module = flax_module.Dropout(
-            rate=rate,
-            broadcast_dims=broadcast_dims,
+        self.rate = rate
+        self.broadcast_dims = broadcast_dims
+        self.rng = RngSeq()
+
+    @property
+    def module(self) -> flax_module.Dropout:
+        return flax_module.Dropout(
+            rate=self.rate,
+            broadcast_dims=self.broadcast_dims,
             deterministic=None,
         )
-        self.rng = RngSeq()
 
     def __call__(
         self, x: np.ndarray, deterministic: tp.Optional[bool] = None, rng=None
