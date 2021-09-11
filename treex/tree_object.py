@@ -69,12 +69,14 @@ class TreeObjectMeta(ABCMeta):
         }
 
         obj.__init__(*args, **kwargs)
-        # obj: TreeObject = type.__call__(cls, *args, **kwargs)
 
         if not obj._init_called:
             raise RuntimeError(
                 f"{obj.__class__.__name__} not initialized properly, constructor must call `super().__init__()`"
             )
+
+        # add all parent class annotations
+        obj.__annotations__ = _get_all_annotations(cls)
 
         # auto-annotations
         for field, value in vars(obj).items():
@@ -529,6 +531,14 @@ def module_update(module: A, other: A, *rest: A) -> A:
 # --------------------------------------------------
 # utils
 # --------------------------------------------------
+
+
+def _get_all_annotations(cls):
+    d = {}
+    for c in reversed(cls.mro()):
+        if hasattr(c, "__annotations__"):
+            d.update(**c.__annotations__)
+    return d
 
 
 def _get_filter(

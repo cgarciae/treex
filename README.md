@@ -171,6 +171,21 @@ class CNN(tx.Module):
 
 Note that this won't work if you have a field with e.g. a list/dict of Modules, for that you have to use proper type annotations.
 
+### Predefined Layers
+The `treex.nn` module contains a number of pre-defined layers which can be used to create more complex models:
+```
+BatchNorm
+Conv
+Dropout
+FlaxModule
+Linear
+MLP
+Lambda
+Sequential
+sequence
+```
+Check them out in the (API Reference)[https://cgarciae.github.io/treex/] section of the documentation. All modules and functions from `treex.nn` are also available on the base `treex` module so e.g. you can use `tx.Conv` and `tx.BatchNorm`.
+
 ### Pytrees
 Since Modules are pytrees they can be arguments to JAX functions such as `jit`, `grad`, `vmap`, etc, and the `jax.tree_*` function family.
 
@@ -461,6 +476,7 @@ rngs = model.filter(tx.Rng)
 batch_stats = model.filter(tx.BatchStat)
 all_states = model.filter(tx.State)
 ```
+
 #### Static Analysis
 All `TreePart` instances included in Treex like `Parameter` and `State` currently behave as a `typing.Union` in the eyes of static analyzers. This means that they will think the following types resolve to:
 
@@ -513,6 +529,26 @@ class MyModule(tx.Module):
     ...
 ```
 Hopefully a better way is found in the future, however, this will keep the static analyzers happy as they will think `cache` is an `ndarray` while Treex will get the correct `_Cache` annotation metadata.
+
+#### Explicit Static fields
+All field that are NOT marked with a `TreePart` subclass annotation are considered static, there is one exception: auto-annotations. All submodules are considered dynamic by default so if you explicitly want to exclude them from being dynamic you can use the `tx.Static` annotation. 
+
+As an example we will create a `ResetableLinear` class that will store a copy of itself in the `initial_state` field and go back to the initial state when `reset` is called:
+
+```python
+class ResetableLinear(tx.Linear):
+    initial_state: tx.Static[tx.Linear, None] = None
+
+    def module_init(self, _key):
+        super().module_init(_key)
+        self.initial_state = self.copy()
+
+    def reset(self):
+        self.update(self.initial_state, inplace=True)
+
+```
+
+They key here is that `initial_state` is annotated with `Static` field so it won't be tracked, this will gurarantee that it won't be modified by the optimizer.
 
 ### Non-hashable static fields
 If you want to have a static field that contains a non-hashable value like a numpy or jax array, you can use `tx.Hashable` to wrap around it such that it:
