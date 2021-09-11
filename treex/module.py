@@ -68,6 +68,7 @@ class Module(TreeObject):
                 else initializer
             ),
             self,
+            is_leaf=lambda x: isinstance(x, types.Initializer),
         )
         if inplace:
             # here we update initialized fields by the above tree_map

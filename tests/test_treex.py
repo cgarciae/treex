@@ -585,3 +585,24 @@ class TestTreex:
 
         m = f(m)
         assert N == 2
+
+    def test_initializer(self):
+        init = tx.Initializer(lambda k: jax.random.uniform(k, shape=[3, 5]))
+
+        @jax.jit
+        def f(x):
+            return x
+
+        init2 = f(init)
+
+    def test_uninitialized_tabulate(self):
+        class MyModule(tx.Module):
+            a: tx.Parameter[np.ndarray, tx.Initializer]
+
+            def __init__(self):
+                super().__init__()
+                self.a = tx.Initializer(lambda k: jax.random.uniform(k, shape=[3, 5]))
+
+        module = MyModule()
+
+        print(module.tabulate())

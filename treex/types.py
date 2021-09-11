@@ -130,6 +130,7 @@ class Named(tp.Generic[A]):
         jax.tree_util.register_pytree_node_class(cls)
 
 
+@jax.tree_util.register_pytree_node_class
 class Initializer:
     """Initialize a field from a function that expects a single argument with a PRNGKey.
 
@@ -148,6 +149,21 @@ class Initializer:
 
     def __repr__(self) -> str:
         return "Initializer"
+
+    # ------------------------
+    # Pytree implementation
+    # ------------------------
+    def tree_flatten(self):
+        tree = ()
+        static = (self.f,)
+
+        return tree, static
+
+    @classmethod
+    def tree_unflatten(cls, static, tree):
+        obj = cls.__new__(cls)
+        obj.f = static[0]
+        return obj
 
 
 @jax.tree_util.register_pytree_node_class

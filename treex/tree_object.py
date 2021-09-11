@@ -62,6 +62,9 @@ class TreeObjectMeta(ABCMeta):
     def __call__(cls, *args, **kwargs) -> "TreeObject":
         obj: TreeObject = cls.__new__(cls)
 
+        # # add all parent class annotations
+        obj.__annotations__ = _get_all_annotations(cls)
+
         # copy annotations before __init__ is called
         obj.__annotations__ = {
             field: _resolve_tree_type(field, value)
@@ -74,9 +77,6 @@ class TreeObjectMeta(ABCMeta):
             raise RuntimeError(
                 f"{obj.__class__.__name__} not initialized properly, constructor must call `super().__init__()`"
             )
-
-        # add all parent class annotations
-        obj.__annotations__ = _get_all_annotations(cls)
 
         # auto-annotations
         for field, value in vars(obj).items():
@@ -191,6 +191,32 @@ class TreeObject(metaclass=TreeObjectMeta):
     def __repr__(self) -> str:
         rep = _get_repr(self, level=0, array_type=None, inline=False)
         return _get_rich_repr(Text.from_markup(rep))
+
+    def map(
+        self: T,
+        f: tp.Callable,
+        *filters: tp.Union[
+            tp.Type["types.TreePart"],
+            tp.Callable[[FieldInfo], bool],
+        ],
+        inplace: bool = False,
+    ) -> T:
+        """
+        Returns a copy of the module, where all fields are mapped by the given function.
+        """
+        filter = len(filters) > 0
+
+        if filter:
+            module = self.filter(*filters)
+        else:
+            module = self
+
+        module: T = jax.tree_map(f, module)
+
+        if filter or inplace:
+            module = self.update(module, inplace=inplace)
+
+        return module
 
     def filter(
         self: T,
@@ -683,9 +709,13 @@ def _get_tabulate_rows(
 
         params_repr = {
             field: jax.tree_map(
-                lambda x: _format_param(x, annotations[field], include_param_type),
+                lambda x: str(x)
+                if isinstance(x, (types.Nothing, types.Initializer, type(None)))
+                else _format_param(x, annotations[field], include_param_type),
                 value,
-                is_leaf=lambda x: isinstance(x, types.Nothing),
+                is_leaf=lambda x: isinstance(
+                    x, (types.Nothing, types.Initializer, type(None))
+                ),
             )
             for field, value in params.items()
         }

@@ -27,6 +27,7 @@ mkdocs = "^1.2.2"
 mkdocstrings = "^0.15.2"
 mkdocs-jupyter = { version = "^0.17.3", python = ">=3.7" }
 mkdocs-material = "^7.2.5"
+einops = "^0.3.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
