@@ -469,10 +469,12 @@ class TestTreex:
         assert len(jax.tree_leaves(mod)) == 2
 
         assert mod.a.initialized
-        assert mod.a.params is not None
+        assert mod.a.kernel is not None
+        assert mod.a.bias is not None
 
         assert not mod.b.initialized
-        assert mod.b.params is None
+        assert mod.b.kernel is None
+        assert mod.b.bias is None
 
     def test_auto_annotations(self):
         class MLP(tx.Module):
