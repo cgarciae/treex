@@ -27,7 +27,7 @@ class BatchNorm(Module):
     var: types.BatchStat[jnp.ndarray, None]
     scale: types.Parameter[jnp.ndarray, None]
     bias: types.Parameter[jnp.ndarray, None]
-    momentum: types.DifferentiableHyperParam[jnp.ndarray]
+    momentum: types.DiffHyperParam[jnp.ndarray]
 
     # props
     features_in: int

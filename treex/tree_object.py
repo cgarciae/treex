@@ -1,10 +1,9 @@
-import dataclasses
+import functools
 import inspect
 import io
 import threading
 import typing as tp
 from abc import ABCMeta
-from contextlib import contextmanager
 from dataclasses import dataclass
 
 import jax
@@ -30,6 +29,7 @@ class _Context(threading.local):
     add_field_info: bool = False
     map_f: tp.Optional[tp.Callable[["TreeObject"], "TreeObject"]] = None
     map_inplace: bool = False
+    call_info: tp.Optional[tp.Dict["TreeObject", tp.Tuple[types.Inputs, tp.Any]]] = None
 
     def __enter__(self):
         global _CONTEXT
@@ -58,7 +58,7 @@ class FieldInfo:
         self.module = module
 
 
-class CheckInitCalled(ABCMeta):
+class TreeObjectMeta(ABCMeta):
     def __call__(cls, *args, **kwargs) -> "TreeObject":
         obj: TreeObject = cls.__new__(cls)
 
@@ -81,10 +81,28 @@ class CheckInitCalled(ABCMeta):
             if field not in obj.__annotations__ and isinstance(value, TreeObject):
                 obj.__annotations__[field] = type(value)
 
+        if isinstance(obj, tp.Callable):
+            new_call = _get_call(cls.__call__)
+            cls.__call__ = functools.wraps(cls.__call__)(new_call)
+
         return obj
 
 
-class TreeObject(metaclass=CheckInitCalled):
+# override __call__
+def _get_call(orig_call):
+    def _meta_call(self: "TreeObject", *args, **kwargs):
+        outputs = orig_call(self, *args, **kwargs)
+
+        if _CONTEXT.call_info is not None:
+            inputs = types.Inputs(*args, **kwargs)
+            _CONTEXT.call_info[self] = (inputs, outputs)
+
+        return outputs
+
+    return _meta_call
+
+
+class TreeObject(metaclass=TreeObjectMeta):
     _init_called: bool = False
 
     def __init__(self) -> None:
@@ -296,7 +314,11 @@ class TreeObject(metaclass=CheckInitCalled):
             return module
 
     def tabulate(
-        self, depth: int = -1, signature: bool = False, param_types: bool = True
+        self,
+        inputs: tp.Union[tp.Any, types.Inputs, None] = None,
+        depth: int = -1,
+        signature: bool = False,
+        param_types: bool = True,
     ) -> str:
         """
         Returns a tabular representation of the module.
@@ -308,6 +330,33 @@ class TreeObject(metaclass=CheckInitCalled):
         Returns:
             A string containing the tabular representation.
         """
+        self = self.copy()
+
+        if inputs is not None:
+            if not isinstance(inputs, types.Inputs):
+                inputs = types.Inputs(inputs)
+
+            if not isinstance(self, tp.Callable):
+                raise TypeError(
+                    "`inputs` can only be specified if the module is a callable."
+                )
+
+            with _Context(call_info={}):
+
+                # call using self to preserve references
+                def eval_call(args, kwargs):
+                    assert isinstance(self, tp.Callable)
+                    return self(*args, **kwargs)
+
+                jax.eval_shape(
+                    eval_call,
+                    inputs.args,
+                    inputs.kwargs,
+                )
+                call_info = _CONTEXT.call_info
+
+        else:
+            call_info = None
 
         with _Context(add_field_info=True):
             flat, _ = jax.tree_flatten(self)
@@ -321,9 +370,39 @@ class TreeObject(metaclass=CheckInitCalled):
                 path, self, depth, tree_part_types, signature, param_types
             )
         )
+
+        modules = [row[0] for row in rows]
+        rows = [row[1:] for row in rows]
+
+        if call_info is not None:
+            for module, row in zip(modules, rows):
+                if module in call_info:
+                    inputs, outputs = call_info[module]
+                    simplified_inputs = (
+                        inputs.args[0]
+                        if len(inputs.kwargs) == 0 and len(inputs.args) == 1
+                        else inputs.kwargs
+                        if len(inputs.kwargs) == 0
+                        else inputs.kwargs
+                        if len(inputs.args) == 0
+                        else (inputs.args, inputs.kwargs)
+                    )
+
+                    inputs_repr = _format_param_tree(simplified_inputs)
+                    outputs_repr = _format_param_tree(outputs)
+                else:
+                    inputs_repr = ""
+                    outputs_repr = ""
+
+                row.insert(3, outputs_repr)
+                row.insert(3, inputs_repr)
+
+        n_non_treepart_cols = 2 if call_info is None else 4
+
         rows[0][0] = "*"
         rows.append(
-            ["", "", "Total:"]
+            [""] * n_non_treepart_cols
+            + ["Total:"]
             + [
                 _format_obj_size(self.filter(tree_type), add_padding=True)
                 for tree_type in tree_part_types
@@ -342,6 +421,10 @@ class TreeObject(metaclass=CheckInitCalled):
         table.add_column("module")
         table.add_column("params")
 
+        if call_info is not None:
+            table.add_column("inputs")
+            table.add_column("outputs")
+
         for tree_part_type in tree_part_types:
             type_name = tree_part_type.__name__
             if type_name.startswith("_"):
@@ -352,10 +435,14 @@ class TreeObject(metaclass=CheckInitCalled):
         for row in rows[:-1]:
             table.add_row(*row)
 
-        table.columns[2].footer = Text.from_markup(rows[-1][2], justify="right")
+        table.columns[n_non_treepart_cols].footer = Text.from_markup(
+            rows[-1][n_non_treepart_cols], justify="right"
+        )
 
         for i in range(len(tree_part_types)):
-            table.columns[3 + i].footer = rows[-1][3 + i]
+            table.columns[n_non_treepart_cols + 1 + i].footer = rows[-1][
+                n_non_treepart_cols + 1 + i
+            ]
 
         table.caption_style = "bold"
         table.caption = "\nTotal Parameters: " + _format_obj_size(
@@ -613,7 +700,7 @@ def _get_tabulate_rows(
                 for t in tree_part_types
             ]
 
-        yield [path_str, signature_str, params_str] + tree_part_sizes
+        yield [obj, path_str, signature_str, params_str] + tree_part_sizes
 
         if level != 0:
             for field, value in submodules.items():
@@ -686,14 +773,15 @@ def _format_module_signature(
     simple_types = {int, str, float, bool}
     cls = obj.__class__
     values = list(inspect.signature(cls.__init__).parameters.values())[1:]
+    names = {x.name for x in values}
 
-    for field in values:
-        if field.name in not_tree:
-            value = not_tree[field.name]
+    for field in not_tree:
+        if field in names:
+            value = not_tree[field]
             types = set(jax.tree_leaves(jax.tree_map(type, value)))
 
             if types.issubset(simple_types):
-                signature[field.name] = value
+                signature[field] = value
 
     signature = jax.tree_map(
         lambda x: f'"{x}"'
@@ -703,6 +791,9 @@ def _format_module_signature(
         else str(x),
         signature,
     )
+    signature = {
+        field: str(value).replace("'", "") for field, value in signature.items()
+    }
 
     return signature
 
@@ -721,6 +812,20 @@ def _format_param(obj, array_type, include_param_type) -> str:
         return f"{type_name}([green]{shape}[/]){PAD}  [dim]{obj.dtype}[/]"
     else:
         return str(obj) if include_param_type else f"() [dim]{type(obj).__name__}[/]"
+
+
+def _format_param_tree(params) -> str:
+
+    params_repr = jax.tree_map(
+        lambda x: _format_param(x, None, include_param_type=False),
+        params,
+        is_leaf=lambda x: isinstance(x, types.Nothing),
+    )
+
+    params_repr = _simplify(params_repr)
+    params_str = _as_yaml_str(params_repr)
+
+    return params_str
 
 
 def _format_obj_size(obj, add_padding):

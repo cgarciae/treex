@@ -155,8 +155,6 @@ def main(
         latent_size=latent_size,
     ).init(42)
 
-    print(model.tabulate())
-
     optimizer = tx.Optimizer(optax.adam(1e-3))
     optimizer = optimizer.init(model.filter(tx.Parameter))
 
@@ -164,6 +162,8 @@ def main(
     X_train, _1, X_test, _2 = dataget.image.mnist().get()
     X_train = (X_train > 0).astype(jnp.float32)
     X_test = (X_test > 0).astype(jnp.float32)
+
+    print(model.tabulate(X_train[:batch_size]))
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)

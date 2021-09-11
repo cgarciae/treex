@@ -25,7 +25,7 @@ class _Parameter(TreePart):
     pass
 
 
-class _DifferentiableHyperParam(TreePart):
+class _DiffHyperParam(TreePart):
     pass
 
 
@@ -73,8 +73,8 @@ class _Metric(_Log):
 Parameter = tp.Union  # static
 globals()["Parameter"] = _Parameter  # real
 
-DifferentiableHyperParam = tp.Union  # static
-globals()["DifferentiableHyperParam"] = _DifferentiableHyperParam  # real
+DiffHyperParam = tp.Union  # static
+globals()["DiffHyperParam"] = _DiffHyperParam  # real
 
 State = tp.Union  # static
 globals()["State"] = _State  # real

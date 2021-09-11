@@ -82,11 +82,9 @@ def main(
         tx.Dropout(0.1),
         jax.nn.relu,
         tx.Conv(64, 128, [3, 3], strides=[2, 2]),
-        lambda x: x.mean(axis=[1, 2]),  # GlobalAveragePooling2D
+        partial(jnp.mean, axis=[1, 2]),
         tx.Linear(128, 10),
     ).init(42)
-
-    print(model.tabulate())
 
     optimizer = tx.Optimizer(optax.adamw(1e-3))
     optimizer = optimizer.init(model.filter(tx.Parameter))
@@ -95,6 +93,8 @@ def main(
     X_train, y_train, X_test, y_test = dataget.image.mnist().get()
     X_train = X_train[..., None]
     X_test = X_test[..., None]
+
+    print(model.tabulate(X_train[:batch_size], signature=True))
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)

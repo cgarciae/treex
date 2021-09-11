@@ -127,7 +127,7 @@ class BatchNormTest(unittest.TestCase):
         flat = jax.tree_leaves(module.filter(tx.BatchStat))
         assert len(flat) == 2
 
-        flat = jax.tree_leaves(module.filter(tx.DifferentiableHyperParam))
+        flat = jax.tree_leaves(module.filter(tx.DiffHyperParam))
         assert len(flat) == 1
 
     def test_jit(self):

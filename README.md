@@ -445,7 +445,7 @@ graph TD;
     TreePart-->Log;
     Log-->Loss;
     Log-->Metric;
-    TreePart-->DifferentiableHyperParam;
+    TreePart-->DiffHyperParam;
 ```
 
 </details>

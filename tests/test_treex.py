@@ -382,6 +382,38 @@ class TestTreex:
 
         print(mlp.a["mlps"][1].linear2)
 
+    def test_tabulate_inputs(self):
+        class MyModule(tx.Module):
+            a: tp.Dict[str, tp.List[tx.MLP]]
+            b: tx.Parameter[tp.List[tp.Union[jnp.ndarray, tx.Initializer]]]
+
+            def __init__(self):
+                super().__init__()
+                self.a = {"mlps": [tx.MLP([256, 1024, 512]), tx.MLP([256, 1024, 512])]}
+                self.b = [
+                    tx.Initializer(lambda key: jnp.zeros((512, 256))),
+                    jnp.zeros((512, 128)),
+                ]
+
+            def __call__(self, x):
+
+                y1 = self.a["mlps"][0](x)
+                y2 = self.a["mlps"][1](x)
+
+                return dict(y1=y1, y2=y2)
+
+        mlp = MyModule().init(42)
+        mlp = jax.tree_map(
+            lambda x: jnp.asarray(x) if not isinstance(x, tx.Initializer) else x, mlp
+        )
+        # mlp = mlp.filter(tx.Parameter)
+
+        x = np.random.uniform(size=(10, 256))
+
+        rep = mlp.tabulate(inputs=tx.Inputs(x))
+
+        print(rep)
+
     def test_resolves(self):
 
         # test some generic resolves to tree type
