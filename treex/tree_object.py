@@ -520,20 +520,6 @@ def object_map(
             return jax.tree_map(lambda x: x, obj)
 
 
-def annotation_map(
-    f: tp.Callable[[tp.Type], tp.Type], obj: A, inplace: bool = False
-) -> A:
-    def _map_annotations(module: TreeObject) -> TreeObject:
-        module.__annotations__ = module.__annotations__.copy()
-        for field, annotation in module.__annotations__.items():
-            if issubclass(annotation, types.TreePart):
-                module.__annotations__[field] = f(annotation)
-
-        return module
-
-    return object_map(_map_annotations, obj, inplace=inplace)
-
-
 def map(
     f: tp.Callable,
     obj: A,

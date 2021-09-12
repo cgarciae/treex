@@ -250,7 +250,8 @@ module # MyModule(a=array([0.3]), b=array([3.2]))
 ```
 As shown here, field `Initializer`s are always called before `module_init`.
 
-### Filter and Update API
+### Basic API
+#### filter
 The `filter` method allows you to select a subtree by filtering based on a `TreePart` type, all leaves whose type annotations are a subclass of such type are kept, the rest are set to a special `Nothing` value.
 ```python
 class MyModule(tx.Module):
@@ -263,11 +264,11 @@ module = MyModule(...)
 module.filter(tx.Parameter) # MyModule(a=array([1]), b=Nothing)
 module.filter(tx.BatchStat) # MyModule(a=Nothing, b=array([2]))
 ```
-`Nothing` much like `None` is an empty Pytree so it gets ignored by tree operations:
+Since `Nothing` is an empty Pytree it gets ignored by tree operations, this effectively allows you to easily operate on a subset of the fields:
 
 ```python
-jax.tree_leaves(module.filter(tx.Parameter)) # [array([1])]
-jax.tree_leaves(module.filter(tx.BatchStat)) # [array([2])]
+jax.tree_map(lambda x: -x, module.filter(tx.Parameter)) # MyModule(a=array([-1]), b=Nothing)
+jax.tree_map(lambda x: -x, module.filter(tx.BatchStat)) # MyModule(a=Nothing, b=array([-2]))
 ```
 
 If you need to do more complex filtering, you can pass callables with the signature `FieldInfo -> bool` instead of types:
@@ -280,6 +281,34 @@ module.filter(
 ) 
 # MyModule(a=Nothing, b=array([2]))
 ```
+#### update
+The `update` method allows you to merge the values of one or more incoming modules with the current module, this is useful for integrating filtered modules back into the main module.
+
+```python
+module = MyModule(...) # MyModule(a=array([1]), b=array([2]))
+params = module.filter(tx.Parameter) # MyModule(a=array([1]), b=Nothing)
+negative = jax.tree_map(lambda x: -x, params) # MyModule(a=array([-1]), b=Nothing)
+module = module.update(negative) # MyModule(a=array([-1]), b=array([2]))
+```
+
+#### map
+The `map` method provides a convenient way to map a function over the fields of a module:
+
+```python
+module = MyModule(...) # MyModule(a=array([1]), b=array([2]))
+params = module.filter(tx.Parameter) # MyModule(a=array([1]), b=Nothing)
+negative = params.map(lambda x: -x) # MyModule(a=array([-1]), b=Nothing)
+module = module.update(negative) # MyModule(a=array([-1]), b=array([2]))
+```
+
+The previous pattern is so common that `map` provides a shortcut for applying `filter -> tree_map -> update` in sequence:
+
+```python
+module = MyModule(...) # MyModule(a=array([1]), b=array([2]))
+module = module.map(lambda x: -x, tx.Parameter) # MyModule(a=array([-1]), b=array([2]))
+```
+
+As shown here, `map` accepts the same varargs as `filter` and calls `update` at the end if filters are given.
 
 #### Use cases
 ##### grad & optimizers
@@ -313,6 +342,14 @@ batch_stats = model.filter(tx.BatchStat)
 batch_stats = jax.lax.pmean(batch_stats, axis_name="device")
 model = model.update(batch_stats)
 ```
+
+The previous is roughly equivalent to:
+
+```python
+model = model.map(lambda x: jax.lax.pmean(x, axis_name="device"), tx.BatchStat)
+```
+
+However, this applies `pmean` to the leaves instead of the whole tree which may or may not be desirable.
 
 ### Optimizer
 
