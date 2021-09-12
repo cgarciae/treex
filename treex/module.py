@@ -6,7 +6,7 @@ import jax.tree_util
 import numpy as np
 
 from treex import types
-from treex.tree_object import TreeObject, module_map
+from treex.tree_object import TreeObject, object_map
 
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
@@ -74,9 +74,9 @@ class Module(TreeObject):
             # here we update initialized fields by the above tree_map
             self.update(module, inplace=True)
             # now call module_init inplace
-            return module_map(call_module_init, self, inplace=True)
+            return object_map(call_module_init, self, inplace=True)
         else:
-            return module_map(call_module_init, module, inplace=False)
+            return object_map(call_module_init, module, inplace=False)
 
     def train(self: M, mode: bool = True, inplace: bool = False) -> M:
         """
@@ -94,7 +94,7 @@ class Module(TreeObject):
 
             return module
 
-        return module_map(set_training, self, inplace=inplace)
+        return object_map(set_training, self, inplace=inplace)
 
     def eval(self: M, inplace: bool = False) -> M:
         """

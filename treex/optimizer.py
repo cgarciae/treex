@@ -7,7 +7,7 @@ import jax.numpy as jnp
 import optax
 
 from treex import types
-from treex.tree_object import TreeObject, annotation_map, module_update
+from treex.tree_object import TreeObject
 
 O = tp.TypeVar("O", bound="Optimizer")
 A = tp.TypeVar("A", bound="tp.Any")

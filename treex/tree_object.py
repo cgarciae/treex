@@ -20,8 +20,16 @@ from treex import types
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
 T = tp.TypeVar("T", bound="TreeObject")
+Filter = tp.Union[
+    tp.Type["types.TreePart"],
+    tp.Callable[["FieldInfo"], bool],
+]
 
 PAD = r"{pad}"
+LEAF_TYPES = (types.Nothing, types.Initializer, type(None))
+
+pymap = map
+pyfilter = filter
 
 
 @dataclass
@@ -47,10 +55,10 @@ _CONTEXT = _Context()
 class FieldInfo:
     def __init__(
         self,
-        name: str,
+        name: tp.Optional[str],
         value: tp.Any,
-        annotation: tp.Type[types.TreePart],
-        module: "TreeObject",
+        annotation: tp.Type[tp.Any],
+        module: tp.Optional["TreeObject"],
     ):
         self.name = name
         self.value = value
@@ -147,6 +155,7 @@ class TreeObject(metaclass=TreeObjectMeta):
                             module=self,
                         ),
                         value,
+                        is_leaf=lambda x: isinstance(x, types.Initializer),
                     )
                 else:
                     tree[field] = value
@@ -202,32 +211,42 @@ class TreeObject(metaclass=TreeObjectMeta):
         inplace: bool = False,
     ) -> T:
         """
-        Returns a copy of the module, where all fields are mapped by the given function.
+        Applies a function to all leaves in a pytree using `jax.tree_map`. If `filters` are given then
+        the function will be applied only to the subset of leaves that match the filters.
+
+        For example, if we want to zero all batch stats we can do:
+
+        ```python
+        module = SomeCompleModule()
+        module = module.map(jnp.zeros_like, tx.BatchStat)
+        ```
+
+        Arguments:
+            f: The function to apply to the leaves.
+            filters: The filters used to select the leaves to which the function will be applied.
+            inplace: If `True` then the object will be mutated with the changes.
+
+        Returns:
+            The object with the changes applied, if `inplace` is `True` then `self` is returned.
         """
-        filter = len(filters) > 0
+        module = map(f, self, *filters)
 
-        if filter:
-            module = self.filter(*filters)
+        if inplace:
+            self.__dict__.update(module.__dict__)
+            return self
         else:
-            module = self
-
-        module: T = jax.tree_map(f, module)
-
-        if filter or inplace:
-            module = self.update(module, inplace=inplace)
-
-        return module
+            return module
 
     def filter(
         self: T,
         *filters: tp.Union[
-            tp.Type["types.TreePart"],
+            type,
             tp.Callable[[FieldInfo], bool],
         ],
     ) -> T:
         """
         Creates a new module with the same structure, but sets to `Nothing` leaves that
-        do not match any of the given filters. If a `TreePart` type `t` is given, the filter
+        do not match any of the given filters. If a type `t` is given, the filter
 
         ```python
         _filter(x: Type[TreePart]) = issubclass(x, t)
@@ -266,17 +285,7 @@ class TreeObject(metaclass=TreeObjectMeta):
 
         """
 
-        filters = tuple(
-            _get_filter(f) if isinstance(f, tp.Type) else f for f in filters
-        )
-
-        def apply_filters(info: FieldInfo) -> tp.Any:
-            return info.value if any(f(info) for f in filters) else types.Nothing()
-
-        with _Context(add_field_info=True):
-            module = jax.tree_map(apply_filters, self)
-
-        return module
+        return filter(self, *filters)
 
     def update(self: T, other: T, *rest: T, inplace: bool = False) -> T:
         """
@@ -333,7 +342,7 @@ class TreeObject(metaclass=TreeObjectMeta):
         Returns:
             A new module with the updated values or `None` if `inplace` is `True`.
         """
-        module = module_update(self, other, *rest)
+        module = update(self, other, *rest)
 
         if inplace:
             self.__dict__.update(module.__dict__)
@@ -485,12 +494,12 @@ class TreeObject(metaclass=TreeObjectMeta):
 # --------------------------------------------------
 
 
-def module_map(
+def object_map(
     f: tp.Callable[[TreeObject], TreeObject], obj: A, inplace: bool = False
 ) -> A:
     """
     Applies a function to all TreeObjects in a Pytree. Function very similar to `jax.tree_map`,
-    but works on modules instead of values.
+    but works on TreeObjects instead of values.
 
     If `inplace` is `True`, the original module is mutated.
 
@@ -522,10 +531,116 @@ def annotation_map(
 
         return module
 
-    return module_map(_map_annotations, obj, inplace=inplace)
+    return object_map(_map_annotations, obj, inplace=inplace)
 
 
-def module_update(module: A, other: A, *rest: A) -> A:
+def map(
+    f: tp.Callable,
+    obj: A,
+    *filters: Filter,
+) -> A:
+    """
+    Functional version of `TreeObject.map` but it can be applied to any pytree, useful if
+    you have TreeObjects that are embedded in a pytree. The `filters` are applied according
+    to `tx.filter`.
+
+    Example:
+
+    ```python
+    tree = dict(a=1, b=MyModule().init(42))
+    tree = tx.map(jnp.zeros, tree, tx.BatchStat)
+
+    # "a" is not modified
+    assert tree["a"] == 1
+    ```
+
+    Arguments:
+        f: The function to apply to the leaves.
+        filters: The filters used to select the leaves to which the function will be applied.
+
+    Returns:
+        The object with the changes applied.
+    """
+
+    has_filters = len(filters) > 0
+
+    if has_filters:
+        new_obj = filter(obj, *filters)
+    else:
+        new_obj = obj
+
+    new_obj: A = jax.tree_map(f, new_obj)
+
+    if has_filters:
+        new_obj = update(obj, new_obj)
+
+    return new_obj
+
+
+def filter(
+    obj: A,
+    *filters: Filter,
+) -> A:
+    """
+    Functional version of `TreeObject.filter` but can filter arbitrary pytrees. This is useful
+    if you have TreeObjects that are embedded in a larger pytree e.g. a list of TreeObjects.
+
+    Leaves that are not part of a TreeObject will get assigned the following `FieldInfo`:
+
+    ```python
+     FieldInfo(
+        name=None,
+        value=leaf_value,
+        annotation=type(None),
+        module=None,
+    )
+    ```
+    where `leaf_value` is the value of the leaf. This means that non-TreeObject leaves will be
+    filtered with a query like:
+
+    ```python
+    tree = dict(a=1, b=tx.Linear(3, 4))
+    filtered = filter(tree, tx.Parameter)
+
+    assert isinstance(filtered["a"], tx.Nothing)
+    ```
+
+    However, you query non-TreeObject based on their value:
+
+    ```python
+    tree = dict(a=1, b=tx.Linear(3, 4))
+    filtered = filter(tree, lambda field: isintance(field.value, int))
+
+    assert filtered["a"] == 1
+    ```
+
+    Arguments:
+        filters: Types to filter by, membership is determined by `issubclass`, or
+            callables that take in a `FieldInfo` and return a `bool`.
+    Returns:
+        The new module with the filtered fields.
+
+    """
+
+    filters = tuple(_get_filter(f) if isinstance(f, tp.Type) else f for f in filters)
+
+    def apply_filters(info: tp.Union[FieldInfo, tp.Any]) -> tp.Any:
+        if not isinstance(info, FieldInfo):
+            info = FieldInfo(
+                name=None,
+                value=info,
+                annotation=type(None),
+                module=None,
+            )
+        return info.value if any(f(info) for f in filters) else types.Nothing()
+
+    with _Context(add_field_info=True):
+        obj = jax.tree_map(apply_filters, obj)
+
+    return obj
+
+
+def update(module: A, other: A, *rest: A) -> A:
     """
     Functional version of `Module.update`, it accepts arbitray pytree structures
     that may optionally contain `Module`s and performs the `update` logic.
@@ -538,7 +653,6 @@ def module_update(module: A, other: A, *rest: A) -> A:
     Returns:
         A new pytree with the updated values.
     """
-    modules = (module, other) + rest
 
     def merge_fn(*xs):
         acc, *xs = xs
@@ -547,8 +661,12 @@ def module_update(module: A, other: A, *rest: A) -> A:
                 acc = x
         return acc
 
-    module = jax.tree_map(
-        merge_fn, *modules, is_leaf=lambda x: isinstance(x, types.Nothing)
+    module = _looser_tree_map(
+        merge_fn,
+        module,
+        other,
+        *rest,
+        is_leaf=lambda x: isinstance(x, LEAF_TYPES),
     )
 
     return module
@@ -557,6 +675,25 @@ def module_update(module: A, other: A, *rest: A) -> A:
 # --------------------------------------------------
 # utils
 # --------------------------------------------------
+
+
+def _looser_tree_map(
+    f: tp.Callable[..., tp.Any],
+    tree: tp.Any,
+    *rest: tp.Any,
+    is_leaf: tp.Optional[tp.Callable[[tp.Any], bool]] = None,
+) -> tp.Any:
+    jax.tree_map
+    leaves, treedef = jax.tree_flatten(
+        tree,
+        is_leaf=is_leaf,
+    )
+    all_leaves = [leaves] + [jax.tree_flatten(r, is_leaf=is_leaf)[0] for r in rest]
+
+    n_leaves = len(leaves)
+    assert all(len(l) == n_leaves for l in all_leaves)
+
+    return treedef.unflatten(f(*xs) for xs in zip(*all_leaves))
 
 
 def _get_all_annotations(cls):
@@ -568,7 +705,7 @@ def _get_all_annotations(cls):
 
 
 def _get_filter(
-    t: tp.Type[types.TreePart],
+    t: type,
 ) -> tp.Callable[[FieldInfo], bool]:
     def _filter(info: FieldInfo) -> bool:
         return isinstance(t, tp.Type) and issubclass(info.annotation, t)
@@ -710,12 +847,10 @@ def _get_tabulate_rows(
         params_repr = {
             field: jax.tree_map(
                 lambda x: str(x)
-                if isinstance(x, (types.Nothing, types.Initializer, type(None)))
+                if isinstance(x, LEAF_TYPES)
                 else _format_param(x, annotations[field], include_param_type),
                 value,
-                is_leaf=lambda x: isinstance(
-                    x, (types.Nothing, types.Initializer, type(None))
-                ),
+                is_leaf=lambda x: isinstance(x, LEAF_TYPES),
             )
             for field, value in params.items()
         }

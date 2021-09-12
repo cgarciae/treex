@@ -143,6 +143,14 @@ class TestTreex:
         assert not isinstance(mlp_next.linear2.b, tx.Nothing)
         assert not isinstance(mlp_next.linear2.n, tx.Nothing)
 
+    def test_update_initializers(self):
+        m = tx.Linear(2, 3)
+        m2 = m.init(42)
+
+        m = m.update(m2)
+
+        assert isinstance(m.kernel, jnp.ndarray)
+
     def test_update_inplace(self):
 
         mlp = MLP(2, 3, 5)
@@ -606,3 +614,13 @@ class TestTreex:
         module = MyModule()
 
         print(module.tabulate())
+
+    def test_treex_filter(self):
+
+        tree = dict(a=1, b=Linear(3, 4))
+
+        tree2 = tx.filter(tree, tx.Parameter)
+        assert isinstance(tree2["a"], tx.Nothing)
+
+        tree2 = tx.filter(tree, lambda field: isinstance(field.value, int))
+        assert tree2["a"] == 1
