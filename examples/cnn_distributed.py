@@ -133,11 +133,7 @@ def main(
     X_train = X_train[..., None]
     X_test = X_test[..., None]
 
-    @partial(jax.pmap, in_axes=0)
-    def tabulate(model):
-        print(model.tabulate(X_train[:batch_size], signature=True))
-
-    tabulate(model)
+    model.tabulate(signature=True)
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)
@@ -215,6 +211,9 @@ def main(
         print(
             f"[{epoch}] loss_train={epoch_train_loss}, acc_train={epoch_train_acc}, loss_test={epoch_test_loss}, acc_test={epoch_test_acc}"
         )
+
+    # pass params from the first device to host
+    model = model.map(lambda x: x[0])
 
     model = model.eval()
 
