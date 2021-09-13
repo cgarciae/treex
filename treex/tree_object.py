@@ -1,3 +1,4 @@
+import functools
 import inspect
 import io
 import threading
@@ -19,26 +20,43 @@ from treex import types
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
 T = tp.TypeVar("T", bound="TreeObject")
+Filter = tp.Union[
+    tp.Type["types.TreePart"],
+    tp.Callable[["FieldInfo"], bool],
+]
 
 PAD = r"{pad}"
+LEAF_TYPES = (types.Nothing, types.Initializer, type(None))
+
+pymap = map
+pyfilter = filter
 
 
+@dataclass
 class _Context(threading.local):
-    get_value_annotations: bool = False
-    map_f: tp.Optional[tp.Callable[["TreeObject"], "TreeObject"]] = None
-    map_inplace: bool = False
+    add_field_info: bool = False
+    call_info: tp.Optional[tp.Dict["TreeObject", tp.Tuple[types.Inputs, tp.Any]]] = None
+
+    def __enter__(self):
+        global _CONTEXT
+        self._old_context = _CONTEXT
+        _CONTEXT = self
+
+    def __exit__(self, *args):
+        global _CONTEXT
+        _CONTEXT = self._old_context
 
 
-_LOCAL: _Context = _Context()
+_CONTEXT = _Context()
 
 
 class FieldInfo:
     def __init__(
         self,
-        name: str,
+        name: tp.Optional[str],
         value: tp.Any,
-        annotation: tp.Type[types.TreePart],
-        module: "TreeObject",
+        annotation: tp.Type[tp.Any],
+        module: tp.Optional["TreeObject"],
     ):
         self.name = name
         self.value = value
@@ -46,9 +64,20 @@ class FieldInfo:
         self.module = module
 
 
-class CheckInitCalled(ABCMeta):
+class TreeObjectMeta(ABCMeta):
     def __call__(cls, *args, **kwargs) -> "TreeObject":
-        obj: TreeObject = type.__call__(cls, *args, **kwargs)
+        obj: TreeObject = cls.__new__(cls)
+
+        # # add all parent class annotations
+        obj.__annotations__ = _get_all_annotations(cls)
+
+        # copy annotations before __init__ is called
+        obj.__annotations__ = {
+            field: _resolve_tree_type(field, value)
+            for field, value in obj.__annotations__.items()
+        }
+
+        obj.__init__(*args, **kwargs)
 
         if not obj._init_called:
             raise RuntimeError(
@@ -60,23 +89,34 @@ class CheckInitCalled(ABCMeta):
             if field not in obj.__annotations__ and isinstance(value, TreeObject):
                 obj.__annotations__[field] = type(value)
 
+        if isinstance(obj, tp.Callable):
+            new_call = _get_call(cls.__call__)
+            cls.__call__ = functools.wraps(cls.__call__)(new_call)
+
         return obj
 
 
-class TreeObject(metaclass=CheckInitCalled):
+# override __call__
+def _get_call(orig_call):
+    def _meta_call(self: "TreeObject", *args, **kwargs):
+        outputs = orig_call(self, *args, **kwargs)
+
+        if _CONTEXT.call_info is not None:
+            inputs = types.Inputs(*args, **kwargs)
+            _CONTEXT.call_info[self] = (inputs, outputs)
+
+        return outputs
+
+    return _meta_call
+
+
+class TreeObject(metaclass=TreeObjectMeta):
     _init_called: bool = False
 
     def __init__(self) -> None:
         self._init_called = True
-        self.__annotations__ = {
-            field: _resolve_tree_type(field, value)
-            for field, value in self.__annotations__.items()
-        }
 
     def tree_flatten(self):
-
-        if _LOCAL.map_f is not None and _LOCAL.map_inplace:
-            _LOCAL.map_f(self)
 
         fields = vars(self)
 
@@ -93,12 +133,16 @@ class TreeObject(metaclass=CheckInitCalled):
             if annotation is None:
                 not_tree[field] = value
 
+            elif not isinstance(annotation, tp.Type):
+                not_tree[field] = value
+
             elif issubclass(annotation, TreeObject):
                 tree[field] = value
 
             elif issubclass(annotation, types.TreePart):
                 _annotation = annotation  # help static analyzer
-                if _LOCAL.get_value_annotations:
+
+                if _CONTEXT.add_field_info:
                     tree[field] = jax.tree_map(
                         lambda x: FieldInfo(
                             name=field,
@@ -107,6 +151,7 @@ class TreeObject(metaclass=CheckInitCalled):
                             module=self,
                         ),
                         value,
+                        is_leaf=lambda x: isinstance(x, types.Initializer),
                     )
                 else:
                     tree[field] = value
@@ -127,9 +172,6 @@ class TreeObject(metaclass=CheckInitCalled):
 
         for k, v in not_tree.items():
             setattr(module, k, v)
-
-        if _LOCAL.map_f is not None and not _LOCAL.map_inplace:
-            module = _LOCAL.map_f(module)
 
         return module
 
@@ -152,16 +194,52 @@ class TreeObject(metaclass=CheckInitCalled):
         rep = _get_repr(self, level=0, array_type=None, inline=False)
         return _get_rich_repr(Text.from_markup(rep))
 
+    def map(
+        self: T,
+        f: tp.Callable,
+        *filters: tp.Union[
+            tp.Type["types.TreePart"],
+            tp.Callable[[FieldInfo], bool],
+        ],
+        inplace: bool = False,
+    ) -> T:
+        """
+        Applies a function to all leaves in a pytree using `jax.tree_map`. If `filters` are given then
+        the function will be applied only to the subset of leaves that match the filters.
+
+        For example, if we want to zero all batch stats we can do:
+
+        ```python
+        module = SomeCompleModule()
+        module = module.map(jnp.zeros_like, tx.BatchStat)
+        ```
+
+        Arguments:
+            f: The function to apply to the leaves.
+            filters: The filters used to select the leaves to which the function will be applied.
+            inplace: If `True` then the object will be mutated with the changes.
+
+        Returns:
+            The object with the changes applied, if `inplace` is `True` then `self` is returned.
+        """
+        module = map(f, self, *filters)
+
+        if inplace:
+            self.__dict__.update(module.__dict__)
+            return self
+        else:
+            return module
+
     def filter(
         self: T,
         *filters: tp.Union[
-            tp.Type["types.TreePart"],
+            type,
             tp.Callable[[FieldInfo], bool],
         ],
     ) -> T:
         """
         Creates a new module with the same structure, but sets to `Nothing` leaves that
-        do not match any of the given filters. If a `TreePart` type `t` is given, the filter
+        do not match **all** of the given filters. If a type `t` is given, the filter
 
         ```python
         _filter(x: Type[TreePart]) = issubclass(x, t)
@@ -199,34 +277,8 @@ class TreeObject(metaclass=CheckInitCalled):
             The new module with the filtered fields.
 
         """
-        flat: tp.List[FieldInfo]
 
-        def _get_filter(
-            t: tp.Type[types.TreePart],
-        ) -> tp.Callable[[FieldInfo], bool]:
-            def _filter(info: FieldInfo) -> bool:
-                return isinstance(t, tp.Type) and issubclass(info.annotation, t)
-
-            return _filter
-
-        filters = tuple(
-            _get_filter(f) if isinstance(f, tp.Type) else f for f in filters
-        )
-
-        old_get_value_annotations = _LOCAL.get_value_annotations
-        _LOCAL.get_value_annotations = True
-
-        try:
-            flat, treedef = jax.tree_flatten(self)
-            flat_out = [
-                info.value if any(f(info) for f in filters) else types.Nothing()
-                for info in flat
-            ]
-            module = jax.tree_unflatten(treedef, flat_out)
-        finally:
-            _LOCAL.get_value_annotations = old_get_value_annotations
-
-        return module
+        return filter(self, *filters)
 
     def update(self: T, other: T, *rest: T, inplace: bool = False) -> T:
         """
@@ -283,7 +335,7 @@ class TreeObject(metaclass=CheckInitCalled):
         Returns:
             A new module with the updated values or `None` if `inplace` is `True`.
         """
-        module = module_update(self, other, *rest)
+        module = update(self, other, *rest)
 
         if inplace:
             self.__dict__.update(module.__dict__)
@@ -292,7 +344,11 @@ class TreeObject(metaclass=CheckInitCalled):
             return module
 
     def tabulate(
-        self, depth: int = -1, signature: bool = False, param_types: bool = True
+        self,
+        inputs: tp.Union[tp.Any, types.Inputs, None] = None,
+        depth: int = -1,
+        signature: bool = False,
+        param_types: bool = True,
     ) -> str:
         """
         Returns a tabular representation of the module.
@@ -304,16 +360,41 @@ class TreeObject(metaclass=CheckInitCalled):
         Returns:
             A string containing the tabular representation.
         """
-        old_get_value_annotations = _LOCAL.get_value_annotations
-        _LOCAL.get_value_annotations = True
+        self = self.copy()
 
-        try:
+        if inputs is not None:
+            if not isinstance(inputs, types.Inputs):
+                inputs = types.Inputs(inputs)
+
+            inputs = tp.cast(types.Inputs, inputs)
+
+            if not isinstance(self, tp.Callable):
+                raise TypeError(
+                    "`inputs` can only be specified if the module is a callable."
+                )
+
+            with _Context(call_info={}):
+
+                # call using self to preserve references
+                def eval_call(args, kwargs):
+                    assert isinstance(self, tp.Callable)
+                    return self(*args, **kwargs)
+
+                jax.eval_shape(
+                    eval_call,
+                    inputs.args,
+                    inputs.kwargs,
+                )
+                call_info = _CONTEXT.call_info
+
+        else:
+            call_info = None
+
+        with _Context(add_field_info=True):
             flat, _ = jax.tree_flatten(self)
             tree_part_types: tp.Tuple[tp.Type[types.TreePart], ...] = tuple(
                 {value_annotation.annotation for value_annotation in flat}
             )
-        finally:
-            _LOCAL.get_value_annotations = old_get_value_annotations
 
         path = ()
         rows = list(
@@ -321,9 +402,39 @@ class TreeObject(metaclass=CheckInitCalled):
                 path, self, depth, tree_part_types, signature, param_types
             )
         )
+
+        modules = [row[0] for row in rows]
+        rows = [row[1:] for row in rows]
+
+        if call_info is not None:
+            for module, row in zip(modules, rows):
+                if module in call_info:
+                    inputs, outputs = call_info[module]
+                    simplified_inputs = (
+                        inputs.args[0]
+                        if len(inputs.kwargs) == 0 and len(inputs.args) == 1
+                        else inputs.kwargs
+                        if len(inputs.kwargs) == 0
+                        else inputs.kwargs
+                        if len(inputs.args) == 0
+                        else (inputs.args, inputs.kwargs)
+                    )
+
+                    inputs_repr = _format_param_tree(simplified_inputs)
+                    outputs_repr = _format_param_tree(outputs)
+                else:
+                    inputs_repr = ""
+                    outputs_repr = ""
+
+                row.insert(3, outputs_repr)
+                row.insert(3, inputs_repr)
+
+        n_non_treepart_cols = 2 if call_info is None else 4
+
         rows[0][0] = "*"
         rows.append(
-            ["", "", "Total:"]
+            [""] * n_non_treepart_cols
+            + ["Total:"]
             + [
                 _format_obj_size(self.filter(tree_type), add_padding=True)
                 for tree_type in tree_part_types
@@ -342,6 +453,10 @@ class TreeObject(metaclass=CheckInitCalled):
         table.add_column("module")
         table.add_column("params")
 
+        if call_info is not None:
+            table.add_column("inputs")
+            table.add_column("outputs")
+
         for tree_part_type in tree_part_types:
             type_name = tree_part_type.__name__
             if type_name.startswith("_"):
@@ -352,10 +467,14 @@ class TreeObject(metaclass=CheckInitCalled):
         for row in rows[:-1]:
             table.add_row(*row)
 
-        table.columns[2].footer = Text.from_markup(rows[-1][2], justify="right")
+        table.columns[n_non_treepart_cols].footer = Text.from_markup(
+            rows[-1][n_non_treepart_cols], justify="right"
+        )
 
         for i in range(len(tree_part_types)):
-            table.columns[3 + i].footer = rows[-1][3 + i]
+            table.columns[n_non_treepart_cols + 1 + i].footer = rows[-1][
+                n_non_treepart_cols + 1 + i
+            ]
 
         table.caption_style = "bold"
         table.caption = "\nTotal Parameters: " + _format_obj_size(
@@ -370,55 +489,149 @@ class TreeObject(metaclass=CheckInitCalled):
 # --------------------------------------------------
 
 
-def module_map(
-    f: tp.Callable[[TreeObject], TreeObject], obj: A, inplace: bool = False
+def object_apply(
+    f: tp.Callable[..., None], obj: A, *rest: A, inplace: bool = False
 ) -> A:
     """
     Applies a function to all TreeObjects in a Pytree. Function very similar to `jax.tree_map`,
-    but works on modules instead of values.
+    but works on TreeObjects instead of values and `f` should apply the changes inplace to the
+    first object.
 
-    If `inplace` is `True`, the original module is mutated.
+    If `inplace` is `False`, a copy of the first object is returned with the changes applied.
+    The `rest` of the objects are always copied.
 
     Arguments:
-        f: The function to apply to all submodules.
-        obj: base pytree.
-        inplace: If `True`, the original TreeObjects are mutated.
+        f: The function to apply.
+        obj: a pytree possibly containing TreeObjects.
+        *rest: additional pytrees.
+        inplace: If `True`, the input `obj` is mutated.
 
     Returns:
         A new pytree with the updated TreeObjects or the same input `obj` if `inplace` is `True`.
     """
-    old_map_f = _LOCAL.map_f
-    old_map_inplace = _LOCAL.map_inplace
+    rest = jax.tree_map(lambda x: x, rest)
 
-    _LOCAL.map_f = f
-    _LOCAL.map_inplace = inplace
+    if not inplace:
+        obj = jax.tree_map(lambda x: x, obj)
 
-    try:
-        if inplace:
-            jax.tree_flatten(obj)
-            return obj
-        else:
-            return jax.tree_map(lambda x: x, obj)
-    finally:
-        _LOCAL.map_f = old_map_f
-        _LOCAL.map_inplace = old_map_inplace
+    objs = (obj,) + rest
 
+    def nested_fn(obj, *rest):
+        if isinstance(obj, TreeObject):
+            object_apply(f, obj, *rest, inplace=True)
 
-def annotation_map(
-    f: tp.Callable[[tp.Type], tp.Type], obj: A, inplace: bool = False
-) -> A:
-    def _map_annotations(module: TreeObject) -> TreeObject:
-        module.__annotations__ = module.__annotations__.copy()
-        for field, annotation in module.__annotations__.items():
-            if issubclass(annotation, types.TreePart):
-                module.__annotations__[field] = f(annotation)
+    jax.tree_map(
+        nested_fn,
+        *objs,
+        is_leaf=lambda x: isinstance(x, TreeObject) and not x in objs,
+    )
 
-        return module
+    if isinstance(obj, TreeObject):
+        f(obj, *rest)
 
-    return module_map(_map_annotations, obj, inplace=inplace)
+    return obj
 
 
-def module_update(module: A, other: A, *rest: A) -> A:
+def map(f: tp.Callable, obj: A, *filters: Filter) -> A:
+    """
+    Functional version of `TreeObject.map` but it can be applied to any pytree, useful if
+    you have TreeObjects that are embedded in a pytree. The `filters` are applied according
+    to `tx.filter`.
+
+    Example:
+
+    ```python
+    tree = dict(a=1, b=MyModule().init(42))
+    tree = tx.map(jnp.zeros, tree, tx.BatchStat)
+
+    # "a" is not modified
+    assert tree["a"] == 1
+    ```
+
+    Arguments:
+        f: The function to apply to the leaves.
+        filters: The filters used to select the leaves to which the function will be applied.
+
+    Returns:
+        The object with the changes applied.
+    """
+
+    has_filters = len(filters) > 0
+
+    if has_filters:
+        new_obj = filter(obj, *filters)
+    else:
+        new_obj = obj
+
+    new_obj: A = jax.tree_map(f, new_obj)
+
+    if has_filters:
+        new_obj = update(obj, new_obj)
+
+    return new_obj
+
+
+def filter(obj: A, *filters: Filter) -> A:
+    """
+    Functional version of `TreeObject.filter` but can filter arbitrary pytrees. This is useful
+    if you have TreeObjects that are embedded in a larger pytree e.g. a list of TreeObjects.
+
+    Leaves that are not part of a TreeObject will get assigned the following `FieldInfo`:
+
+    ```python
+     FieldInfo(
+        name=None,
+        value=leaf_value,
+        annotation=type(None),
+        module=None,
+    )
+    ```
+    where `leaf_value` is the value of the leaf. This means that non-TreeObject leaves will be
+    filtered with a query like:
+
+    ```python
+    tree = dict(a=1, b=tx.Linear(3, 4))
+    filtered = filter(tree, tx.Parameter)
+
+    assert isinstance(filtered["a"], tx.Nothing)
+    ```
+
+    However, you query non-TreeObject based on their value:
+
+    ```python
+    tree = dict(a=1, b=tx.Linear(3, 4))
+    filtered = filter(tree, lambda field: isintance(field.value, int))
+
+    assert filtered["a"] == 1
+    ```
+
+    Arguments:
+        filters: Types to filter by, membership is determined by `issubclass`, or
+            callables that take in a `FieldInfo` and return a `bool`.
+    Returns:
+        The new module with the filtered fields.
+
+    """
+
+    filters = tuple(_get_filter(f) if isinstance(f, tp.Type) else f for f in filters)
+
+    def apply_filters(info: tp.Union[FieldInfo, tp.Any]) -> tp.Any:
+        if not isinstance(info, FieldInfo):
+            info = FieldInfo(
+                name=None,
+                value=info,
+                annotation=type(None),
+                module=None,
+            )
+        return info.value if all(f(info) for f in filters) else types.Nothing()
+
+    with _Context(add_field_info=True):
+        obj = jax.tree_map(apply_filters, obj)
+
+    return obj
+
+
+def update(module: A, other: A, *rest: A) -> A:
     """
     Functional version of `Module.update`, it accepts arbitray pytree structures
     that may optionally contain `Module`s and performs the `update` logic.
@@ -431,24 +644,21 @@ def module_update(module: A, other: A, *rest: A) -> A:
     Returns:
         A new pytree with the updated values.
     """
-    modules = (module, other) + rest
 
-    def merge_fn(xs):
+    def merge_fn(*xs):
         acc, *xs = xs
         for x in xs:
             if not isinstance(x, types.Nothing):
                 acc = x
         return acc
 
-    flats, treedefs = zip(
-        *[
-            jax.tree_flatten(m, is_leaf=lambda x: isinstance(x, types.Nothing))
-            for m in modules
-        ]
+    module = _looser_tree_map(
+        merge_fn,
+        module,
+        other,
+        *rest,
+        is_leaf=lambda x: isinstance(x, LEAF_TYPES),
     )
-    # flat_out = jax.tree_util.tree_map(merge_fn, *flats)
-    flat_out = [merge_fn(values) for values in zip(*flats)]
-    module = jax.tree_unflatten(treedefs[0], flat_out)
 
     return module
 
@@ -456,6 +666,42 @@ def module_update(module: A, other: A, *rest: A) -> A:
 # --------------------------------------------------
 # utils
 # --------------------------------------------------
+
+
+def _looser_tree_map(
+    f: tp.Callable[..., tp.Any],
+    tree: tp.Any,
+    *rest: tp.Any,
+    is_leaf: tp.Optional[tp.Callable[[tp.Any], bool]] = None,
+) -> tp.Any:
+    jax.tree_map
+    leaves, treedef = jax.tree_flatten(
+        tree,
+        is_leaf=is_leaf,
+    )
+    all_leaves = [leaves] + [jax.tree_flatten(r, is_leaf=is_leaf)[0] for r in rest]
+
+    n_leaves = len(leaves)
+    assert all(len(l) == n_leaves for l in all_leaves)
+
+    return treedef.unflatten(f(*xs) for xs in zip(*all_leaves))
+
+
+def _get_all_annotations(cls):
+    d = {}
+    for c in reversed(cls.mro()):
+        if hasattr(c, "__annotations__"):
+            d.update(**c.__annotations__)
+    return d
+
+
+def _get_filter(
+    t: type,
+) -> tp.Callable[[FieldInfo], bool]:
+    def _filter(info: FieldInfo) -> bool:
+        return isinstance(t, tp.Type) and issubclass(info.annotation, t)
+
+    return _filter
 
 
 def _get_rich_repr(table):
@@ -591,9 +837,11 @@ def _get_tabulate_rows(
 
         params_repr = {
             field: jax.tree_map(
-                lambda x: _format_param(x, annotations[field], include_param_type),
+                lambda x: str(x)
+                if isinstance(x, LEAF_TYPES)
+                else _format_param(x, annotations[field], include_param_type),
                 value,
-                is_leaf=lambda x: isinstance(x, types.Nothing),
+                is_leaf=lambda x: isinstance(x, LEAF_TYPES),
             )
             for field, value in params.items()
         }
@@ -618,7 +866,7 @@ def _get_tabulate_rows(
                 for t in tree_part_types
             ]
 
-        yield [path_str, signature_str, params_str] + tree_part_sizes
+        yield [obj, path_str, signature_str, params_str] + tree_part_sizes
 
         if level != 0:
             for field, value in submodules.items():
@@ -691,14 +939,15 @@ def _format_module_signature(
     simple_types = {int, str, float, bool}
     cls = obj.__class__
     values = list(inspect.signature(cls.__init__).parameters.values())[1:]
+    names = {x.name for x in values}
 
-    for field in values:
-        if field.name in not_tree:
-            value = not_tree[field.name]
+    for field in not_tree:
+        if field in names:
+            value = not_tree[field]
             types = set(jax.tree_leaves(jax.tree_map(type, value)))
 
             if types.issubset(simple_types):
-                signature[field.name] = value
+                signature[field] = value
 
     signature = jax.tree_map(
         lambda x: f'"{x}"'
@@ -708,6 +957,9 @@ def _format_module_signature(
         else str(x),
         signature,
     )
+    signature = {
+        field: str(value).replace("'", "") for field, value in signature.items()
+    }
 
     return signature
 
@@ -726,6 +978,20 @@ def _format_param(obj, array_type, include_param_type) -> str:
         return f"{type_name}([green]{shape}[/]){PAD}  [dim]{obj.dtype}[/]"
     else:
         return str(obj) if include_param_type else f"() [dim]{type(obj).__name__}[/]"
+
+
+def _format_param_tree(params) -> str:
+
+    params_repr = jax.tree_map(
+        lambda x: _format_param(x, None, include_param_type=False),
+        params,
+        is_leaf=lambda x: isinstance(x, types.Nothing),
+    )
+
+    params_repr = _simplify(params_repr)
+    params_str = _as_yaml_str(params_repr)
+
+    return params_str
 
 
 def _format_obj_size(obj, add_padding):
@@ -756,6 +1022,8 @@ def _add_padding(rows):
                     line.format(
                         pad=" " * (max_length - len(line.rstrip().split(PAD)[0]))
                     )
+                    if PAD in line
+                    else line
                     for line in row[col].rstrip().split("\n")
                 )
 
@@ -785,11 +1053,46 @@ def _generic_issubclass(__cls, __class_or_tuple) -> bool:
     )
 
 
+def _remove_generic(_cls):
+    return (
+        _cls
+        if isinstance(_cls, type)
+        else _cls.__origin__
+        if hasattr(_cls, "__origin__")
+        else type(_cls)
+    )
+
+
 def _resolve_tree_type(name: str, t: tp.Any) -> tp.Any:
 
     tree_types = [
-        x for x in _all_types(t) if _generic_issubclass(x, (types.TreePart, TreeObject))
+        x
+        for x in _all_types(t)
+        if _generic_issubclass(x, (types.TreePart, TreeObject, types.Static))
     ]
+
+    if _generic_issubclass(t, types.Static):
+        if any(
+            _generic_issubclass(x, (types.TreePart, types.Static))
+            for x in tree_types[1:]
+        ):
+            raise TypeError(
+                f"Generic Static annotation cannot contain TreePart or Static types, got '{name}': {t}"
+            )
+        return types.Static
+
+    elif _generic_issubclass(t, types.TreePart):
+        if len(tree_types) > 1:
+            raise TypeError(
+                f"TreePart annotations cannot contain TreeParts, TreeObject, or Static types, got '{name}': {t}"
+            )
+        return _remove_generic(t)
+    elif any(
+        _generic_issubclass(x, (types.TreePart, types.Static)) for x in tree_types[1:]
+    ):
+        raise TypeError(
+            f"TreePart or Static annotations have to be the top-level annotation, they cannot be used inside Generic types, got '{name}': {t}"
+        )
 
     if len(tree_types) > 1:
         # if its a type with many TreeObject subtypes just mark them all as TreeObject
@@ -797,18 +1100,12 @@ def _resolve_tree_type(name: str, t: tp.Any) -> tp.Any:
             return TreeObject
         else:
             raise TypeError(
-                f"Multiple tree parts found in annotation for field '{name}': {tree_types}"
+                f"Multiple tree parts found in annotation for field '{name}': {t}"
             )
     elif len(tree_types) == 1:
         return tree_types[0]
     else:
-        return (
-            t
-            if isinstance(t, type)
-            else t.__origin__
-            if hasattr(t, "__origin__")
-            else type(t)
-        )
+        return _remove_generic(t)
 
 
 def _all_types(t: tp.Type) -> tp.Iterable[tp.Type]:

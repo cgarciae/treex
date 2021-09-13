@@ -5,6 +5,7 @@ import jax
 import jax.numpy as jnp
 import jax.tree_util
 import numpy as np
+import pytest
 
 import treex as tx
 from treex.tree_object import _resolve_tree_type
@@ -141,6 +142,14 @@ class TestTreex:
         assert not isinstance(mlp_next.linear2.w, tx.Nothing)
         assert not isinstance(mlp_next.linear2.b, tx.Nothing)
         assert not isinstance(mlp_next.linear2.n, tx.Nothing)
+
+    def test_update_initializers(self):
+        m = tx.Linear(2, 3)
+        m2 = m.init(42)
+
+        m = m.update(m2)
+
+        assert isinstance(m.kernel, jnp.ndarray)
 
     def test_update_inplace(self):
 
@@ -381,6 +390,38 @@ class TestTreex:
 
         print(mlp.a["mlps"][1].linear2)
 
+    def test_tabulate_inputs(self):
+        class MyModule(tx.Module):
+            a: tp.Dict[str, tp.List[tx.MLP]]
+            b: tx.Parameter[tp.List[tp.Union[jnp.ndarray, tx.Initializer]]]
+
+            def __init__(self):
+                super().__init__()
+                self.a = {"mlps": [tx.MLP([256, 1024, 512]), tx.MLP([256, 1024, 512])]}
+                self.b = [
+                    tx.Initializer(lambda key: jnp.zeros((512, 256))),
+                    jnp.zeros((512, 128)),
+                ]
+
+            def __call__(self, x):
+
+                y1 = self.a["mlps"][0](x)
+                y2 = self.a["mlps"][1](x)
+
+                return dict(y1=y1, y2=y2)
+
+        mlp = MyModule().init(42)
+        mlp = jax.tree_map(
+            lambda x: jnp.asarray(x) if not isinstance(x, tx.Initializer) else x, mlp
+        )
+        # mlp = mlp.filter(tx.Parameter)
+
+        x = np.random.uniform(size=(10, 256))
+
+        rep = mlp.tabulate(inputs=tx.Inputs(x))
+
+        print(rep)
+
     def test_resolves(self):
 
         # test some generic resolves to tree type
@@ -388,12 +429,12 @@ class TestTreex:
         tree_type = _resolve_tree_type("annotation", annotation)
         assert tree_type is tx.Parameter
 
-        # test static generic resolve to None
-        annotation = tx.Static[tx.Parameter[tp.Any]]
+        # test static generic
+        annotation = tx.Static[tx.Linear]
         tree_type = _resolve_tree_type("annotation", annotation)
         assert tree_type is tx.Static
 
-        # test static only resolve to None
+        # test static only
         annotation = tx.Static
         tree_type = _resolve_tree_type("annotation", annotation)
         assert tree_type is tx.Static
@@ -405,6 +446,21 @@ class TestTreex:
         annotation = tp.List[tx.Parameter[int]]
         tree_type = _resolve_tree_type("annotation", annotation)
         assert tree_type is tx.Parameter
+
+        with pytest.raises(TypeError):
+            annotation = tx.Parameter[tp.List[tx.State[int]]]
+            _resolve_tree_type("annotation", annotation)
+
+        with pytest.raises(TypeError):
+            annotation = tx.Parameter[tp.List[tx.Linear]]
+            _resolve_tree_type("annotation", annotation)
+
+        with pytest.raises(TypeError):
+            annotation = tp.Tuple[tx.Parameter, tp.List[tx.Linear]]
+            _resolve_tree_type("annotation", annotation)
+
+        annotation = tx.Static[tp.List[tx.Linear]]
+        _resolve_tree_type("annotation", annotation)
 
     def test_static_annotation(self):
         class Mod(tx.Module):
@@ -421,10 +477,12 @@ class TestTreex:
         assert len(jax.tree_leaves(mod)) == 2
 
         assert mod.a.initialized
-        assert mod.a.params is not None
+        assert mod.a.kernel is not None
+        assert mod.a.bias is not None
 
         assert not mod.b.initialized
-        assert mod.b.params is None
+        assert mod.b.kernel is None
+        assert mod.b.bias is None
 
     def test_auto_annotations(self):
         class MLP(tx.Module):
@@ -503,3 +561,82 @@ class TestTreex:
 
         assert "linear1" in rep
         assert "linear2" in rep
+
+    def test_hashable(self):
+        class M(tx.Module):
+            a: tx.Hashable[np.ndarray]
+
+            def __init__(self):
+                super().__init__()
+                self.a = tx.Hashable(np.ones((3, 4), dtype=np.float32))
+
+        m = M().init(42)
+
+        N = 0
+
+        @jax.jit
+        def f(x):
+            nonlocal N
+            N += 1
+            return x
+
+        m = f(m)
+        assert N == 1
+
+        m = f(m)
+        assert N == 1
+
+        m.a = tx.Hashable(np.zeros((3, 4), dtype=np.float32))
+
+        m = f(m)
+        assert N == 2
+
+        m = f(m)
+        assert N == 2
+
+    def test_initializer(self):
+        init = tx.Initializer(lambda k: jax.random.uniform(k, shape=[3, 5]))
+
+        @jax.jit
+        def f(x):
+            return x
+
+        init2 = f(init)
+
+    def test_uninitialized_tabulate(self):
+        class MyModule(tx.Module):
+            a: tx.Parameter[np.ndarray, tx.Initializer]
+
+            def __init__(self):
+                super().__init__()
+                self.a = tx.Initializer(lambda k: jax.random.uniform(k, shape=[3, 5]))
+
+        module = MyModule()
+
+        print(module.tabulate())
+
+    def test_treex_filter(self):
+
+        tree = dict(a=1, b=Linear(3, 4))
+
+        tree2 = tx.filter(tree, tx.Parameter)
+        assert isinstance(tree2["a"], tx.Nothing)
+
+        tree2 = tx.filter(tree, lambda field: isinstance(field.value, int))
+        assert tree2["a"] == 1
+
+    def test_module_map(self):
+        class A(tx.Module):
+            def __init__(self):
+                super().__init__()
+                self.a = 1
+
+        module = A()
+
+        def map_fn(x):
+            x.a = 2
+
+        module2 = tx.object_apply(map_fn, module)
+
+        assert module.a == 1
+        assert module2.a == 2

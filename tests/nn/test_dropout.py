@@ -14,23 +14,25 @@ class DropoutTest(unittest.TestCase):
         batch_size=st.integers(min_value=1, max_value=32),
         length=st.integers(min_value=1, max_value=32),
         channels=st.integers(min_value=1, max_value=32),
-        training=st.booleans(),
         rate=st.floats(min_value=0.0, max_value=1.0),
         broadcast_dims=st.lists(
             st.integers(min_value=0, max_value=2), min_size=0, max_size=2
         ),
+        training=st.booleans(),
+        frozen=st.booleans(),
     )
     @hp.settings(deadline=None, max_examples=20)
-    def test_equivalence(
+    def test_dropout_equivalence(
         self,
         batch_size,
         length,
         channels,
-        training,
         rate,
         broadcast_dims,
+        training,
+        frozen,
     ):
-        deterministic = not training
+        deterministic = not training or frozen
         shape = (batch_size, length, channels)
 
         x = np.random.uniform(size=shape)
@@ -42,10 +44,14 @@ class DropoutTest(unittest.TestCase):
             broadcast_dims=broadcast_dims,
             deterministic=deterministic,
         )
-        treex_module = tx.Dropout(
-            rate=rate,
-            broadcast_dims=broadcast_dims,
-        ).train(training)
+        treex_module = (
+            tx.Dropout(
+                rate=rate,
+                broadcast_dims=broadcast_dims,
+            )
+            .train(training)
+            .freeze(frozen)
+        )
 
         flax_key, _ = jax.random.split(key)  # emulate init split
         variables = flax_module.init({"dropout": flax_key}, x)

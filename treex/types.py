@@ -7,11 +7,14 @@ import jax.tree_util
 import numpy as np
 
 A = tp.TypeVar("A")
+B = tp.TypeVar("B")
+
+_GenericAlias = type(tp.List[int])  # int is just a dummy type, it could be anything
 
 
 class IdentityGeneric(ABCMeta):
-    def __getitem__(cls: tp.Type[A], *key: tp.Any) -> tp.Type[A]:
-        return cls
+    def __getitem__(cls, *keys: tp.Any):
+        return _GenericAlias(cls, keys)
 
 
 class TreePart(object, metaclass=IdentityGeneric):
@@ -19,6 +22,10 @@ class TreePart(object, metaclass=IdentityGeneric):
 
 
 class _Parameter(TreePart):
+    pass
+
+
+class _DiffHyperParam(TreePart):
     pass
 
 
@@ -65,6 +72,9 @@ class _Metric(_Log):
 # use cast to trick static analyzers into believing these types
 Parameter = tp.Union  # static
 globals()["Parameter"] = _Parameter  # real
+
+DiffHyperParam = tp.Union  # static
+globals()["DiffHyperParam"] = _DiffHyperParam  # real
 
 State = tp.Union  # static
 globals()["State"] = _State  # real
@@ -120,6 +130,7 @@ class Named(tp.Generic[A]):
         jax.tree_util.register_pytree_node_class(cls)
 
 
+@jax.tree_util.register_pytree_node_class
 class Initializer:
     """Initialize a field from a function that expects a single argument with a PRNGKey.
 
@@ -139,6 +150,21 @@ class Initializer:
     def __repr__(self) -> str:
         return "Initializer"
 
+    # ------------------------
+    # Pytree implementation
+    # ------------------------
+    def tree_flatten(self):
+        tree = ()
+        static = (self.f,)
+
+        return tree, static
+
+    @classmethod
+    def tree_unflatten(cls, static, tree):
+        obj = cls.__new__(cls)
+        obj.f = static[0]
+        return obj
+
 
 @jax.tree_util.register_pytree_node_class
 class Nothing:
@@ -154,3 +180,24 @@ class Nothing:
 
     def __eq__(self, o: object) -> bool:
         return isinstance(o, Nothing)
+
+
+class Hashable(tp.Generic[A]):
+    """A hashable immutable wrapper around non-hashable values"""
+
+    value: A
+
+    def __init__(self, value: A):
+        self.__dict__["value"] = value
+
+    def __setattr__(self, name: str, value: tp.Any) -> None:
+        raise AttributeError(f"Hashable is immutable")
+
+
+class Inputs:
+    args: tp.Tuple[tp.Any, ...]
+    kwargs: tp.Dict[str, tp.Any]
+
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs

@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import optax
 import typer
+from flax import linen
 from tqdm import tqdm
 
 import treex as tx
@@ -17,10 +18,10 @@ np.random.seed(420)
 
 
 def loss_fn(
-    params: tx.Sequential, model: tx.Sequential, x: jnp.ndarray, y: jnp.ndarray
-) -> tp.Tuple[jnp.ndarray, tp.Tuple[tx.Sequential, jnp.ndarray]]:
+    params: tx.FlaxModule, model: tx.FlaxModule, x: jnp.ndarray, y: jnp.ndarray
+) -> tp.Tuple[jnp.ndarray, tp.Tuple[tx.FlaxModule, jnp.ndarray]]:
     model = model.update(params)
-    y_pred = model(x)
+    y_pred = model(x, training=model.training)
 
     loss = jnp.mean(
         optax.softmax_cross_entropy(
@@ -36,8 +37,8 @@ def loss_fn(
 
 @jax.jit
 def train_step(
-    model: tx.Sequential, optimizer: tx.Optimizer, x: jnp.ndarray, y: jnp.ndarray
-) -> tp.Tuple[jnp.ndarray, tx.Sequential, tx.Optimizer, jnp.ndarray]:
+    model: tx.FlaxModule, optimizer: tx.Optimizer, x: jnp.ndarray, y: jnp.ndarray
+) -> tp.Tuple[jnp.ndarray, tx.FlaxModule, tx.Optimizer, jnp.ndarray]:
     params = model.filter(tx.Parameter)
 
     (loss, (model, acc_batch)), grads = jax.value_and_grad(loss_fn, has_aux=True)(
@@ -52,7 +53,7 @@ def train_step(
 
 @jax.jit
 def test_step(
-    model: tx.Sequential, x: jnp.ndarray, y: jnp.ndarray
+    model: tx.FlaxModule, x: jnp.ndarray, y: jnp.ndarray
 ) -> tp.Tuple[jnp.ndarray, jnp.ndarray]:
 
     loss, (model, acc_batch) = loss_fn(model, model, x, y)
@@ -61,8 +62,26 @@ def test_step(
 
 
 @jax.jit
-def predict(model: tx.Sequential, x: jnp.ndarray):
-    return model(x).argmax(axis=1)
+def predict(model: tx.FlaxModule, x: jnp.ndarray):
+    return model(x, model.training).argmax(axis=1)
+
+
+class CNN(linen.Module):
+    @linen.compact
+    def __call__(self, x, training):
+        x = linen.Conv(32, [3, 3], strides=[2, 2])(x)
+        x = linen.BatchNorm(use_running_average=not training)(x)
+        x = linen.Dropout(0.05, deterministic=not training)(x)
+        x = jax.nn.relu(x)
+        x = linen.Conv(64, [3, 3], strides=[2, 2])(x)
+        x = linen.BatchNorm(use_running_average=not training)(x)
+        x = linen.Dropout(0.1, deterministic=not training)(x)
+        x = jax.nn.relu(x)
+        x = linen.Conv(128, [3, 3], strides=[2, 2])(x)
+        x = x.mean(axis=[1, 2])  # GlobalAveragePooling2D
+        x = linen.Dense(10)(x)
+
+        return x
 
 
 # define parameters
@@ -71,30 +90,20 @@ def main(
     batch_size: int = 32,
     steps_per_epoch: int = -1,
 ):
-
-    model = tx.Sequential(
-        tx.Conv(1, 32, [3, 3], strides=[2, 2]),
-        tx.BatchNorm(32),
-        tx.Dropout(0.05),
-        jax.nn.relu,
-        tx.Conv(32, 64, [3, 3], strides=[2, 2]),
-        tx.BatchNorm(64),
-        tx.Dropout(0.1),
-        jax.nn.relu,
-        tx.Conv(64, 128, [3, 3], strides=[2, 2]),
-        partial(jnp.mean, axis=[1, 2]),
-        tx.Linear(128, 10),
-    ).init(42)
-
-    optimizer = tx.Optimizer(optax.adamw(1e-3))
-    optimizer = optimizer.init(model.filter(tx.Parameter))
-
     # load data
     X_train, y_train, X_test, y_test = dataget.image.mnist().get()
     X_train = X_train[..., None]
     X_test = X_test[..., None]
 
-    print(model.tabulate(X_train[:batch_size], signature=True))
+    model = tx.FlaxModule(
+        CNN(),
+        sample_inputs=tx.Inputs(X_train[:32], training=True),
+    ).init(42)
+
+    print(model.tabulate())
+
+    optimizer = tx.Optimizer(optax.adamw(1e-3))
+    optimizer = optimizer.init(model.filter(tx.Parameter))
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)

@@ -71,11 +71,9 @@ class LinearTest(unittest.TestCase):
         variables = flax_module.init(flax_key, x)
         treex_module = treex_module.init(key)
 
-        assert set(variables["params"]) == set(treex_module.params)
-        assert all(
-            np.allclose(variables["params"][name], treex_module.params[name])
-            for name in variables["params"]
-        )
+        assert np.allclose(variables["params"]["kernel"], treex_module.kernel)
+        if use_bias:
+            assert np.allclose(variables["params"]["bias"], treex_module.bias)
 
         y_flax, updates = flax_module.apply(variables, x, mutable=["batch_stats"])
         variables = variables.copy(updates)
@@ -84,10 +82,9 @@ class LinearTest(unittest.TestCase):
 
         assert np.allclose(y_flax, y_treex)
 
-        assert all(
-            np.allclose(variables["params"][name], treex_module.params[name])
-            for name in variables["params"]
-        )
+        assert np.allclose(variables["params"]["kernel"], treex_module.kernel)
+        if use_bias:
+            assert np.allclose(variables["params"]["bias"], treex_module.bias)
 
     def test_call(self):
         x = np.random.uniform(size=(10, 2))

@@ -19,13 +19,18 @@ class Dropout(Module):
 
     * `deterministic` is not a constructor argument, but remains a `__call__` argument.
     * `self.training` state is used to indicate how Dropout should behave, interally
-    `deterministic = not self.training` is used unless `deterministic` is explicitly
+    `deterministic = not self.training or self.frozen` is used unless `deterministic` is explicitly
     passed via `__call__`.
     * Dropout maintains an `rng: Rng` state which is used to generate random masks unless `rng` is passed
     via `__call__`.
     """
 
+    # pytree
     rng: RngSeq
+
+    # static
+    rate: float
+    broadcast_dims: tp.Iterable[int]
 
     def __init__(
         self,
@@ -40,12 +45,17 @@ class Dropout(Module):
             broadcast_dims: dimensions that will share the same dropout mask
         """
         super().__init__()
-        self.module = flax_module.Dropout(
-            rate=rate,
-            broadcast_dims=broadcast_dims,
+        self.rate = rate
+        self.broadcast_dims = broadcast_dims
+        self.rng = RngSeq()
+
+    @property
+    def module(self) -> flax_module.Dropout:
+        return flax_module.Dropout(
+            rate=self.rate,
+            broadcast_dims=self.broadcast_dims,
             deterministic=None,
         )
-        self.rng = RngSeq()
 
     def __call__(
         self, x: np.ndarray, deterministic: tp.Optional[bool] = None, rng=None
@@ -65,8 +75,11 @@ class Dropout(Module):
         """
         variables = dict()
 
-        training = not deterministic if deterministic is not None else self.training
-        deterministic = not training
+        training = (
+            not deterministic
+            if deterministic is not None
+            else self.training and not self.frozen
+        )
 
         if rng is None:
             rng = self.rng.next()
@@ -75,7 +88,7 @@ class Dropout(Module):
         output = self.module.apply(
             variables,
             x,
-            deterministic=deterministic,
+            deterministic=not training,
             rng=rng,
         )
 

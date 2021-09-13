@@ -147,4 +147,8 @@ cython_debug/
 # data folder
 data
 
+# test file to try out stuff
 /test.py
+
+# rsync
+.git/

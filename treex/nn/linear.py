@@ -21,11 +21,23 @@ class Linear(Module):
     """
 
     # pytree
-    params: types.Parameter[tp.Mapping[str, jnp.ndarray], None]
+    kernel: types.Parameter[jnp.ndarray, None]
+    bias: types.Parameter[jnp.ndarray, None]
 
-    # props
+    # static
     features_in: int
-    module: flax_module.Dense
+    features_out: int
+    use_bias: bool
+    dtype: tp.Any
+    precision: tp.Any
+    kernel_init: tp.Callable[
+        [flax_module.PRNGKey, flax_module.Shape, flax_module.Dtype],
+        flax_module.Array,
+    ]
+    bias_init: tp.Callable[
+        [flax_module.PRNGKey, flax_module.Shape, flax_module.Dtype],
+        flax_module.Array,
+    ]
 
     def __init__(
         self,
@@ -57,15 +69,26 @@ class Linear(Module):
         super().__init__()
 
         self.features_in = features_in
-        self.module = flax_module.Dense(
-            features=features_out,
-            use_bias=use_bias,
-            dtype=dtype,
-            precision=precision,
-            kernel_init=kernel_init,
-            bias_init=bias_init,
+        self.features_out = features_out
+        self.use_bias = use_bias
+        self.dtype = dtype
+        self.precision = precision
+        self.kernel_init = kernel_init
+        self.bias_init = bias_init
+
+        self.kernel = None
+        self.bias = None
+
+    @property
+    def module(self) -> flax_module.Dense:
+        return flax_module.Dense(
+            features=self.features_out,
+            use_bias=self.use_bias,
+            dtype=self.dtype,
+            precision=self.precision,
+            kernel_init=self.kernel_init,
+            bias_init=self.bias_init,
         )
-        self.params = None
 
     def module_init(self, key: jnp.ndarray):
         batch_size = 10  # random
@@ -74,7 +97,12 @@ class Linear(Module):
         variables = self.module.init(key, x)
 
         # Extract collections
-        self.params = variables["params"].unfreeze()
+        params = variables["params"].unfreeze()
+
+        self.kernel = params["kernel"]
+
+        if self.use_bias:
+            self.bias = params["bias"]
 
     def __call__(self, x: np.ndarray) -> jnp.ndarray:
         """Applies a linear transformation to the inputs along the last dimension.
@@ -85,8 +113,14 @@ class Linear(Module):
         Returns:
             The transformed input.
         """
-        assert self.params is not None, "Module not initialized"
+        assert self.initialized, "Module is not initialized."
 
-        variables = dict(params=self.params)
-        output = self.module.apply(variables, x)
+        assert self.kernel is not None
+        params = {"kernel": self.kernel}
+
+        if self.use_bias:
+            assert self.bias is not None
+            params["bias"] = self.bias
+
+        output = self.module.apply({"params": params}, x)
         return tp.cast(jnp.ndarray, output)

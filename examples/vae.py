@@ -163,6 +163,8 @@ def main(
     X_train = (X_train > 0).astype(jnp.float32)
     X_test = (X_test > 0).astype(jnp.float32)
 
+    print(model.tabulate(X_train[:batch_size]))
+
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)
 
@@ -189,7 +191,7 @@ def main(
     plt.plot(epoch_losses)
 
     # visualize reconstructions
-    idxs = np.random.choice(5, len(X_test))
+    idxs = np.random.choice(len(X_test), 10)
     x_sample = X_test[idxs]
     x_pred = model.reconstruct(x_sample)
 
