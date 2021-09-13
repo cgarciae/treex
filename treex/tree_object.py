@@ -239,7 +239,7 @@ class TreeObject(metaclass=TreeObjectMeta):
     ) -> T:
         """
         Creates a new module with the same structure, but sets to `Nothing` leaves that
-        do not match any of the given filters. If a type `t` is given, the filter
+        do not match **all** of the given filters. If a type `t` is given, the filter
 
         ```python
         _filter(x: Type[TreePart]) = issubclass(x, t)
@@ -630,7 +630,7 @@ def filter(
                 annotation=type(None),
                 module=None,
             )
-        return info.value if any(f(info) for f in filters) else types.Nothing()
+        return info.value if all(f(info) for f in filters) else types.Nothing()
 
     with _Context(add_field_info=True):
         obj = jax.tree_map(apply_filters, obj)

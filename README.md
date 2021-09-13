@@ -251,7 +251,7 @@ module # MyModule(a=array([0.3]), b=array([3.2]))
 As shown here, field `Initializer`s are always called before `module_init`.
 
 ### Basic API
-#### filter
+#### Filter
 The `filter` method allows you to select a subtree by filtering based on a `TreePart` type, all leaves whose type annotations are a subclass of such type are kept, the rest are set to a special `Nothing` value.
 ```python
 class MyModule(tx.Module):
@@ -270,7 +270,7 @@ Since `Nothing` is an empty Pytree it gets ignored by tree operations, this effe
 jax.tree_map(lambda x: -x, module.filter(tx.Parameter)) # MyModule(a=array([-1]), b=Nothing)
 jax.tree_map(lambda x: -x, module.filter(tx.BatchStat)) # MyModule(a=Nothing, b=array([-2]))
 ```
-
+##### functions
 If you need to do more complex filtering, you can pass callables with the signature `FieldInfo -> bool` instead of types:
 
 ```python
@@ -281,7 +281,18 @@ module.filter(
 ) 
 # MyModule(a=Nothing, b=array([2]))
 ```
-#### update
+##### multiple filters
+The previous could be abbreviated using multiple filters as its required that **all** filters pass for a field to be kept:
+```python
+# all States that are not OptStates
+module.filter(
+    tx.State,
+    lambda field: not issubclass(field.annotation, tx.OptState)
+) 
+# MyModule(a=Nothing, b=array([2]))
+```
+
+#### Update
 The `update` method allows you to merge the values of one or more incoming modules with the current module, this is useful for integrating filtered modules back into the main module.
 
 ```python
@@ -291,7 +302,7 @@ negative = jax.tree_map(lambda x: -x, params) # MyModule(a=array([-1]), b=Nothin
 module = module.update(negative) # MyModule(a=array([-1]), b=array([2]))
 ```
 
-#### map
+#### Map
 The `map` method provides a convenient way to map a function over the fields of a module:
 
 ```python
