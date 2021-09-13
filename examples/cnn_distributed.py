@@ -54,8 +54,7 @@ def train_step(
     model = model.update(params)
 
     # sync batch statistics
-    batch_stats = jax.lax.pmean(model.filter(tx.BatchStat), axis_name="device")
-    model = model.update(batch_stats)
+    model = model.map(partial(jax.lax.pmean, axis_name="device"), tx.BatchStat)
 
     return loss, model, optimizer, acc_batch
 
@@ -82,10 +81,8 @@ def init_step(
     optimizer = optimizer.init(model.filter(tx.Parameter))
 
     # assign unique rng keys
-    model = model.map(
-        lambda k: jax.random.fold_in(k, jax.lax.axis_index("device")),
-        tx.Rng,
-    )
+    axis_index = jax.lax.axis_index("device")
+    model = model.map(lambda k: jax.random.fold_in(k, axis_index), tx.Rng)
 
     return model, optimizer
 
