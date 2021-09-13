@@ -532,11 +532,7 @@ def object_apply(
     return obj
 
 
-def map(
-    f: tp.Callable,
-    obj: A,
-    *filters: Filter,
-) -> A:
+def map(f: tp.Callable, obj: A, *filters: Filter) -> A:
     """
     Functional version of `TreeObject.map` but it can be applied to any pytree, useful if
     you have TreeObjects that are embedded in a pytree. The `filters` are applied according
@@ -575,10 +571,7 @@ def map(
     return new_obj
 
 
-def filter(
-    obj: A,
-    *filters: Filter,
-) -> A:
+def filter(obj: A, *filters: Filter) -> A:
     """
     Functional version of `TreeObject.filter` but can filter arbitrary pytrees. This is useful
     if you have TreeObjects that are embedded in a larger pytree e.g. a list of TreeObjects.

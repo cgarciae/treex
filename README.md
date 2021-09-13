@@ -321,6 +321,23 @@ module = module.map(lambda x: -x, tx.Parameter) # MyModule(a=array([-1]), b=arra
 
 As shown here, `map` accepts the same varargs as `filter` and calls `update` at the end if filters are given.
 
+#### Functional API
+All the previous methods are available as functions that can be applied to arbirary Pytrees. Here is the full list of functions:
+```python
+# -----------------
+# basic API
+# -----------------
+tx.filter(obj: A, *filters: Filter) -> A
+tx.update(module: A, other: A, *rest: A) -> A
+tx.map(f: tp.Callable, obj: A, *filters: Filter) -> A
+
+# -----------------
+# other functions
+# -----------------
+# applies a function to TreeObjects instead of leaves, useful to modify static properties
+tx.object_apply(f: tp.Callable, obj: A, *rest: A, inplace: bool) -> A
+```
+
 #### Use cases
 ##### grad & optimizers
 A typical use case is to define `params` as a `Parameter` filter and pass it as the first argument to `grad` or `value_and_grad` and as the target to optimizers:
