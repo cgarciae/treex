@@ -624,3 +624,19 @@ class TestTreex:
 
         tree2 = tx.filter(tree, lambda field: isinstance(field.value, int))
         assert tree2["a"] == 1
+
+    def test_module_map(self):
+        class A(tx.Module):
+            def __init__(self):
+                super().__init__()
+                self.a = 1
+
+        module = A()
+
+        def map_fn(x):
+            x.a = 2
+
+        module2 = tx.object_apply(map_fn, module)
+
+        assert module.a == 1
+        assert module2.a == 2

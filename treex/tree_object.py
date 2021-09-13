@@ -35,8 +35,6 @@ pyfilter = filter
 @dataclass
 class _Context(threading.local):
     add_field_info: bool = False
-    map_f: tp.Optional[tp.Callable[["TreeObject"], "TreeObject"]] = None
-    map_inplace: bool = False
     call_info: tp.Optional[tp.Dict["TreeObject", tp.Tuple[types.Inputs, tp.Any]]] = None
 
     def __enter__(self):
@@ -120,9 +118,6 @@ class TreeObject(metaclass=TreeObjectMeta):
 
     def tree_flatten(self):
 
-        if _CONTEXT.map_f is not None and _CONTEXT.map_inplace:
-            _CONTEXT.map_f(self)
-
         fields = vars(self)
 
         tree = {}
@@ -146,6 +141,7 @@ class TreeObject(metaclass=TreeObjectMeta):
 
             elif issubclass(annotation, types.TreePart):
                 _annotation = annotation  # help static analyzer
+
                 if _CONTEXT.add_field_info:
                     tree[field] = jax.tree_map(
                         lambda x: FieldInfo(
@@ -176,9 +172,6 @@ class TreeObject(metaclass=TreeObjectMeta):
 
         for k, v in not_tree.items():
             setattr(module, k, v)
-
-        if _CONTEXT.map_f is not None and not _CONTEXT.map_inplace:
-            module = _CONTEXT.map_f(module)
 
         return module
 
@@ -373,6 +366,8 @@ class TreeObject(metaclass=TreeObjectMeta):
             if not isinstance(inputs, types.Inputs):
                 inputs = types.Inputs(inputs)
 
+            inputs = tp.cast(types.Inputs, inputs)
+
             if not isinstance(self, tp.Callable):
                 raise TypeError(
                     "`inputs` can only be specified if the module is a callable."
@@ -494,30 +489,47 @@ class TreeObject(metaclass=TreeObjectMeta):
 # --------------------------------------------------
 
 
-def object_map(
-    f: tp.Callable[[TreeObject], TreeObject], obj: A, inplace: bool = False
+def object_apply(
+    f: tp.Callable[..., None], obj: A, *rest: A, inplace: bool = False
 ) -> A:
     """
     Applies a function to all TreeObjects in a Pytree. Function very similar to `jax.tree_map`,
-    but works on TreeObjects instead of values.
+    but works on TreeObjects instead of values and `f` should apply the changes inplace to the
+    first object.
 
-    If `inplace` is `True`, the original module is mutated.
+    If `inplace` is `False`, a copy of the first object is returned with the changes applied.
+    The `rest` of the objects are always copied.
 
     Arguments:
-        f: The function to apply to all submodules.
-        obj: base pytree.
-        inplace: If `True`, the original TreeObjects are mutated.
+        f: The function to apply.
+        obj: a pytree possibly containing TreeObjects.
+        *rest: additional pytrees.
+        inplace: If `True`, the input `obj` is mutated.
 
     Returns:
         A new pytree with the updated TreeObjects or the same input `obj` if `inplace` is `True`.
     """
+    rest = jax.tree_map(lambda x: x, rest)
 
-    with _Context(map_f=f, map_inplace=inplace):
-        if inplace:
-            jax.tree_flatten(obj)
-            return obj
-        else:
-            return jax.tree_map(lambda x: x, obj)
+    if not inplace:
+        obj = jax.tree_map(lambda x: x, obj)
+
+    objs = (obj,) + rest
+
+    def nested_fn(obj, *rest):
+        if isinstance(obj, TreeObject):
+            object_apply(f, obj, *rest, inplace=True)
+
+    jax.tree_map(
+        nested_fn,
+        *objs,
+        is_leaf=lambda x: isinstance(x, TreeObject) and not x in objs,
+    )
+
+    if isinstance(obj, TreeObject):
+        f(obj, *rest)
+
+    return obj
 
 
 def map(
