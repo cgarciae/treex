@@ -490,6 +490,61 @@ model = model.eval()
 # make predictions
 y_pred = model(X_test)
 ```
+
+### Freezing Layers
+Similar to `.training`, Treex `Module`s have a `.frozen` property that specifies whether the module is frozen or not. This property is used to condition the behavior of modules such as `Dropout` and `BatchNorm` which will behave deterministically/statically when `frozen=True`. Freezing layers is useful for tasks such as Transfer Learning where you want to freeze most of the weights of a model and train only a few of them on a new dataset.
+
+To switch between modes, use the `.freeze()` and `.unfreeze()` methods, they return a new Module whose `frozen` state and the state of all of its submodules (recursively) are set to the desired value.
+
+For example, you can leverage the fact that `Sequential` has its submoules in a `layers: List[Module]` field to freeze the first few layers of a model:
+
+```python
+class ConvBlock(tx.Module):
+    ...
+
+model = tx.Sequential(
+    ConvBlock(3, 32),
+    ConvBlock(32, 64),
+    ConvBlock(64, 128),
+    ...
+)
+
+# train model
+...
+
+# freeze some layers
+for layer in model.layers[:-1]:
+    layer.freeze(inplace=True)
+
+# fine-tune the model
+...
+```
+
+If you have a backbone you can just freeze the entire model:
+
+```python
+backbone = get_pretrained_model()
+backbone = backbone.freeze()
+
+model = tx.Sequential(
+    backbone,
+    tx.Linear(backbone.output_features, 10)
+).init(42)
+
+...
+
+@jax.jit
+def train_step(model, x, y, optimizer):
+    # only differentiate w.r.t. parameters whose module is not frozen
+    params = model.filter(
+        tx.Parameter,
+        lambda field: not field.module.frozen,
+    )
+    (loss, model), grads = loss_fn(params, model, x, y)
+
+    ...
+```
+
 ### Parameter Annotations
 The role of each field is defined by its annotation. While any valid parameter annotation is just type which inherits from `tx.TreePart`, the default annotations from Treex are organized into the following hierarchy:
 

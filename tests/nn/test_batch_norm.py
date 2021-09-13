@@ -21,7 +21,6 @@ class BatchNormTest(unittest.TestCase):
         batch_size=st.integers(min_value=1, max_value=32),
         length=st.integers(min_value=1, max_value=32),
         channels=st.integers(min_value=1, max_value=32),
-        training=st.booleans(),
         axis=st.sampled_from([-1]),  # flax has an error with other axis
         momentum=st.floats(min_value=0.01, max_value=1.0),
         epsilon=st.floats(min_value=0.000001, max_value=0.01),
@@ -29,6 +28,8 @@ class BatchNormTest(unittest.TestCase):
         use_scale=st.booleans(),
         bias_init=st.sampled_from(INITS),
         scale_init=st.sampled_from(INITS),
+        training=st.booleans(),
+        frozen=st.booleans(),
     )
     @hp.settings(deadline=None, max_examples=20)
     def test_equivalence(
@@ -36,7 +37,6 @@ class BatchNormTest(unittest.TestCase):
         batch_size,
         length,
         channels,
-        training,
         axis,
         momentum,
         epsilon,
@@ -44,8 +44,10 @@ class BatchNormTest(unittest.TestCase):
         use_scale,
         bias_init,
         scale_init,
+        training,
+        frozen,
     ):
-        use_running_average = not training
+        use_running_average = not training or frozen
         shape = (batch_size, length, channels)
 
         x = np.random.uniform(size=shape)
@@ -62,16 +64,20 @@ class BatchNormTest(unittest.TestCase):
             bias_init=bias_init,
             scale_init=scale_init,
         )
-        treex_module = tx.BatchNorm(
-            features_in=shape[axis],
-            axis=axis,
-            momentum=momentum,
-            epsilon=epsilon,
-            use_bias=use_bias,
-            use_scale=use_scale,
-            bias_init=bias_init,
-            scale_init=scale_init,
-        ).train(training)
+        treex_module = (
+            tx.BatchNorm(
+                features_in=shape[axis],
+                axis=axis,
+                momentum=momentum,
+                epsilon=epsilon,
+                use_bias=use_bias,
+                use_scale=use_scale,
+                bias_init=bias_init,
+                scale_init=scale_init,
+            )
+            .train(training)
+            .freeze(frozen)
+        )
 
         flax_key, _ = jax.random.split(key)  # emulate init split
         variables = flax_module.init(flax_key, x)

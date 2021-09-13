@@ -16,10 +16,12 @@ M = tp.TypeVar("M", bound="Module")
 class Module(TreeObject):
     _training: bool
     _initialized: bool
+    _frozen: bool
 
     def __init__(self) -> None:
         self._training = True
         self._initialized = False
+        self._frozen = False
         super().__init__()
 
     @property
@@ -29,6 +31,10 @@ class Module(TreeObject):
     @property
     def training(self) -> bool:
         return self._training
+
+    @property
+    def frozen(self) -> bool:
+        return self._frozen
 
     def init(self: M, key: tp.Union[int, jnp.ndarray], inplace: bool = False) -> M:
         """
@@ -81,8 +87,10 @@ class Module(TreeObject):
 
         Arguments:
             mode: The new training mode.
+            inplace: Whether to update the module inplace.
         Returns:
-            The new module in with the training mode is set to the given value.
+            The new module in with the training mode is set to the given value,
+            if `inplace` is `True` then `self` is returned.
         """
 
         def set_training(module: TreeObject):
@@ -99,3 +107,33 @@ class Module(TreeObject):
             The new module with the training mode set to False.
         """
         return self.train(False, inplace=inplace)
+
+    def freeze(self: M, mode: bool = True, inplace: bool = False) -> M:
+        """
+        Creates a new module with the same structure, but with `TreeObject.frozen` set
+        to the given value.
+
+        Arguments:
+            mode: The new `frozen` mode.
+            inplace: Whether to update the module inplace.
+        Returns:
+            The new module in with the `frozen` mode is set to the given value,
+            if `inplace` is `True` then `self` is returned.
+        """
+
+        def set_frozen(module: TreeObject):
+            if isinstance(module, Module):
+                module._frozen = mode
+
+        return object_apply(set_frozen, self, inplace=inplace)
+
+    def unfreeze(self: M, inplace: bool = False) -> M:
+        """
+        Creates a new module with `.frozen` set to False, equivalent to calling `freeze(False)`.
+
+        Arguments:
+            inplace: Whether to update the module inplace.
+        Returns:
+            The new module with `.frozen` set to False, if `inplace` is `True` then `self` is returned.
+        """
+        return self.freeze(False, inplace=inplace)

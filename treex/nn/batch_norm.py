@@ -18,7 +18,7 @@ class BatchNorm(Module):
 
     * `use_running_average` is not a constructor argument, but remains a `__call__` argument.
     * `self.training` state is used to indicate how BatchNorm should behave, interally
-    `use_running_average = not self.training` is used unless `use_running_average` is explicitly
+    `use_running_average = not self.training or self.frozen` is used unless `use_running_average` is explicitly
     passed via `__call__`.
     """
 
@@ -184,7 +184,7 @@ class BatchNorm(Module):
         training = (
             not use_running_average
             if use_running_average is not None
-            else self.training
+            else self.training and not self.frozen
         )
 
         # call apply
