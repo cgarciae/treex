@@ -185,7 +185,7 @@ class TreeObject(metaclass=TreeObjectMeta):
         obj_id: tp.Optional[int]
 
         if _IDENTITIES_CONTEXT.instances is not None:
-            obj_id = tp.cast(int, not_tree.pop("__TREEX_id"))
+            obj_id = tp.cast(int, not_tree["__TREEX_id"])
 
             if obj_id in _IDENTITIES_CONTEXT.instances:
                 return _IDENTITIES_CONTEXT.instances[obj_id]
@@ -201,8 +201,8 @@ class TreeObject(metaclass=TreeObjectMeta):
         for k, v in not_tree.items():
             setattr(module, k, v)
 
-        if obj_id is not None:
-            assert _IDENTITIES_CONTEXT.instances is not None
+        if _IDENTITIES_CONTEXT.instances is not None:
+            assert obj_id is not None
             _IDENTITIES_CONTEXT.instances[obj_id] = module
 
         return module
@@ -757,11 +757,84 @@ def update(module: A, other: A, *rest: A) -> A:
     return module
 
 
-def preserve_identities_ctx(decorator, *args, **kwargs):
-    def decorator_wrapper(f):
-        return preserve_identities(
-            decorator(
-                _share_output(f),
+def experimental_preserve_ids_io(f, *args, **kwargs):
+    """
+    EXPERIMENTAL: see https://github.com/cgarciae/treex/issues/8
+
+    Enables *relative* identities of TreeObjects to be preserved for the inputs and outputs
+    of functions like `jit` that clone Pytrees via flattening and unflattening. This useful when parameters
+    sharing is done by having the same submodule in multiple parts of a overall model/pytree.
+
+    The main difference with `preserve_ids` is that this function preserves identities
+    only when the inputs and outputs are bien processed by e.g. `jit` but not in the body of the main function.
+    In contrast, `preserve_ids` will try to preserve identities all the time which might be undesirable
+    if the same object is being cloned multiple times e.g. is the input to more than one `jax.tree_map`.
+
+    A very simple example could be:
+    ```python
+    m = SomeModule()
+
+    @preserve_ids_io(jax.jit)
+    def f(m1, m2):
+        assert m1 is m2
+        return m1, m2
+
+    m1, m2 = f(m, m)
+
+    assert m1 is m2
+    assert m is not m1 and m is not m2
+    ```
+    Here m1 and m2 preserve the same relative identity even though they are cloned from m. A more realistic example
+    could involve a module two modules sharing the same submodule:
+
+    ```python
+    class Child(tx.Moudle):
+        shared: SomeModule
+        ...
+
+    class Parent(tx.Module):
+        child1: Child
+        child2: Child
+
+        def __init__(self):
+            super().__init__()
+            shared = SomeModule()
+            self.child1 = Child(shared=shared)
+            self.child2 = Child(shared=shared)
+
+    @preserve_ids_io(jax.jit)
+    def f(model):
+        assert model.child1.shared is model.child2.shared
+        # do stuff
+        return model
+
+    model = f(Parent().init(42))
+
+    assert model.child1.shared is model.child2.shared
+    ```
+
+    Additionally, `preserve_ids_io` behaves like `functools.partial` so instead of having to write:
+
+    ```python
+    @preserve_ids_io(partial(jax.jit, static_argnums=(1, 2)))
+    ```
+
+    you can just write:
+
+    ```python
+    @preserve_ids_io(jax.jit, static_argnums=(1, 2))
+    ```
+
+    Arguments:
+        f: A decorator function like `jax.jit` or `jax.vmap`.
+        *args: Additional positional arguments to pass to `f`.
+        **kwargs: Additional keyword arguments to pass to `f`.
+    """
+
+    def decorator_wrapper(real_f):
+        return experimental_preserve_ids(
+            f(
+                _clear_context(real_f),
                 *args,
                 **kwargs,
             )
@@ -770,8 +843,10 @@ def preserve_identities_ctx(decorator, *args, **kwargs):
     return decorator_wrapper
 
 
-def preserve_identities(f):
+def experimental_preserve_ids(f):
     """
+    EXPERIMENTAL: see https://github.com/cgarciae/treex/issues/8
+
     Enables *relative* identities of TreeObjects to be preserved across functions that clone
     Pytrees via flattening and unflattening. This useful for parameters sharing via having
     the same TreeObject reference in two or more parts of the same pytree.
@@ -791,13 +866,13 @@ def preserve_identities(f):
 # --------------------------------------------------
 
 
-def _share_output(f):
+def _clear_context(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         # decorator from `share` was already called, we can clear _CONTEXT.shared
         # so we can reuse it on the output
-        assert _CONTEXT.instances is not None
-        _CONTEXT.instances.clear()
+        assert _IDENTITIES_CONTEXT.instances is not None
+        _IDENTITIES_CONTEXT.instances.clear()
 
         # revert to the original found before `_share_input` while calling `f`
         # so the whole `share` operation is transparent
@@ -815,15 +890,15 @@ from contextlib import contextmanager
 @contextmanager
 def _revert_context():
     """Sets the old_context as the current context for a while"""
-    global _CONTEXT
+    global _IDENTITIES_CONTEXT
 
-    current_context = _CONTEXT
-    _CONTEXT = _CONTEXT._old_context
+    current_context = _IDENTITIES_CONTEXT
+    _IDENTITIES_CONTEXT = _IDENTITIES_CONTEXT._old_context
 
     try:
         yield
     finally:
-        _CONTEXT = current_context
+        _IDENTITIES_CONTEXT = current_context
 
 
 def _looser_tree_map(
