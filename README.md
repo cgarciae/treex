@@ -270,7 +270,28 @@ Since `Nothing` is an empty Pytree it gets ignored by tree operations, this effe
 jax.tree_map(lambda x: -x, module.filter(tx.Parameter)) # MyModule(a=array([-1]), b=Nothing)
 jax.tree_map(lambda x: -x, module.filter(tx.BatchStat)) # MyModule(a=Nothing, b=array([-2]))
 ```
-##### functions
+#### shortcuts
+As simple filters getting the standard TreePart types are often enough, some shortcuts are provided, the first filter example can be written as:
+```python
+module.parameters()  # MyModule(a=array([1]), b=Nothing)
+module.batch_stats() # MyModule(a=Nothing, b=array([2]))
+```
+Here is the full list of shortcuts:
+
+| Shortcut          | Equivalence              |
+| ----------------- | ------------------------ |
+| `.parameters()`   | `.filter(tx.Parameter)`  |
+| `.batch_stats()`  | `.filter(tx.BatchStat)`  |
+| `.rngs()`         | `.filter(tx.RNG)`        |
+| `.model_states()` | `.filter(tx.ModelState)` |
+| `.states()`       | `.filter(tx.State)`      |
+| `.metrics()`      | `.filter(tx.Metric)`     |
+| `.losses()`       | `.filter(tx.Loss)`       |
+| `.logs()`         | `.filter(tx.Log)`        |
+
+
+
+##### filter predicates
 If you need to do more complex filtering, you can pass callables with the signature `FieldInfo -> bool` instead of types:
 
 ```python

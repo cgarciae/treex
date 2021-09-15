@@ -640,3 +640,32 @@ class TestTreex:
 
         assert module.a == 1
         assert module2.a == 2
+
+    def test_share(self):
+        class SomeModule(tx.Module):
+            x: tx.State[int, jnp.ndarray]
+
+            def __init__(self, x: int):
+                super().__init__()
+                self.x = x
+
+        @tx.preserve_identities
+        @jax.jit
+        def f(m1: SomeModule, m2: SomeModule):
+            assert m1 is m2
+
+            m1.x = 2
+            m3, m4 = jax.tree_map(lambda x: x, (m1, m2))
+
+            assert m3 is m4
+            assert m1 is not m3 and m2 is not m4
+
+            return m3, m4
+
+        m = SomeModule(1)
+
+        m1, m2 = f(m, m)
+
+        assert m1 is m2
+        assert m1.x == m2.x == 2
+        assert isinstance(m1.x, jnp.ndarray)

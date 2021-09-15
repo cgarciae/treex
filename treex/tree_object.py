@@ -47,7 +47,22 @@ class _Context(threading.local):
         _CONTEXT = self._old_context
 
 
+@dataclass
+class _IdentitiesContext(threading.local):
+    instances: tp.Optional[tp.Dict[int, tp.Any]] = None
+
+    def __enter__(self):
+        global _IDENTITIES_CONTEXT
+        self._old_context = _IDENTITIES_CONTEXT
+        _IDENTITIES_CONTEXT = self
+
+    def __exit__(self, *args):
+        global _IDENTITIES_CONTEXT
+        _IDENTITIES_CONTEXT = self._old_context
+
+
 _CONTEXT = _Context()
+_IDENTITIES_CONTEXT = _IdentitiesContext()
 
 
 class FieldInfo:
@@ -160,10 +175,23 @@ class TreeObject(metaclass=TreeObjectMeta):
 
         children = (tree,)
 
+        if _IDENTITIES_CONTEXT.instances is not None:
+            not_tree["__TREEX_id"] = id(self)
+
         return children, not_tree
 
     @classmethod
     def tree_unflatten(cls, not_tree, children):
+        obj_id: tp.Optional[int]
+
+        if _IDENTITIES_CONTEXT.instances is not None:
+            obj_id = tp.cast(int, not_tree.pop("__TREEX_id"))
+
+            if obj_id in _IDENTITIES_CONTEXT.instances:
+                return _IDENTITIES_CONTEXT.instances[obj_id]
+        else:
+            obj_id = None
+
         module = cls.__new__(cls)
         (tree,) = children
 
@@ -172,6 +200,10 @@ class TreeObject(metaclass=TreeObjectMeta):
 
         for k, v in not_tree.items():
             setattr(module, k, v)
+
+        if obj_id is not None:
+            assert _IDENTITIES_CONTEXT.instances is not None
+            _IDENTITIES_CONTEXT.instances[obj_id] = module
 
         return module
 
@@ -194,15 +226,7 @@ class TreeObject(metaclass=TreeObjectMeta):
         rep = _get_repr(self, level=0, array_type=None, inline=False)
         return _get_rich_repr(Text.from_markup(rep))
 
-    def map(
-        self: T,
-        f: tp.Callable,
-        *filters: tp.Union[
-            tp.Type["types.TreePart"],
-            tp.Callable[[FieldInfo], bool],
-        ],
-        inplace: bool = False,
-    ) -> T:
+    def map(self: T, f: tp.Callable, *filters: Filter, inplace: bool = False) -> T:
         """
         Applies a function to all leaves in a pytree using `jax.tree_map`. If `filters` are given then
         the function will be applied only to the subset of leaves that match the filters.
@@ -230,13 +254,7 @@ class TreeObject(metaclass=TreeObjectMeta):
         else:
             return module
 
-    def filter(
-        self: T,
-        *filters: tp.Union[
-            type,
-            tp.Callable[[FieldInfo], bool],
-        ],
-    ) -> T:
+    def filter(self: T, *filters: Filter) -> T:
         """
         Creates a new module with the same structure, but sets to `Nothing` leaves that
         do not match **all** of the given filters. If a type `t` is given, the filter
@@ -483,6 +501,82 @@ class TreeObject(metaclass=TreeObjectMeta):
 
         return _get_rich_repr(table)
 
+    # --------------------------------------
+    # filter shortcuts
+    # --------------------------------------
+
+    def parameters(self: T, *filters: Filter) -> T:
+        """
+        Returns a copy of the TreeObject with only tx.Parameter TreeParts, alias for `filter(tx.Parameter)`.
+
+        Arguments:
+            filters: additional filters passed to `filter`.
+        """
+        return self.filter(types.Parameter, *filters)
+
+    def batch_stats(self: T, *filters: Filter) -> T:
+        """
+        Returns a copy of the TreeObject with only tx.BatchStat TreeParts, alias for `filter(tx.BatchStat)`.
+
+        Arguments:
+            filters: additional filters passed to `filter`.
+        """
+        return self.filter(types.BatchStat, *filters)
+
+    def rngs(self: T, *filters: Filter) -> T:
+        """
+        Returns a copy of the TreeObject with only tx.Rng TreeParts, alias for `filter(tx.Rng)`.
+
+        Arguments:
+            filters: additional filters passed to `filter`.
+        """
+        return self.filter(types.Rng, *filters)
+
+    def model_states(self: T, *filters: Filter) -> T:
+        """
+        Returns a copy of the TreeObject with only tx.ModelState TreeParts, alias for `filter(tx.ModelState)`.
+
+        Arguments:
+            filters: additional filters passed to `filter`.
+        """
+        return self.filter(types.ModelState, *filters)
+
+    def states(self: T, *filters: Filter) -> T:
+        """
+        Returns a copy of the TreeObject with only tx.State TreeParts, alias for `filter(tx.State)`.
+
+        Arguments:
+            filters: additional filters passed to `filter`.
+        """
+        return self.filter(types.State, *filters)
+
+    def metrics(self: T, *filters: Filter) -> T:
+        """
+        Returns a copy of the TreeObject with only tx.Metric TreeParts, alias for `filter(tx.Metric)`.
+
+        Arguments:
+            filters: additional filters passed to `filter`.
+        """
+        return self.filter(types.Metric, *filters)
+
+    def losses(self: T, *filters: Filter) -> T:
+        """
+        Returns a copy of the TreeObject with only tx.Loss TreeParts, alias for `filter(tx.Loss)`.
+
+        Arguments:
+            filters: additional filters passed to `filter`.
+        """
+        return self.filter(types.Loss, *filters)
+
+    def logs(self: T, *filters: Filter) -> T:
+        """
+        Returns a copy of the TreeObject with only tx.Log TreeParts, alias for `filter(tx.Log)`.
+
+        Arguments:
+            filters: additional filters passed to `filter`.
+        """
+        return self.filter(types.Log, *filters)
+
 
 # --------------------------------------------------
 # functions
@@ -663,9 +757,73 @@ def update(module: A, other: A, *rest: A) -> A:
     return module
 
 
+def preserve_identities_ctx(decorator, *args, **kwargs):
+    def decorator_wrapper(f):
+        return preserve_identities(
+            decorator(
+                _share_output(f),
+                *args,
+                **kwargs,
+            )
+        )
+
+    return decorator_wrapper
+
+
+def preserve_identities(f):
+    """
+    Enables *relative* identities of TreeObjects to be preserved across functions that clone
+    Pytrees via flattening and unflattening. This useful for parameters sharing via having
+    the same TreeObject reference in two or more parts of the same pytree.
+    """
+
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        # set a shared context before the decorator is called
+        with _IdentitiesContext(instances={}):
+            return f(*args, **kwargs)
+
+    return wrapper
+
+
 # --------------------------------------------------
 # utils
 # --------------------------------------------------
+
+
+def _share_output(f):
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        # decorator from `share` was already called, we can clear _CONTEXT.shared
+        # so we can reuse it on the output
+        assert _CONTEXT.instances is not None
+        _CONTEXT.instances.clear()
+
+        # revert to the original found before `_share_input` while calling `f`
+        # so the whole `share` operation is transparent
+        with _revert_context():
+            outputs = f(*args, **kwargs)
+
+        return outputs
+
+    return wrapper
+
+
+from contextlib import contextmanager
+
+
+@contextmanager
+def _revert_context():
+    """Sets the old_context as the current context for a while"""
+    global _CONTEXT
+
+    current_context = _CONTEXT
+    _CONTEXT = _CONTEXT._old_context
+
+    try:
+        yield
+    finally:
+        _CONTEXT = current_context
 
 
 def _looser_tree_map(

@@ -94,9 +94,6 @@ globals()["Cache"] = _Cache  # real
 OptState = tp.Union  # static
 globals()["OptState"] = _OptState  # real
 
-Static = tp.Union  # static
-globals()["Static"] = _Static  # real
-
 Log = tp.Union  # static
 globals()["Log"] = _Log  # real
 
@@ -105,6 +102,9 @@ globals()["Loss"] = _Loss  # real
 
 Metric = tp.Union  # static
 globals()["Metric"] = _Metric  # real
+
+Static = tp.Union  # static
+globals()["Static"] = _Static  # real
 
 
 class Named(tp.Generic[A]):
