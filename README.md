@@ -312,13 +312,17 @@ module.filter(
 ) 
 # MyModule(a=Nothing, b=array([2]))
 ```
+The previous also be written as:
+```python
+module.states(lambda field: not issubclass(field.annotation, tx.OptState))
+```
 
 #### Update
 The `update` method allows you to merge the values of one or more incoming modules with the current module, this is useful for integrating filtered modules back into the main module.
 
 ```python
 module = MyModule(...) # MyModule(a=array([1]), b=array([2]))
-params = module.filter(tx.Parameter) # MyModule(a=array([1]), b=Nothing)
+params = module.parameters() # MyModule(a=array([1]), b=Nothing)
 negative = jax.tree_map(lambda x: -x, params) # MyModule(a=array([-1]), b=Nothing)
 module = module.update(negative) # MyModule(a=array([-1]), b=array([2]))
 ```
@@ -328,7 +332,7 @@ The `map` method provides a convenient way to map a function over the fields of 
 
 ```python
 module = MyModule(...) # MyModule(a=array([1]), b=array([2]))
-params = module.filter(tx.Parameter) # MyModule(a=array([1]), b=Nothing)
+params = module.parameters() # MyModule(a=array([1]), b=Nothing)
 negative = params.map(lambda x: -x) # MyModule(a=array([-1]), b=Nothing)
 module = module.update(negative) # MyModule(a=array([-1]), b=array([2]))
 ```
@@ -340,21 +344,17 @@ module = MyModule(...) # MyModule(a=array([1]), b=array([2]))
 module = module.map(lambda x: -x, tx.Parameter) # MyModule(a=array([-1]), b=array([2]))
 ```
 
-As shown here, `map` accepts the same varargs as `filter` and calls `update` at the end if filters are given.
+As shown here, `map` accepts the same `*args` as `filter` and calls `update` at the end if filters are given.
 
 #### Functional API
 All the previous methods are available as functions that can be applied to arbirary Pytrees. Here is the full list of functions:
 ```python
-# -----------------
-# basic API
-# -----------------
+# || basic API ||
 tx.filter(obj: A, *filters: Filter) -> A
 tx.update(module: A, other: A, *rest: A) -> A
 tx.map(f: tp.Callable, obj: A, *filters: Filter) -> A
 
-# -----------------
-# other functions
-# -----------------
+# || other functions ||
 # applies a function to TreeObjects instead of leaves, useful to modify static properties
 tx.object_apply(f: tp.Callable, obj: A, *rest: A, inplace: bool) -> A
 ```
@@ -366,7 +366,7 @@ A typical use case is to define `params` as a `Parameter` filter and pass it as 
 ```python
 # we take `params` as a Parameter filter from model
 # but model itself is left untouched
-params = model.filter(tx.Parameter)
+params = model.parameters()
 
 optimizer = tx.Optimizer(optax.adam(1e-3))
 optimizer = optimizer.init(params)
@@ -387,7 +387,7 @@ Note that inside `loss_fn` the `params` are immediately merged back into `model`
 
 ```python
 # assume we are inside a pmap with axis_name="device"
-batch_stats = model.filter(tx.BatchStat)
+batch_stats = model.batch_stats()
 batch_stats = jax.lax.pmean(batch_stats, axis_name="device")
 model = model.update(batch_stats)
 ```
@@ -505,7 +505,7 @@ def loss_fn(params, model, x, y):
 
     return loss, model
 
-params = model.filter(tx.Parameter)
+params = model.parameters()
 (loss, model), grads = loss_fn(params, model, x, y)
 ...
 ```
@@ -755,7 +755,7 @@ class Linear(tx.Module):
 
 model = Linear(1, 1).init(42)
 optimizer = tx.Optimizer(optax.adam(0.01))
-optimizer = optimizer.init(model.filter(tx.Parameter))
+optimizer = optimizer.init(model.paramerters())
 
 
 @partial(jax.value_and_grad, has_aux=True)
@@ -770,7 +770,7 @@ def loss_fn(params, model, x, y):
 
 @jax.jit
 def train_step(model, x, y, optimizer):
-    params = model.filter(tx.Parameter)
+    params = model.paramerters()
     (loss, model), grads = loss_fn(params, model, x, y)
 
     # here model == params
