@@ -8,8 +8,8 @@ from flax.core.frozen_dict import FrozenDict
 from flax.core.scope import FrozenVariableDict
 
 from treex import types
+from treex.key_seq import KeySeq
 from treex.module import Module
-from treex.rnq_seq import RngSeq
 
 
 class FlaxModule(Module):
@@ -26,7 +26,7 @@ class FlaxModule(Module):
     batch_stats: types.BatchStat[tp.Dict[str, tp.Any], None]
     cache: types.Cache[tp.Dict[str, tp.Any], None]
     variables: types.Log[tp.Dict[str, tp.Dict[str, tp.Any]], None]
-    rng_seq: RngSeq
+    next_key: KeySeq
 
     def __init__(
         self,
@@ -45,7 +45,7 @@ class FlaxModule(Module):
         self.sample_inputs = (
             sample_inputs if sample_inputs is not None else types.Inputs()
         )
-        self.rng_seq = RngSeq()
+        self.next_key = KeySeq()
         self.params = None
         self.batch_stats = None
         self.cache = None
@@ -97,10 +97,10 @@ class FlaxModule(Module):
         if len(all_collections) == 0:
             rngs = {}
         elif len(all_collections) == 1:
-            key = self.rng_seq.next()
+            key = self.next_key()
             rngs = {all_collections[0]: key}
         elif len(all_collections) > 1:
-            key = self.rng_seq.next()
+            key = self.next_key()
             keys = jax.random.split(key, len(all_collections))
             rngs = dict(zip(all_collections, keys))
         else:

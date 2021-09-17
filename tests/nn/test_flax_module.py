@@ -113,7 +113,7 @@ class TestFlaxModule:
             sample_inputs=tx.Inputs(x, training=True),
             variables=variables,
         ).init(42)
-        flax_key = treex_module.rng_seq.key
+        flax_key = treex_module.next_key.key
 
         # step 1
         next_key, flax_key = jax.random.split(flax_key)
@@ -127,7 +127,7 @@ class TestFlaxModule:
         variables = variables.copy(updates)
         y_treex = treex_module(x, training)
 
-        assert np.allclose(flax_key, treex_module.rng_seq.key)
+        assert np.allclose(flax_key, treex_module.next_key.key)
 
         # step 2
         next_key, flax_key = jax.random.split(flax_key)
@@ -140,7 +140,7 @@ class TestFlaxModule:
         )
         variables = variables.copy(updates)
         y_treex = treex_module(x, training)
-        assert np.allclose(flax_key, treex_module.rng_seq.key)
+        assert np.allclose(flax_key, treex_module.next_key.key)
 
         assert np.allclose(y_treex, y_flax)
 

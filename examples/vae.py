@@ -27,7 +27,7 @@ class Encoder(tx.Module):
     linear1: tx.Linear
     linear_mean: tx.Linear
     linear_std: tx.Linear
-    rng: tx.RngSeq
+    next_key: tx.KeySeq
     kl_loss: tx.Loss[jnp.ndarray]
 
     def __init__(
@@ -40,7 +40,7 @@ class Encoder(tx.Module):
         self.linear1 = tx.Linear(np.prod(image_shape), hidden_size)
         self.linear_mean = tx.Linear(hidden_size, latent_size)
         self.linear_std = tx.Linear(hidden_size, latent_size)
-        self.rng = tx.RngSeq()
+        self.next_key = tx.KeySeq()
         self.kl_loss = jnp.array(0.0)
 
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
@@ -52,7 +52,7 @@ class Encoder(tx.Module):
         log_std = self.linear_std(x)
         stddev = jnp.exp(log_std)
 
-        key = self.rng.next()
+        key = self.next_key()
         z = mean + stddev * jax.random.normal(key, mean.shape)
 
         self.kl_loss = 2e-1 * kl_divergence(mean, stddev)

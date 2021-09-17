@@ -13,12 +13,13 @@ from tqdm import tqdm
 import treex as tx
 
 Batch = tp.Mapping[str, np.ndarray]
+Model = tx.Sequential
 np.random.seed(420)
 
 
 def loss_fn(
-    params: tx.Sequential, model: tx.Sequential, x: jnp.ndarray, y: jnp.ndarray
-) -> tp.Tuple[jnp.ndarray, tp.Tuple[tx.Sequential, jnp.ndarray]]:
+    params: Model, model: Model, x: jnp.ndarray, y: jnp.ndarray
+) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, jnp.ndarray]]:
     model = model.update(params)
     y_pred = model(x)
 
@@ -36,8 +37,8 @@ def loss_fn(
 
 @jax.jit
 def train_step(
-    model: tx.Sequential, optimizer: tx.Optimizer, x: jnp.ndarray, y: jnp.ndarray
-) -> tp.Tuple[jnp.ndarray, tx.Sequential, tx.Optimizer, jnp.ndarray]:
+    model: Model, optimizer: tx.Optimizer, x: jnp.ndarray, y: jnp.ndarray
+) -> tp.Tuple[jnp.ndarray, Model, tx.Optimizer, jnp.ndarray]:
     params = model.filter(tx.Parameter)
 
     (loss, (model, acc_batch)), grads = jax.value_and_grad(loss_fn, has_aux=True)(
@@ -52,7 +53,7 @@ def train_step(
 
 @jax.jit
 def test_step(
-    model: tx.Sequential, x: jnp.ndarray, y: jnp.ndarray
+    model: Model, x: jnp.ndarray, y: jnp.ndarray
 ) -> tp.Tuple[jnp.ndarray, jnp.ndarray]:
 
     loss, (model, acc_batch) = loss_fn(model, model, x, y)
@@ -61,7 +62,7 @@ def test_step(
 
 
 @jax.jit
-def predict(model: tx.Sequential, x: jnp.ndarray):
+def predict(model: Model, x: jnp.ndarray):
     return model(x).argmax(axis=1)
 
 

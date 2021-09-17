@@ -4,6 +4,7 @@ import io
 import threading
 import typing as tp
 from abc import ABCMeta
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 import jax
@@ -45,6 +46,14 @@ class _Context(threading.local):
     def __exit__(self, *args):
         global _CONTEXT
         _CONTEXT = self._old_context
+
+    @contextmanager
+    def update(self, **kwargs):
+        fields = vars(self).copy()
+        fields.update(kwargs)
+
+        with _Context(**fields):
+            yield
 
 
 @dataclass
@@ -882,9 +891,6 @@ def _clear_context(f):
         return outputs
 
     return wrapper
-
-
-from contextlib import contextmanager
 
 
 @contextmanager
