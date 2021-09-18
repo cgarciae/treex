@@ -44,7 +44,7 @@ class Optimizer(tree_object.TreeObject):
         to get the param updates instead.
     """
 
-    opt_state: tp.Optional[tp.Any] = types.OptState.field()
+    opt_state: tp.Optional[tp.Any] = types.OptState.dynamic()
     optimizer: optax.GradientTransformation
     _n_params: tp.Optional[int]
 

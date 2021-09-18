@@ -27,25 +27,25 @@ class ArrayLike(tp.Protocol):
 
 class FieldMixin:
     @classmethod
-    def field(
+    def dynamic(
         cls,
         default=dataclasses.MISSING,
         *,
-        tree_part: bool = True,
+        dynamic: bool = True,
         **kwargs,
     ) -> tp.Any:
-        return utils.field(
+        return utils.dynamic(
             default=default,
-            tree_part=tree_part,
+            dynamic=dynamic,
             tree_type=cls,
             **kwargs,
         )
 
     @classmethod
     def static(cls, default=dataclasses.MISSING, **kwargs) -> tp.Any:
-        return cls.field(
+        return cls.dynamic(
             default=default,
-            tree_part=False,
+            dynamic=False,
             **kwargs,
         )
 
@@ -94,9 +94,28 @@ class Metric(Log):
     pass
 
 
+class TrivialPytree:
+    def tree_flatten(self):
+        tree = vars(self)
+        children = (tree,)
+        return (children, ())
+
+    @classmethod
+    def tree_unflatten(cls, aux, children):
+        (tree,) = children
+
+        obj = cls.__new__(cls)
+        obj.__dict__.update(tree)
+
+        return obj
+
+    def __init_subclass__(cls):
+        jax.tree_util.register_pytree_node_class(cls)
+
+
 @dataclass
-class FieldAnnotation:
-    tree_part: bool
+class FieldMetadata(TrivialPytree):
+    id_dynamic: bool
     tree_type: type
 
 
@@ -194,3 +213,7 @@ class Inputs:
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
+
+
+class Missing:
+    pass

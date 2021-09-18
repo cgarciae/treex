@@ -10,16 +10,16 @@ _pymap = map
 _pyfilter = filter
 
 
-def field(
+def dynamic(
     default=dataclasses.MISSING,
     *,
-    tree_part: bool = True,
+    dynamic: bool = True,
     tree_type: type = type(None),
     **kwargs,
 ) -> tp.Any:
     return dataclasses.field(
         default=default,
-        metadata={"tree_part": tree_part, "tree_type": tree_type},
+        metadata={"dynamic": dynamic, "tree_type": tree_type},
         **kwargs,
     )
 
@@ -30,7 +30,7 @@ def static(
     tree_type: type = type(None),
     **kwargs,
 ) -> tp.Any:
-    return field(default, tree_part=False, tree_type=tree_type, **kwargs)
+    return dynamic(default, dynamic=False, tree_type=tree_type, **kwargs)
 
 
 def _get_all_annotations(cls: type) -> tp.Dict[str, type]:

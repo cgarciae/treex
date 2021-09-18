@@ -1,4 +1,5 @@
 import dataclasses
+import enum
 import functools
 import inspect
 import io
@@ -32,10 +33,17 @@ PAD = r"{pad}"
 LEAF_TYPES = (types.Nothing, types.Initializer, type(None))
 
 
+class FlattenMode(enum.Enum):
+    normal = enum.auto()
+    all_static = enum.auto()
+    all_dynamic = enum.auto()
+
+
 @dataclass
 class _Context(threading.local):
     add_field_info: bool = False
     call_info: tp.Optional[tp.Dict["TreeObject", tp.Tuple[types.Inputs, tp.Any]]] = None
+    flatten_mode: FlattenMode = FlattenMode.normal
 
     def __enter__(self):
         global _CONTEXT
@@ -82,16 +90,7 @@ class TreeObjectMeta(ABCMeta):
     def __call__(cls, *args, **kwargs) -> "TreeObject":
         obj: TreeObject = cls.__new__(cls)
 
-        # # add all parent class annotations
-        # obj.__annotations__ = _get_all_annotations(cls)
-
-        # copy annotations before __init__ is called
-        # obj.__annotations__ = {
-        #     field: _resolve_tree_type(field, value)
-        #     for field, value in obj.__annotations__.items()
-        # }
-
-        obj._tree_parts = obj._tree_parts.copy()
+        obj._field_metadata = obj._field_metadata.copy()
 
         obj.__init__(*args, **kwargs)
 
@@ -102,9 +101,9 @@ class TreeObjectMeta(ABCMeta):
 
         # auto-annotations
         for field, value in vars(obj).items():
-            if field not in obj._tree_parts and isinstance(value, TreeObject):
-                obj._tree_parts[field] = types.FieldAnnotation(
-                    tree_part=True,
+            if field not in obj._field_metadata and isinstance(value, TreeObject):
+                obj._field_metadata[field] = types.FieldMetadata(
+                    id_dynamic=True,
                     tree_type=type(value),
                 )
 
@@ -131,18 +130,37 @@ def _get_call(orig_call):
 
 class TreeObject(types.FieldMixin, metaclass=TreeObjectMeta):
     _init_called: bool = False
-    _tree_parts: tp.Dict[str, types.FieldAnnotation]
+    _field_metadata: tp.Dict[str, types.FieldMetadata]
 
     @property
-    def tree_parts(self) -> tp.Mapping[str, types.FieldAnnotation]:
-        return MappingProxyType(self._tree_parts)
+    def field_metadata(self) -> tp.Mapping[str, types.FieldMetadata]:
+        return MappingProxyType(self._field_metadata)
+
+    def update_field_metadata(
+        self: T,
+        field: str,
+        dynamic: tp.Union[bool, types.Missing] = types.Missing(),
+        tree_type: tp.Union[type, types.Missing] = types.Missing(),
+    ) -> T:
+        module = self.copy()
+        field_metadata = module._field_metadata[field]
+
+        if not isinstance(dynamic, types.Missing):
+            field_metadata.id_dynamic = dynamic
+
+        if not isinstance(tree_type, types.Missing):
+            field_metadata.tree_type = tree_type
+
+        self._field_metadata[field] = field_metadata
+
+        return module
 
     def __init_subclass__(cls):
         jax.tree_util.register_pytree_node_class(cls)
 
         annotations = utils._get_all_annotations(cls)
         class_vars = utils._get_all_vars(cls)
-        cls._tree_parts = {}
+        cls._field_metadata = {}
 
         for field, value in class_vars.items():
             if isinstance(value, dataclasses.Field):
@@ -153,19 +171,19 @@ class TreeObject(types.FieldMixin, metaclass=TreeObjectMeta):
                 else:
                     delattr(cls, field)
 
-                if value.metadata is not None and "tree_part" in value.metadata:
-                    cls._tree_parts[field] = types.FieldAnnotation(
-                        tree_part=value.metadata["tree_part"],
+                if value.metadata is not None and "dynamic" in value.metadata:
+                    cls._field_metadata[field] = types.FieldMetadata(
+                        id_dynamic=value.metadata["dynamic"],
                         tree_type=value.metadata["tree_type"],
                     )
 
         for field, value in annotations.items():
-            if field not in cls._tree_parts and any(
+            if field not in cls._field_metadata and any(
                 issubclass(t, (types.TreePart, TreeObject))
                 for t in utils._all_types(value)
             ):
-                cls._tree_parts[field] = types.FieldAnnotation(
-                    tree_part=True,
+                cls._field_metadata[field] = types.FieldMetadata(
+                    id_dynamic=True,
                     tree_type=value,
                 )
 
@@ -179,38 +197,43 @@ class TreeObject(types.FieldMixin, metaclass=TreeObjectMeta):
         tree = {}
         not_tree = {}
 
-        for field, value in fields.items():
-            # auto-annotations
-            if field not in self._tree_parts and isinstance(value, TreeObject):
-                self._tree_parts[field] = types.FieldAnnotation(
-                    tree_part=True,
-                    tree_type=type(value),
-                )
-
-            field_annotation = self._tree_parts.get(field, None)
-
-            if field_annotation is not None and field_annotation.tree_part:
-                if _CONTEXT.add_field_info:
-                    # leaves, treedef
-                    tree[field], not_tree[field] = jax.tree_flatten(
-                        value,
-                        is_leaf=lambda x: isinstance(x, types.Initializer),
+        if _CONTEXT.flatten_mode == FlattenMode.all_dynamic:
+            tree = fields
+        elif _CONTEXT.flatten_mode == FlattenMode.all_static:
+            not_tree = fields
+        else:
+            for field, value in fields.items():
+                # auto-annotations
+                if field not in self._field_metadata and isinstance(value, TreeObject):
+                    self._field_metadata[field] = types.FieldMetadata(
+                        id_dynamic=True,
+                        tree_type=type(value),
                     )
-                    tree[field] = [
-                        FieldInfo(
-                            name=field,
-                            value=x,
-                            annotation=field_annotation.tree_type,
-                            module=self,
+
+                field_annotation = self._field_metadata.get(field, None)
+
+                if field_annotation is not None and field_annotation.id_dynamic:
+                    if _CONTEXT.add_field_info:
+                        # leaves, treedef
+                        tree[field], not_tree[field] = jax.tree_flatten(
+                            value,
+                            is_leaf=lambda x: isinstance(x, types.Initializer),
                         )
-                        if not isinstance(x, FieldInfo)
-                        else x
-                        for x in tree[field]
-                    ]
+                        tree[field] = [
+                            FieldInfo(
+                                name=field,
+                                value=x,
+                                annotation=field_annotation.tree_type,
+                                module=self,
+                            )
+                            if not isinstance(x, FieldInfo)
+                            else x
+                            for x in tree[field]
+                        ]
+                    else:
+                        tree[field] = value
                 else:
-                    tree[field] = value
-            else:
-                not_tree[field] = value
+                    not_tree[field] = value
 
         children = (tree,)
 
@@ -241,7 +264,8 @@ class TreeObject(types.FieldMixin, metaclass=TreeObjectMeta):
         jax.tree_map(lambda x: x, self)
         ```
         """
-        return jax.tree_map(lambda x: x, self)
+        with _CONTEXT.update(flatten_mode=FlattenMode.all_dynamic):
+            return jax.tree_map(lambda x: x, self)
 
     def __repr__(self) -> str:
         rep = _get_repr(self, level=0, array_type=None, inline=False)
@@ -846,7 +870,7 @@ def _get_repr(
             annotation: tp.Union[
                 tp.Type[TreeObject], tp.Type[types.TreePart], None
             ] = _first_issubclass(
-                obj.tree_parts[field].tree_type, (types.TreePart, TreeObject)
+                obj.field_metadata[field].tree_type, (types.TreePart, TreeObject)
             )
 
             if annotation is None:
@@ -861,12 +885,12 @@ def _get_repr(
         body = [
             indent_level
             + space
-            + f"{field}: {_get_repr(value, level + 1, obj.tree_parts[field].tree_type, inline=True)}"
+            + f"{field}: {_get_repr(value, level + 1, obj.field_metadata[field].tree_type, inline=True)}"
             for field, value in params.items()
         ] + [
             indent_level
             + space
-            + f"{field}: {_get_repr(value, level + 1, obj.tree_parts[field].tree_type, inline=True)}"
+            + f"{field}: {_get_repr(value, level + 1, obj.field_metadata[field].tree_type, inline=True)}"
             for field, value in submodules.items()
         ]
 
@@ -938,7 +962,7 @@ def _get_tabulate_rows(
             annotation: tp.Union[
                 tp.Type[TreeObject], tp.Type[types.TreePart], None
             ] = _first_issubclass(
-                obj.tree_parts[field].tree_type, (types.TreePart, TreeObject)
+                obj.field_metadata[field].tree_type, (types.TreePart, TreeObject)
             )
 
             if annotation is None:
@@ -968,7 +992,7 @@ def _get_tabulate_rows(
                 lambda x: str(x)
                 if isinstance(x, LEAF_TYPES)
                 else _format_param(
-                    x, obj.tree_parts[field].tree_type, include_param_type
+                    x, obj.field_metadata[field].tree_type, include_param_type
                 ),
                 value,
                 is_leaf=lambda x: isinstance(x, LEAF_TYPES),
@@ -989,7 +1013,7 @@ def _get_tabulate_rows(
                     [
                         value
                         for field, value in params.items()
-                        if obj.tree_parts[field].tree_type is t
+                        if obj.field_metadata[field].tree_type is t
                     ],
                     add_padding=True,
                 )

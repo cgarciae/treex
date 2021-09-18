@@ -22,10 +22,10 @@ class FlaxModule(Module):
     init_rngs: tp.Tuple[str, ...]
 
     # dynamic
-    params: tp.Optional[tp.Dict[str, tp.Any]] = types.Parameter.field()
-    batch_stats: tp.Optional[tp.Dict[str, tp.Any]] = types.BatchStat.field()
-    cache: tp.Optional[tp.Dict[str, tp.Any]] = types.Cache.field()
-    variables: tp.Union[tp.Dict[str, tp.Dict[str, tp.Any]], None] = types.Log.field()
+    params: tp.Optional[tp.Dict[str, tp.Any]] = types.Parameter.dynamic()
+    batch_stats: tp.Optional[tp.Dict[str, tp.Any]] = types.BatchStat.dynamic()
+    cache: tp.Optional[tp.Dict[str, tp.Any]] = types.Cache.dynamic()
+    variables: tp.Union[tp.Dict[str, tp.Dict[str, tp.Any]], None] = types.Log.dynamic()
     next_key: KeySeq
 
     def __init__(

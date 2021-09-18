@@ -23,11 +23,11 @@ class BatchNorm(Module):
     """
 
     # pytree
-    mean: tp.Optional[jnp.ndarray] = types.BatchStat.field()
-    var: tp.Optional[jnp.ndarray] = types.BatchStat.field()
-    scale: tp.Optional[jnp.ndarray] = types.Parameter.field()
-    bias: tp.Optional[jnp.ndarray] = types.Parameter.field()
-    momentum: jnp.ndarray = utils.field()
+    mean: tp.Optional[jnp.ndarray] = types.BatchStat.dynamic()
+    var: tp.Optional[jnp.ndarray] = types.BatchStat.dynamic()
+    scale: tp.Optional[jnp.ndarray] = types.Parameter.dynamic()
+    bias: tp.Optional[jnp.ndarray] = types.Parameter.dynamic()
+    momentum: jnp.ndarray = utils.dynamic()
 
     # props
     features_in: int
