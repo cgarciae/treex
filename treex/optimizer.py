@@ -6,14 +6,13 @@ import jax
 import jax.numpy as jnp
 import optax
 
-from treex import types
-from treex.tree_object import TreeObject
+from treex import tree_object, types
 
 O = tp.TypeVar("O", bound="Optimizer")
 A = tp.TypeVar("A", bound="tp.Any")
 
 
-class Optimizer(TreeObject):
+class Optimizer(tree_object.TreeObject):
     """Wraps an optax optimizer and turn it into a Pytree while maintaining a similar API.
 
     The main difference with optax is that tx.Optimizer contains its own state, thus, there is
@@ -45,7 +44,7 @@ class Optimizer(TreeObject):
         to get the param updates instead.
     """
 
-    opt_state: types.OptState[tp.Any, None]
+    opt_state: tp.Optional[tp.Any] = types.OptState.field()
     optimizer: optax.GradientTransformation
     _n_params: tp.Optional[int]
 

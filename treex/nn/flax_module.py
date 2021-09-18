@@ -7,7 +7,7 @@ import numpy as np
 from flax.core.frozen_dict import FrozenDict
 from flax.core.scope import FrozenVariableDict
 
-from treex import types
+from treex import tree_object, types
 from treex.key_seq import KeySeq
 from treex.module import Module
 
@@ -22,10 +22,10 @@ class FlaxModule(Module):
     init_rngs: tp.Tuple[str, ...]
 
     # dynamic
-    params: types.Parameter[tp.Dict[str, tp.Any], None]
-    batch_stats: types.BatchStat[tp.Dict[str, tp.Any], None]
-    cache: types.Cache[tp.Dict[str, tp.Any], None]
-    variables: types.Log[tp.Dict[str, tp.Dict[str, tp.Any]], None]
+    params: tp.Optional[tp.Dict[str, tp.Any]] = types.Parameter.field()
+    batch_stats: tp.Optional[tp.Dict[str, tp.Any]] = types.BatchStat.field()
+    cache: tp.Optional[tp.Dict[str, tp.Any]] = types.Cache.field()
+    variables: tp.Union[tp.Dict[str, tp.Dict[str, tp.Any]], None] = types.Log.field()
     next_key: KeySeq
 
     def __init__(

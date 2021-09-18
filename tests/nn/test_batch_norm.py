@@ -133,7 +133,9 @@ class BatchNormTest(unittest.TestCase):
         flat = jax.tree_leaves(module.filter(tx.BatchStat))
         assert len(flat) == 2
 
-        flat = jax.tree_leaves(module.filter(tx.DiffHyperParam))
+        flat = jax.tree_leaves(
+            module.filter(lambda field: not issubclass(field.annotation, tx.TreePart))
+        )
         assert len(flat) == 1
 
     def test_jit(self):

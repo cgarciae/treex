@@ -5,7 +5,7 @@ import jax.numpy as jnp
 import numpy as np
 from flax.linen import normalization as flax_module
 
-from treex import types
+from treex import tree_object, types, utils
 from treex.module import Module
 
 
@@ -23,11 +23,11 @@ class BatchNorm(Module):
     """
 
     # pytree
-    mean: types.BatchStat[jnp.ndarray, None]
-    var: types.BatchStat[jnp.ndarray, None]
-    scale: types.Parameter[jnp.ndarray, None]
-    bias: types.Parameter[jnp.ndarray, None]
-    momentum: types.DiffHyperParam[jnp.ndarray]
+    mean: tp.Optional[jnp.ndarray] = types.BatchStat.field()
+    var: tp.Optional[jnp.ndarray] = types.BatchStat.field()
+    scale: tp.Optional[jnp.ndarray] = types.Parameter.field()
+    bias: tp.Optional[jnp.ndarray] = types.Parameter.field()
+    momentum: jnp.ndarray = utils.field()
 
     # props
     features_in: int

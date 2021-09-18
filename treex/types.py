@@ -1,110 +1,103 @@
+import dataclasses
 import typing as tp
 from abc import ABCMeta
+from dataclasses import dataclass
 
 import jax
 import jax.numpy as jnp
 import jax.tree_util
 import numpy as np
 
+from treex import utils
+
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
 
-_GenericAlias = type(tp.List[int])  # int is just a dummy type, it could be anything
+
+@tp.runtime_checkable
+class ArrayLike(tp.Protocol):
+    shape: tp.Tuple[int, ...]
+    dtype: np.dtype
 
 
-class IdentityGeneric(ABCMeta):
-    def __getitem__(cls, *keys: tp.Any):
-        return _GenericAlias(cls, keys)
+# -----------------------------------------
+# TreeParts
+# -----------------------------------------
 
 
-class TreePart(object, metaclass=IdentityGeneric):
+class FieldMixin:
+    @classmethod
+    def field(
+        cls,
+        default=dataclasses.MISSING,
+        *,
+        tree_part: bool = True,
+        **kwargs,
+    ) -> tp.Any:
+        return utils.field(
+            default=default,
+            tree_part=tree_part,
+            tree_type=cls,
+            **kwargs,
+        )
+
+    @classmethod
+    def static(cls, default=dataclasses.MISSING, **kwargs) -> tp.Any:
+        return cls.field(
+            default=default,
+            tree_part=False,
+            **kwargs,
+        )
+
+
+class TreePart(FieldMixin):
     pass
 
 
-class _Parameter(TreePart):
+class Parameter(TreePart):
     pass
 
 
-class _DiffHyperParam(TreePart):
+class State(TreePart):
     pass
 
 
-class _State(TreePart):
+class Rng(State):
     pass
 
 
-class _Rng(_State):
+class ModelState(State):
     pass
 
 
-class _ModelState(_State):
+class BatchStat(ModelState):
     pass
 
 
-class _BatchStat(_ModelState):
+class Cache(ModelState):
     pass
 
 
-class _Cache(_ModelState):
+class OptState(State):
     pass
 
 
-class _OptState(_State):
+class Log(TreePart):
     pass
 
 
-class _Static(metaclass=IdentityGeneric):
+class Loss(Log):
     pass
 
 
-class _Log(TreePart):
+class Metric(Log):
     pass
 
 
-class _Loss(_Log):
-    pass
-
-
-class _Metric(_Log):
-    pass
-
-
-# use cast to trick static analyzers into believing these types
-Parameter = tp.Union  # static
-globals()["Parameter"] = _Parameter  # real
-
-DiffHyperParam = tp.Union  # static
-globals()["DiffHyperParam"] = _DiffHyperParam  # real
-
-State = tp.Union  # static
-globals()["State"] = _State  # real
-
-Rng = tp.Union  # static
-globals()["Rng"] = _Rng  # real
-
-ModelState = tp.Union  # static
-globals()["ModelState"] = _ModelState  # real
-
-BatchStat = tp.Union  # static
-globals()["BatchStat"] = _BatchStat  # real
-
-Cache = tp.Union  # static
-globals()["Cache"] = _Cache  # real
-
-OptState = tp.Union  # static
-globals()["OptState"] = _OptState  # real
-
-Log = tp.Union  # static
-globals()["Log"] = _Log  # real
-
-Loss = tp.Union  # static
-globals()["Loss"] = _Loss  # real
-
-Metric = tp.Union  # static
-globals()["Metric"] = _Metric  # real
-
-Static = tp.Union  # static
-globals()["Static"] = _Static  # real
+@dataclass
+class FieldAnnotation:
+    tree_part: bool
+    tree_type: type
 
 
 class Named(tp.Generic[A]):

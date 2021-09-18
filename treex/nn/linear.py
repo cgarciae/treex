@@ -5,7 +5,7 @@ import jax.numpy as jnp
 import numpy as np
 from flax.linen import linear as flax_module
 
-from treex import types
+from treex import tree_object, types
 from treex.module import Module
 
 
@@ -21,8 +21,8 @@ class Linear(Module):
     """
 
     # pytree
-    kernel: types.Parameter[jnp.ndarray, None]
-    bias: types.Parameter[jnp.ndarray, None]
+    kernel: tp.Optional[jnp.ndarray] = types.Parameter.field()
+    bias: tp.Optional[jnp.ndarray] = types.Parameter.field()
 
     # static
     features_in: int

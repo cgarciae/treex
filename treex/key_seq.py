@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from treex import types
+from treex import tree_object, types
 from treex.module import Module
 
 
@@ -27,7 +27,7 @@ class KeySeq(Module):
     ```
     """
 
-    key: types.Rng[types.Initializer, jnp.ndarray]
+    key: tp.Union[types.Initializer, jnp.ndarray] = types.Rng.field()
 
     def __init__(self, key: tp.Optional[tp.Union[jnp.ndarray, int]] = None):
         """

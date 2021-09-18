@@ -9,13 +9,12 @@ import optax
 import pytest
 
 import treex as tx
-from treex.tree_object import _resolve_tree_type
 
 
 class Linear(tx.Module):
-    w: tx.Parameter[np.ndarray]
-    b: tx.Parameter[np.ndarray]
-    n: tx.State[int]
+    w: np.ndarray = tx.Parameter.field()
+    b: np.ndarray = tx.Parameter.field()
+    n: int = tx.State.field()
 
     def __init__(self, din, dout, name="linear"):
         super().__init__()
@@ -42,7 +41,26 @@ class MLP(tx.Module):
         self.linear2 = Linear(dmid, dout, name="linear2")
 
 
+def _get_all_vars(cls):
+    d = {}
+    for c in reversed(cls.mro()):
+        if hasattr(c, "__dict__"):
+            d.update(vars(c))
+    return d
+
+
 class TestTreex:
+    def test_vars_inheritance(self):
+        class A:
+            a = 1
+
+        class B(A):
+            b = 2
+
+        v = _get_all_vars(B)
+
+        v
+
     def test_flatten_nothing(self):
         x = [(1, 2), (3, tx.Nothing())]
         assert jax.tree_leaves(x) == [1, 2, 3]
@@ -188,7 +206,7 @@ class TestTreex:
 
     def test_list(self):
         class LinearList(tx.Module):
-            params: tx.Parameter[tp.List[np.ndarray]]
+            params: tp.List[np.ndarray] = tx.Parameter.field()
 
             def __init__(self, din, dout, name="linear"):
                 super().__init__()
@@ -346,7 +364,7 @@ class TestTreex:
     def test_repr(self):
         class MyModule(tx.Module):
             a: tp.Dict[str, tp.List[MLP]]
-            b: tx.Parameter[tp.List[tp.Union[tx.Initializer, jnp.ndarray]]]
+            b: tp.List[tp.Union[tx.Initializer, jnp.ndarray]] = tx.Parameter.field()
 
             def __init__(self):
                 super().__init__()
@@ -369,7 +387,7 @@ class TestTreex:
     def test_tabulate(self):
         class MyModule(tx.Module):
             a: tp.Dict[str, tp.List[MLP]]
-            b: tx.Parameter[tp.List[tp.Union[jnp.ndarray, tx.Initializer]]]
+            b: tp.List[tp.Union[jnp.ndarray, tx.Initializer]] = tx.Parameter.field()
 
             def __init__(self):
                 super().__init__()
@@ -394,7 +412,7 @@ class TestTreex:
     def test_tabulate_inputs(self):
         class MyModule(tx.Module):
             a: tp.Dict[str, tp.List[tx.MLP]]
-            b: tx.Parameter[tp.List[tp.Union[jnp.ndarray, tx.Initializer]]]
+            b: tp.List[tp.Union[jnp.ndarray, tx.Initializer]] = tx.Parameter.field()
 
             def __init__(self):
                 super().__init__()
@@ -423,50 +441,10 @@ class TestTreex:
 
         print(rep)
 
-    def test_resolves(self):
-
-        # test some generic resolves to tree type
-        annotation = tx.Parameter[tp.List[tp.Any]]
-        tree_type = _resolve_tree_type("annotation", annotation)
-        assert tree_type is tx.Parameter
-
-        # test static generic
-        annotation = tx.Static[tx.Linear]
-        tree_type = _resolve_tree_type("annotation", annotation)
-        assert tree_type is tx.Static
-
-        # test static only
-        annotation = tx.Static
-        tree_type = _resolve_tree_type("annotation", annotation)
-        assert tree_type is tx.Static
-
-        annotation = tp.List[int]
-        tree_type = _resolve_tree_type("annotation", annotation)
-        assert tree_type is list
-
-        annotation = tp.List[tx.Parameter[int]]
-        tree_type = _resolve_tree_type("annotation", annotation)
-        assert tree_type is tx.Parameter
-
-        with pytest.raises(TypeError):
-            annotation = tx.Parameter[tp.List[tx.State[int]]]
-            _resolve_tree_type("annotation", annotation)
-
-        with pytest.raises(TypeError):
-            annotation = tx.Parameter[tp.List[tx.Linear]]
-            _resolve_tree_type("annotation", annotation)
-
-        with pytest.raises(TypeError):
-            annotation = tp.Tuple[tx.Parameter, tp.List[tx.Linear]]
-            _resolve_tree_type("annotation", annotation)
-
-        annotation = tx.Static[tp.List[tx.Linear]]
-        _resolve_tree_type("annotation", annotation)
-
     def test_static_annotation(self):
         class Mod(tx.Module):
             a: tx.Linear
-            b: tx.Static[tx.Linear]
+            b: tx.Linear = tx.static()
 
             def __init__(self):
                 super().__init__()
@@ -499,7 +477,7 @@ class TestTreex:
 
         mlp = MLP(2, 3, 5).init(42)
 
-        assert "linear1" in mlp.__annotations__
+        assert "linear1" in mlp.tree_parts
 
     def test_auto_annotations_inserted(self):
         class MLP(tx.Module):
@@ -517,13 +495,13 @@ class TestTreex:
 
         mlp.linear3 = Linear(7, 8, name="linear3").init(42)
 
-        rep = repr(mlp)
+        mlp = mlp.copy()  # force flatten
 
-        assert "linear3" in rep
+        assert "linear3" in mlp.tree_parts
 
     def test_auto_annotations_static(self):
         class MLP(tx.Module):
-            linear2: tx.Static[Linear]
+            linear2: Linear = tx.static()
 
             def __init__(self, din, dmid, dout, name="mlp"):
                 super().__init__()
@@ -537,10 +515,8 @@ class TestTreex:
 
         mlp = MLP(2, 3, 5).init(42)
 
-        rep = repr(mlp)
-
-        assert "linear1" in rep
-        assert "linear2" not in rep
+        assert "linear1" in mlp.tree_parts
+        assert not mlp.tree_parts["linear2"].tree_part
 
     def test_annotations_missing_field_no_error(self):
         class MLP(tx.Module):
@@ -558,10 +534,8 @@ class TestTreex:
 
         mlp = MLP(2, 3, 5).init(42)
 
-        rep = repr(mlp)
-
-        assert "linear1" in rep
-        assert "linear2" in rep
+        assert "linear1" in mlp.tree_parts
+        assert "linear2" in mlp.tree_parts
 
     def test_hashable(self):
         class M(tx.Module):
@@ -606,7 +580,7 @@ class TestTreex:
 
     def test_uninitialized_tabulate(self):
         class MyModule(tx.Module):
-            a: tx.Parameter[np.ndarray, tx.Initializer]
+            a: tp.Union[np.ndarray, tx.Initializer] = tx.Parameter.field()
 
             def __init__(self):
                 super().__init__()
