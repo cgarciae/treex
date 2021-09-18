@@ -21,8 +21,8 @@ class Conv(Module):
     """
 
     # pytree
-    kernel: tp.Optional[jnp.ndarray] = types.Parameter.dynamic()
-    bias: tp.Optional[jnp.ndarray] = types.Parameter.dynamic()
+    kernel: tp.Optional[jnp.ndarray] = types.Parameter.node()
+    bias: tp.Optional[jnp.ndarray] = types.Parameter.node()
 
     # props
     features_in: int

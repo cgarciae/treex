@@ -27,7 +27,7 @@ class KeySeq(Module):
     ```
     """
 
-    key: tp.Union[types.Initializer, jnp.ndarray] = types.Rng.dynamic()
+    key: tp.Union[types.Initializer, jnp.ndarray] = types.Rng.node()
 
     def __init__(self, key: tp.Optional[tp.Union[jnp.ndarray, int]] = None):
         """

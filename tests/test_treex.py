@@ -12,9 +12,9 @@ import treex as tx
 
 
 class Linear(tx.Module):
-    w: np.ndarray = tx.Parameter.dynamic()
-    b: np.ndarray = tx.Parameter.dynamic()
-    n: int = tx.State.dynamic()
+    w: np.ndarray = tx.Parameter.node()
+    b: np.ndarray = tx.Parameter.node()
+    n: int = tx.State.node()
 
     def __init__(self, din, dout, name="linear"):
         super().__init__()
@@ -123,7 +123,7 @@ class TestTreex:
 
         mlp = MLP(2, 3, 5)
 
-        mlp.linear1 = mlp.linear1.update_field_metadata("w", dynamic=False)
+        mlp.linear1 = mlp.linear1.update_field_metadata("w", node=False)
 
         @jax.jit
         def idfn(x):
@@ -234,7 +234,7 @@ class TestTreex:
 
     def test_list(self):
         class LinearList(tx.Module):
-            params: tp.List[np.ndarray] = tx.Parameter.dynamic()
+            params: tp.List[np.ndarray] = tx.Parameter.node()
 
             def __init__(self, din, dout, name="linear"):
                 super().__init__()
@@ -392,7 +392,7 @@ class TestTreex:
     def test_repr(self):
         class MyModule(tx.Module):
             a: tp.Dict[str, tp.List[MLP]]
-            b: tp.List[tp.Union[tx.Initializer, jnp.ndarray]] = tx.Parameter.dynamic()
+            b: tp.List[tp.Union[tx.Initializer, jnp.ndarray]] = tx.Parameter.node()
 
             def __init__(self):
                 super().__init__()
@@ -415,7 +415,7 @@ class TestTreex:
     def test_tabulate(self):
         class MyModule(tx.Module):
             a: tp.Dict[str, tp.List[MLP]]
-            b: tp.List[tp.Union[jnp.ndarray, tx.Initializer]] = tx.Parameter.dynamic()
+            b: tp.List[tp.Union[jnp.ndarray, tx.Initializer]] = tx.Parameter.node()
 
             def __init__(self):
                 super().__init__()
@@ -440,7 +440,7 @@ class TestTreex:
     def test_tabulate_inputs(self):
         class MyModule(tx.Module):
             a: tp.Dict[str, tp.List[tx.MLP]]
-            b: tp.List[tp.Union[jnp.ndarray, tx.Initializer]] = tx.Parameter.dynamic()
+            b: tp.List[tp.Union[jnp.ndarray, tx.Initializer]] = tx.Parameter.node()
 
             def __init__(self):
                 super().__init__()
@@ -544,7 +544,7 @@ class TestTreex:
         mlp = MLP(2, 3, 5).init(42)
 
         assert "linear1" in mlp.field_metadata
-        assert not mlp.field_metadata["linear2"].id_dynamic
+        assert not mlp.field_metadata["linear2"].node
 
     def test_annotations_missing_field_no_error(self):
         class MLP(tx.Module):
@@ -608,7 +608,7 @@ class TestTreex:
 
     def test_uninitialized_tabulate(self):
         class MyModule(tx.Module):
-            a: tp.Union[np.ndarray, tx.Initializer] = tx.Parameter.dynamic()
+            a: tp.Union[np.ndarray, tx.Initializer] = tx.Parameter.node()
 
             def __init__(self):
                 super().__init__()

@@ -27,26 +27,67 @@ class ArrayLike(tp.Protocol):
 
 class FieldMixin:
     @classmethod
-    def dynamic(
+    def field(
         cls,
         default=dataclasses.MISSING,
         *,
-        dynamic: bool = True,
-        **kwargs,
+        node: bool,
+        default_factory=dataclasses.MISSING,
+        init: bool = True,
+        repr: bool = True,
+        hash: tp.Optional[bool] = None,
+        compare: bool = True,
     ) -> tp.Any:
-        return utils.dynamic(
+        return utils.field(
             default=default,
-            dynamic=dynamic,
-            tree_type=cls,
-            **kwargs,
+            node=node,
+            kind=cls,
+            default_factory=default_factory,
+            init=init,
+            repr=repr,
+            hash=hash,
+            compare=compare,
         )
 
     @classmethod
-    def static(cls, default=dataclasses.MISSING, **kwargs) -> tp.Any:
-        return cls.dynamic(
+    def node(
+        cls,
+        default=dataclasses.MISSING,
+        *,
+        default_factory=dataclasses.MISSING,
+        init: bool = True,
+        repr: bool = True,
+        hash: tp.Optional[bool] = None,
+        compare: bool = True,
+    ) -> tp.Any:
+        return utils.node(
             default=default,
-            dynamic=False,
-            **kwargs,
+            kind=cls,
+            default_factory=default_factory,
+            init=init,
+            repr=repr,
+            hash=hash,
+            compare=compare,
+        )
+
+    @classmethod
+    def static(
+        cls,
+        default=dataclasses.MISSING,
+        default_factory=dataclasses.MISSING,
+        init: bool = True,
+        repr: bool = True,
+        hash: tp.Optional[bool] = None,
+        compare: bool = True,
+    ) -> tp.Any:
+        return cls.field(
+            default=default,
+            node=False,
+            default_factory=default_factory,
+            init=init,
+            repr=repr,
+            hash=hash,
+            compare=compare,
         )
 
 
@@ -115,8 +156,8 @@ class TrivialPytree:
 
 @dataclass
 class FieldMetadata(TrivialPytree):
-    id_dynamic: bool
-    tree_type: type
+    node: bool
+    kind: type
 
 
 class Named(tp.Generic[A]):

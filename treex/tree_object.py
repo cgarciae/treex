@@ -103,8 +103,8 @@ class TreeObjectMeta(ABCMeta):
         for field, value in vars(obj).items():
             if field not in obj._field_metadata and isinstance(value, TreeObject):
                 obj._field_metadata[field] = types.FieldMetadata(
-                    id_dynamic=True,
-                    tree_type=type(value),
+                    node=True,
+                    kind=type(value),
                 )
 
         if isinstance(obj, tp.Callable):
@@ -139,17 +139,17 @@ class TreeObject(types.FieldMixin, metaclass=TreeObjectMeta):
     def update_field_metadata(
         self: T,
         field: str,
-        dynamic: tp.Union[bool, types.Missing] = types.Missing(),
-        tree_type: tp.Union[type, types.Missing] = types.Missing(),
+        node: tp.Optional[bool] = None,
+        kind: tp.Optional[type] = None,
     ) -> T:
         module = self.copy()
         field_metadata = module._field_metadata[field]
 
-        if not isinstance(dynamic, types.Missing):
-            field_metadata.id_dynamic = dynamic
+        if node is not None:
+            field_metadata.node = node
 
-        if not isinstance(tree_type, types.Missing):
-            field_metadata.tree_type = tree_type
+        if kind is not None:
+            field_metadata.kind = kind
 
         self._field_metadata[field] = field_metadata
 
@@ -171,10 +171,10 @@ class TreeObject(types.FieldMixin, metaclass=TreeObjectMeta):
                 else:
                     delattr(cls, field)
 
-                if value.metadata is not None and "dynamic" in value.metadata:
+                if value.metadata is not None and "node" in value.metadata:
                     cls._field_metadata[field] = types.FieldMetadata(
-                        id_dynamic=value.metadata["dynamic"],
-                        tree_type=value.metadata["tree_type"],
+                        node=value.metadata["node"],
+                        kind=value.metadata["kind"],
                     )
 
         for field, value in annotations.items():
@@ -183,8 +183,8 @@ class TreeObject(types.FieldMixin, metaclass=TreeObjectMeta):
                 for t in utils._all_types(value)
             ):
                 cls._field_metadata[field] = types.FieldMetadata(
-                    id_dynamic=True,
-                    tree_type=value,
+                    node=True,
+                    kind=value,
                 )
 
     def __init__(self) -> None:
@@ -206,13 +206,13 @@ class TreeObject(types.FieldMixin, metaclass=TreeObjectMeta):
                 # auto-annotations
                 if field not in self._field_metadata and isinstance(value, TreeObject):
                     self._field_metadata[field] = types.FieldMetadata(
-                        id_dynamic=True,
-                        tree_type=type(value),
+                        node=True,
+                        kind=type(value),
                     )
 
                 field_annotation = self._field_metadata.get(field, None)
 
-                if field_annotation is not None and field_annotation.id_dynamic:
+                if field_annotation is not None and field_annotation.node:
                     if _CONTEXT.add_field_info:
                         # leaves, treedef
                         tree[field], not_tree[field] = jax.tree_flatten(
@@ -223,7 +223,7 @@ class TreeObject(types.FieldMixin, metaclass=TreeObjectMeta):
                             FieldInfo(
                                 name=field,
                                 value=x,
-                                annotation=field_annotation.tree_type,
+                                annotation=field_annotation.kind,
                                 module=self,
                             )
                             if not isinstance(x, FieldInfo)
@@ -504,8 +504,8 @@ class TreeObject(types.FieldMixin, metaclass=TreeObjectMeta):
             [""] * n_non_treepart_cols
             + ["Total:"]
             + [
-                _format_obj_size(self.filter(tree_type), add_padding=True)
-                for tree_type in tree_part_types
+                _format_obj_size(self.filter(kind), add_padding=True)
+                for kind in tree_part_types
             ]
         )
         _add_padding(rows)
@@ -870,7 +870,7 @@ def _get_repr(
             annotation: tp.Union[
                 tp.Type[TreeObject], tp.Type[types.TreePart], None
             ] = _first_issubclass(
-                obj.field_metadata[field].tree_type, (types.TreePart, TreeObject)
+                obj.field_metadata[field].kind, (types.TreePart, TreeObject)
             )
 
             if annotation is None:
@@ -885,12 +885,12 @@ def _get_repr(
         body = [
             indent_level
             + space
-            + f"{field}: {_get_repr(value, level + 1, obj.field_metadata[field].tree_type, inline=True)}"
+            + f"{field}: {_get_repr(value, level + 1, obj.field_metadata[field].kind, inline=True)}"
             for field, value in params.items()
         ] + [
             indent_level
             + space
-            + f"{field}: {_get_repr(value, level + 1, obj.field_metadata[field].tree_type, inline=True)}"
+            + f"{field}: {_get_repr(value, level + 1, obj.field_metadata[field].kind, inline=True)}"
             for field, value in submodules.items()
         ]
 
@@ -962,7 +962,7 @@ def _get_tabulate_rows(
             annotation: tp.Union[
                 tp.Type[TreeObject], tp.Type[types.TreePart], None
             ] = _first_issubclass(
-                obj.field_metadata[field].tree_type, (types.TreePart, TreeObject)
+                obj.field_metadata[field].kind, (types.TreePart, TreeObject)
             )
 
             if annotation is None:
@@ -992,7 +992,7 @@ def _get_tabulate_rows(
                 lambda x: str(x)
                 if isinstance(x, LEAF_TYPES)
                 else _format_param(
-                    x, obj.field_metadata[field].tree_type, include_param_type
+                    x, obj.field_metadata[field].kind, include_param_type
                 ),
                 value,
                 is_leaf=lambda x: isinstance(x, LEAF_TYPES),
@@ -1013,7 +1013,7 @@ def _get_tabulate_rows(
                     [
                         value
                         for field, value in params.items()
-                        if obj.field_metadata[field].tree_type is t
+                        if obj.field_metadata[field].kind is t
                     ],
                     add_padding=True,
                 )

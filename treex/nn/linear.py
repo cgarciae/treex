@@ -21,8 +21,8 @@ class Linear(Module):
     """
 
     # pytree
-    kernel: tp.Optional[jnp.ndarray] = types.Parameter.dynamic()
-    bias: tp.Optional[jnp.ndarray] = types.Parameter.dynamic()
+    kernel: tp.Optional[jnp.ndarray] = types.Parameter.node()
+    bias: tp.Optional[jnp.ndarray] = types.Parameter.node()
 
     # static
     features_in: int

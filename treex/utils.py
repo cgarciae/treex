@@ -10,27 +10,70 @@ _pymap = map
 _pyfilter = filter
 
 
-def dynamic(
+def field(
     default=dataclasses.MISSING,
     *,
-    dynamic: bool = True,
-    tree_type: type = type(None),
-    **kwargs,
+    node: bool,
+    kind: type = type(None),
+    default_factory=dataclasses.MISSING,
+    init: bool = True,
+    repr: bool = True,
+    hash: tp.Optional[bool] = None,
+    compare: bool = True,
 ) -> tp.Any:
     return dataclasses.field(
         default=default,
-        metadata={"dynamic": dynamic, "tree_type": tree_type},
-        **kwargs,
+        metadata={"node": node, "kind": kind},
+        default_factory=default_factory,
+        init=init,
+        repr=repr,
+        hash=hash,
+        compare=compare,
+    )
+
+
+def node(
+    default=dataclasses.MISSING,
+    *,
+    kind: type = type(None),
+    default_factory=dataclasses.MISSING,
+    init: bool = True,
+    repr: bool = True,
+    hash: tp.Optional[bool] = None,
+    compare: bool = True,
+) -> tp.Any:
+    return field(
+        default=default,
+        node=True,
+        kind=kind,
+        default_factory=default_factory,
+        init=init,
+        repr=repr,
+        hash=hash,
+        compare=compare,
     )
 
 
 def static(
     default=dataclasses.MISSING,
     *,
-    tree_type: type = type(None),
-    **kwargs,
+    kind: type = type(None),
+    default_factory=dataclasses.MISSING,
+    init: bool = True,
+    repr: bool = True,
+    hash: tp.Optional[bool] = None,
+    compare: bool = True,
 ) -> tp.Any:
-    return dynamic(default, dynamic=False, tree_type=tree_type, **kwargs)
+    return field(
+        default,
+        node=False,
+        kind=kind,
+        default_factory=default_factory,
+        init=init,
+        repr=repr,
+        hash=hash,
+        compare=compare,
+    )
 
 
 def _get_all_annotations(cls: type) -> tp.Dict[str, type]:
