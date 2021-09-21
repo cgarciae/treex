@@ -1,6 +1,6 @@
 
-# treex.OptState
+# treex.Loss
 
-::: treex.types.OptState
+::: treex.types.Loss
     selection:
         inherited_members: true

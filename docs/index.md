@@ -1,11 +1,15 @@
 # Treex
 
-_A Pytree-based Module system for JAX_
+_A Pytree Module system for Deep Learning in JAX_
 
 * **Intuitive**: Modules are simple Python objects that respect Object-Oriented semantics and should make PyTorch users feel at home, with no need for separate dictionary structures or complex `apply` methods.
 * **Pytree-based**:  Modules are registered as JAX PyTrees, enabling their use with any JAX function. No need for specialized versions of `jit`, `grad`, `vmap`, etc.
 * **Expressive**: In Treex you use type annotations to define what the different parts of your module represent (submodules, parameters, batch statistics, etc), this leads to a very flexible and powerful state management solution.
 * **Flax-based Implementations**: Writing high-quality, battle-tested code for common layers is hard. For this reason Modules in `treex.nn` are wrappers over their Flax counterparts. We keep identical signatures, enabling Flax users to feel at home but still benefiting from the simpler Pytorch-like experience Treex brings.
+
+Treex is implemented on top of [Treeo](https://github.com/cgarciae/treeo). All of Treeo's public API is also available through Treex.
+
+[Documentation](https://cgarciae.github.io/treex) | [User Guide](https://cgarciae.github.io/treex/user-guide/)
 
 ## Why Treex?
 Despite all JAX benefits, current Module systems are not intuitive to new users and add additional complexity not present in frameworks like PyTorch or Keras. Treex takes inspiration from S4TF and delivers an intuitive experience using JAX Pytree infrastructure.
@@ -30,13 +34,13 @@ pip install treex
 ```
 
 ## Status
-At the moment Treex is a proof of concept for what a Pytree-based Module system for JAX could look like. Testing is needed to find bugs and potential issues, however, since Treex layers are numerically equivalent to Flax this borrows some maturity and yields more confidence over its results. Feedback is much appreciated.
+Treex is in an early stage, things might brake between versions but we will respect semanting versioning. While more testing is needed, since Treex layers are numerically equivalent to Flax this borrows some maturity and yields more confidence over its results. Feedback is much appreciated.
 
 **Roadmap**:
 - [x] Finish prototyping core API
 - [ ] Wrap all Flax Linen Modules
-- [ ] Document public API
-- [ ] Create documentation site
+- [x] Document public API
+- [x] Create documentation site
 
 
 ## Getting Started
@@ -64,12 +68,6 @@ class MLP(tx.Module):
             x = jax.nn.relu(linear(x))
         return self.layers[-1](x)
 
-
-model = MLP([1, 12, 8, 1]).init(42)
-
-x = np.random.uniform(-1, 1, size=(100, 1))
-y = 1.4 * x ** 2 - 0.3 + np.random.normal(scale=0.1, size=(100, 1))
-
 @jax.jit
 @jax.grad
 def loss_fn(model, x, y):
@@ -80,6 +78,11 @@ def loss_fn(model, x, y):
 def sdg(param, grad):
     return param - 0.01 * grad
 
+model = MLP([1, 12, 8, 1]).init(42)
+
+x = np.random.uniform(-1, 1, size=(100, 1))
+y = 1.4 * x ** 2 - 0.3 + np.random.normal(scale=0.1, size=(100, 1))
+
 # training loop
 for step in range(10_000):
     grads = loss_fn(model, x, y)
@@ -89,331 +92,44 @@ model = model.eval()
 y_pred = model(x)
 ```
 
-## Guide
-### Defining Modules
-Treex Modules have the following characteristics:
-* They inherit from `tx.Module`.
-* Fields for parameter and submodules **MUST** be marked using a _valid_ type annotation.
-
+#### Stateful Module example
+Here is an example of creating a stateful module of a `RollingMean` metric and using them with `jax.jit`:
 
 ```python
-class Linear(tx.Module):
-    w: tx.Parameter
-    b: tx.Parameter
+class Metric(tx.Module):
+    def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
+        raise NotImplementedError()
 
-    def __init__(self, din, dout):
-        self.w = tx.Initializer(
-            lambda key: jax.random.uniform(key, shape=(din, dout)))
-        self.b = jnp.zeros(shape=(dout,))
-
-    def __call__(self, x):
-        return jnp.dot(x, self.w) + self.b
-
-linear = Linear(3, 5).init(42)
-y = linear(x)
-```
-
-Valid type annotations include:
-* Subtypes of `tx.TreePart` e.g. `tx.Parameter`, `tx.BatchStat`, etc.
-* Subtypes of `tx.Module` e.g. `tx.Linear`, custom Module types, etc.
-* Generic subtypes from the `typing` module of the previous e.g. `List[tx.Parameter]` or `Dict[str, tx.Linear]`.
-
-Type annotations that do not comform to the above rules will be ignored and the field will not be counted as part of the Pytree.
-
-```python
-class MLP(tx.Module):
-    layers: List[tx.Linear]
-
-    def __init__(self, features: Sequence[int]):
-        self.layers = [
-            tx.Linear(din, dout) 
-            for din, dout in zip(features[:-1], features[1:])
-        ]
-
-    def __call__(self, x):
-        for linear in self.layers[:-1]:
-            x = jax.nn.relu(linear(x))
-        return self.layers[-1](x)
-
-mlp = MLP([3, 5, 2]).init(42)
-```
-
-### Pytrees
-Since Modules are pytrees they can be arguments to JAX functions such as `jit`, `grad`, `vmap`, etc, and the `jax.tree_*` function family.
-```python
-@jax.jit
-@jax.grad
-def loss_fn(model, x, y):
-    y_pred = model(x)
-    return jnp.mean((y_pred - y) ** 2)
-
-def sdg(param, grad):
-    return param - 0.01 * grad
-
-model = MLP(...).init(42)
-
-grads = loss_fn(model, x, y)
-model = jax.tree_map(sdg, model, grads)
-```
-This makes Treex Modules compatible with tooling from the broader JAX ecosystem, and enables correct unification of Modules as both parameter containers and the definition of the foward computation.
-
-### Initialization
-Initialization in Treex is done by calling the `init` method on the Module with a seed. This returns a new Module with all fields initialized.
-
-There are two initialization mechanisms in Treex. The first one is setting the fields we wish to initialize to an `Initializer` object. `Initializer`s contain functions that take a `key` and return the initial value of the field:
-```python
-class MyModule(tx.Module):
-    a: tx.Parameter
-    b: tx.Parameter
-
-    def __init__(self):
-        self.a = tx.Initializer(
-            lambda key: jax.random.uniform(key, shape=(1,)))
-        self.b = 2
-
-module = MyModule() 
-module # MyModule(a=Initializer, b=2)
-moduel.initialized # False
-
-module = module.init(42)  
-module # MyModule(a=array([0.034...]), b=2)
-module.initialized # True
-```
-The second is to override the `rng_init` method, which takes a `key` and can initialize any required fields. This is useful for modules that require complex initialization logic or whose field's initialization depends on each other.
-```python
-class MyModule(tx.Module):
-    a: tx.Parameter
-    b: tx.Parameter
-
-    def __init__(self):
-        self.a = None
-        self.b = None
-
-    def rng_init(self, key):
-        # some complex initialization
-        ...
-
-module = MyModule().init(42)
-module # MyModule(a=array([0.927...]), b=array([0.749...]))
-```
-We can also mix and match the two strategies, meaning that some parameters can be initialized via `Initializer`s while others via `rng_init`. The rule is that `Initializer`s are always going the be called first.
-
-
-### Filter and Update API
-The `filter` method allows selecting a subtree by filtering based on a type, all leaves that are not a subclass of such type are set to a special `Nothing` value.
-```python
-class MyModule(tx.Module):
-    a: tx.Parameter = np.array(1)
-    b: tx.BatchStat = np.array(2)
-    ...
-
-module = MyModule(...)
-
-module.filter(tx.Parameter) # MyModule(a=array([1]), b=Nothing)
-module.filter(tx.BatchStat) # MyModule(a=Nothing, b=array([2]))
-```
-`Nothing` much like `None` is an empty Pytree so it gets ignored by tree operations:
-
-```python
-jax.tree_leaves(module.filter(tx.Parameter)) # [array([1])]
-jax.tree_leaves(module.filter(tx.BatchStat)) # [array([2])]
-```
-
-A typical use case is to define `params` as a `Parameter` filter and pass it as the first argument to `grad` so that the gradient is computed only that particular subset and immediately update them back to the `model` before performing any computation:
-
-```python
-# we take `params` as a Parameter filter from model
-# but model itself is left untouched
-params = model.filter(tx.Parameter)
-
-@jax.grad 
-def loss_fn(params, model, x, y):
-    # update traced arrays by `grad` from `params`
-    model = model.update(params)
-    ...
-
-grads = loss_fn(params, model, x, y) 
-
-optimizer = tx.Optimizer(optax.adam(1e-3))
-optimizer = optimizer.init(params) # only needs params
-```
-
-### Optimizer
-
-Optax is an amazing library however, its optimizers are not pytrees, this means that state and computation are separate, and you cannot jit them. To solve this Treex provides an `tx.Optimizer` class that can wrap any Optax optimizer and make it a Pytree.
-
-While in optax you would define something like this:
-```python
-def main():
-    ...
-    optimizer = optax.adam(1e-3)
-    opt_state = optimizer.init(params)
-    ...
-
-@partial(jax.jit, static_argnums=(4,))
-def train_step(model, x, y, opt_state, optimizer): # optimizer has to be static
-    ...
-    updates, opt_state = optimizer.update(grads, opt_state, params)
-    params = optax.apply_updates(params, updates)
-    ...
-    return model, loss, opt_state
-```
-
-With `tx.Optimizer` you it can be simplified to:
-
-```python
-def main():
-    ...
-    optimizer = tx.Optimizer(optax.adam(1e-3)).init(params)
-    ...
-
-jax.jit
-def train_step(model, x, y, optimizer):
-    ...
-    params = optimizer.update(grads, params)
-    ...
-    return model, loss, optimizer
-```
-
-As you see, `tx.Optimizer` follows the same API as `optax.GradientTransformation` except that:
-1. There is no `opt_state`, instead optimizer IS the state.
-2. `update` by default applies the gradient updates to the parameters.
-3. `update` updates the internal state of the optimizer in-place.
-
-Notice that since `tx.Optimizer` is a Pytree, it was passed through `jit` without the need to specify `static_argnums`.
-
-### State Management
-Treex takes a "direct" approach to state management, i.e., state is updated in-place by the Module whenever it needs to. For example, this module will calculate the running average of its input:
-```python
-class Average(tx.Module):
-    count: tx.State
-    total: tx.State
+class RollingMean(Metric):
+    count: jnp.ndarray = tx.State.node()
+    total: jnp.ndarray = tx.State.node()
 
     def __init__(self):
         self.count = jnp.array(0)
         self.total = jnp.array(0.0)
 
-    def __call__(self, x):
+    def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
         self.count += np.prod(x.shape)
-        self.total += jnp.sum(x)
+        self.total += x.sum()
 
         return self.total / self.count
-```
-Treex Modules that require random state will often keep a `rng` key internally and update it in-place when needed:
-```python
-class Dropout(tx.Module):
-    rng: tx.Rng
 
-    def __init__(self, rate: float):
-        self.rng = tx.Initializer(lambda key: key)
-        ...
-
-    def __call__(self, x):
-        key, self.rng = jax.random.split(self.rng)
-        ...
-```
-Finally `tx.Optimizer` also performs inplace updates inside the `update` method, here is a sketch of how it works:
-```python
-class Optimizer(tx.Module):
-    opt_state: tx.OptState
-    optimizer: optax.GradientTransformation
-
-    def update(self, grads, params):
-        ...
-        updates, self.opt_state = self.optimizer.update(
-            grads, self.opt_state, params
-        )
-        ...
-```
-#### What is the catch?
-State management is one of the most challenging things in JAX, but with the help of Treex it seems effortless, what is the catch? As always there is a trade-off to consider: Treex's approach requires to consider how to propagate state changes properly while taking into account the fact that Pytree operations create new objects, that is, since reference do not persist across calls through these functions changes might be lost. 
-
-A standard solution to this problem is: **always output the module to update state**. For example, a typical loss function that contains a stateful model would look like this:
-
-```python
-@partial(jax.value_and_grad, has_aux=True)
-def loss_fn(params, model, x, y):
-    model = model.update(params)
-
-    y_pred = model(x)
-    loss = jnp.mean((y_pred - y) ** 2)
-
-    return loss, model
-
-params = model.filter(tx.Parameter)
-(loss, model), grads = loss_fn(params, model, x, y)
-...
-```
-Here `model` is returned along with the loss through `value_and_grad` to update `model` on the outside thus persisting any changes to the state performed on the inside.
+@jax.jit
+def update(x: jnp.ndarray, metric: Metric) -> Tuple[jnp.ndarray, Metric]:
+    mean = metric(x)
+    return mean, metric # return mean value and updated metric
 
 
-### Training State
-Treex Modules have a `training: bool` property that specifies whether the module is in training mode or not. This property conditions the behavior of Modules such as `Dropout` and `BatchNorm`, which behave differently between training and evaluation. 
+metric = RollingMean()
 
-To switch between modes, use the `.train()` and `.eval()` methods, they return a new Module whose `training` state and the state of all of its submodules (recursively) are set to the desired value.
+for i in range(10):
+    x = np.random.uniform(-1, 1, size=(100, 1))
+    mean, metric = update(x, metric)
 
-```python
-# training loop
-for step in range(1000):
-    loss, model, opt_state = train_step(model, x, y, opt_state)
-
-# prepare for evaluation
-model = model.eval()
-
-# make predictions
-y_pred = model(X_test)
-```
-### Parameter Annotations
-The role of each parameter is defined by its annotation. While valid annotations is any type which inherits from `tx.TreePart`, the default annotations from Treex are currently organized into the following type hierarchy:
-
-<details>
-<summary>Graph code</summary>
-
-```mermaid
-graph TD;
-    TreePart-->Parameter;
-    TreePart-->State;
-    State-->Rng;
-    State-->BatchStat;
+print(mean)
 ```
 
-</details>
-
-![types](images/types.png)
-
-This is useful because you can make specific or more general queries using `filter` depending on what you want to achive. e.g.
-
-```python
-rngs = model.filter(tx.Rng)
-batch_stats = model.filter(tx.BatchStat)
-all_states = model.filter(tx.State) # union of the previous two
-```
-You can easily define you own annotations by inheriting from directly `tx.TreePart` or any of its subclasses. As an example lets create a new `Cache` state to emulates Flax's `cache` collection:
-
-```python
-class Cache(tx.TreePart):
-    pass
-```
-That is it! Now you can use it in your model:
-```python
-class MyModule(tx.Module):
-    memory: Cache
-    ...
-```
-**Tip**: Your static analyzer will probably start complaining if you try to assign an `jnp.ndarray` to `memory` in this example because `ndarray`s are not `TreePart`s. While this makes sense, we want to trick the static analyzer into thinking `Cache` represents an `ndarray` and not a `TreePart`, the easiest way to do this is to use `typing.cast`:
-
-```python
-from typing import cast, Type
-import jax.numpy as jnp
-
-class Cache(tx.TreePart):
-    pass
-
-Cache = cast(Type[jnp.ndarray], Cache)
-```
-`cast` an identity function, meaning `Cache` is actually reassigned to itself, however, the static analyzer will now think its an `ndarray`. This way both the static analyzer and Treex will be happy.
-
-### Full Example
+#### Linear Regression from scratch example
 
 ```python
 from functools import partial
@@ -429,8 +145,8 @@ y = 1.4 * x - 0.3 + np.random.normal(scale=0.1, size=(500, 1))
 
 # treex already defines tx.Linear but we can define our own
 class Linear(tx.Module):
-    w: tx.Parameter
-    b: tx.Parameter
+    w: tx.Parameter[tx.Initializer, jnp.ndarray]
+    b: tx.Parameter[jnp.ndarray]
 
     def __init__(self, din, dout):
         self.w = tx.Initializer(lambda key: jax.random.uniform(key, shape=(din, dout)))
@@ -442,7 +158,7 @@ class Linear(tx.Module):
 
 model = Linear(1, 1).init(42)
 optimizer = tx.Optimizer(optax.adam(0.01))
-optimizer = optimizer.init(model.filter(tx.Parameter))
+optimizer = optimizer.init(model.paramerters())
 
 
 @partial(jax.value_and_grad, has_aux=True)
@@ -457,7 +173,7 @@ def loss_fn(params, model, x, y):
 
 @jax.jit
 def train_step(model, x, y, optimizer):
-    params = model.filter(tx.Parameter)
+    params = model.paramerters()
     (loss, model), grads = loss_fn(params, model, x, y)
 
     # here model == params
@@ -480,5 +196,4 @@ plt.scatter(x, y, c="k", label="data")
 plt.plot(X_test, y_pred, c="b", linewidth=2, label="prediction")
 plt.legend()
 plt.show()
-
 ```

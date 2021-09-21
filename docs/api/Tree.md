@@ -1,6 +1,6 @@
 
-# treex.Sequence
+# treex.Tree
 
-::: treex.nn.sequence.Sequence
+::: treeo.tree.Tree
     selection:
         inherited_members: true

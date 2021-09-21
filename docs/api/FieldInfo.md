@@ -1,6 +1,6 @@
 
-# treex.OptState
+# treex.FieldInfo
 
-::: treex.types.OptState
+::: treeo.tree.FieldInfo
     selection:
         inherited_members: true

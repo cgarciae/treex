@@ -1,6 +1,6 @@
 
-# treex.OptState
+# treex.Missing
 
-::: treex.types.OptState
+::: treeo.types.Missing
     selection:
         inherited_members: true

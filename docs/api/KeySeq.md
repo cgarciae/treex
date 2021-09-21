@@ -1,6 +1,6 @@
 
-# treex.OptState
+# treex.KeySeq
 
-::: treex.types.OptState
+::: treex.key_seq.KeySeq
     selection:
         inherited_members: true

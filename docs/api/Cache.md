@@ -1,6 +1,6 @@
 
-# treex.OptState
+# treex.Cache
 
-::: treex.types.OptState
+::: treex.types.Cache
     selection:
         inherited_members: true

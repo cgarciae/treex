@@ -1,6 +1,6 @@
 
-# treex.OptState
+# treex.apply
 
-::: treex.types.OptState
+::: treeo.tree.apply
     selection:
         inherited_members: true

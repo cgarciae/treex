@@ -1,6 +1,6 @@
 
-# treex.OptState
+# treex.Hashable
 
-::: treex.types.OptState
+::: treeo.types.Hashable
     selection:
         inherited_members: true

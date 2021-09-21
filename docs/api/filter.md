@@ -1,6 +1,6 @@
 
-# treex.OptState
+# treex.filter
 
-::: treex.types.OptState
+::: treeo.tree.filter
     selection:
         inherited_members: true

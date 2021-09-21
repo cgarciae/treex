@@ -1,6 +1,6 @@
 
-# treex.OptState
+# treex.KindMixin
 
-::: treex.types.OptState
+::: treeo.types.KindMixin
     selection:
         inherited_members: true

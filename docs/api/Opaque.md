@@ -1,6 +1,6 @@
 
-# treex.OptState
+# treex.Opaque
 
-::: treex.types.OptState
+::: treeo.utils.Opaque
     selection:
         inherited_members: true
