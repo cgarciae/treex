@@ -84,7 +84,7 @@ class Optimizer(to.Tree):
     # OptState by a single annotation (no need to rewrite the module's annotations)
     # - It ignores the static part of Modules which if changed Optax yields an error.
     def update(
-        self, grads: A, params: tp.Optional[A] = None, return_updates: bool = False
+        self, grads: A, params: tp.Optional[A] = None, apply_updates: bool = True
     ) -> A:
         """
         Applies the parameters updates and updates the optimizers internal state inplace.
@@ -92,16 +92,16 @@ class Optimizer(to.Tree):
         Arguments:
             grads: the gradients to perform the update.
             params: the parameters to update. If `None` then `update` has to be `False`.
-            return_updates: if `True` then the updates are returned instead of being applied.
+            apply_updates: if `False` then the updates are returned instead of being applied.
 
         Returns:
-            The updated parameters. Iftree_leaves `return_updates` is `True` then the updates are returned instead.
+            The updated parameters. If `apply_updates` is `False` then the updates are returned instead.
         """
         if not self.initialized:
             raise RuntimeError("Optimizer is not initialized")
 
         assert self.opt_state is not None
-        if not return_updates and params is None:
+        if apply_updates and params is None:
             raise ValueError("params must be provided if updates are being applied")
 
         opt_grads, treedef = jax.tree_flatten(grads)
@@ -124,10 +124,10 @@ class Optimizer(to.Tree):
         )
 
         output: A
-        if return_updates:
-            output = param_updates
-        else:
+        if apply_updates:
             output = optax.apply_updates(opt_params, param_updates)
+        else:
+            output = param_updates
 
         return jax.tree_unflatten(treedef, output)
 

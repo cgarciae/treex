@@ -7,7 +7,7 @@ _A Pytree Module system for Deep Learning in JAX_
 * **Expressive**: In Treex you use type annotations to define what the different parts of your module represent (submodules, parameters, batch statistics, etc), this leads to a very flexible and powerful state management solution.
 * **Flax-based Implementations**: Writing high-quality, battle-tested code for common layers is hard. For this reason Modules in `treex.nn` are wrappers over their Flax counterparts. We keep identical signatures, enabling Flax users to feel at home but still benefiting from the simpler Pytorch-like experience Treex brings.
 
-Treex is now implemented on top of [Treeo](https://github.com/cgarciae/treeo), Treex makes available all of Treeo's public API.
+Treex is implemented on top of [Treeo](https://github.com/cgarciae/treeo). All of Treeo's public API is also available through Treex.
 
 [Documentation](https://cgarciae.github.io/treex) | [Guide](#guide)
 
@@ -97,7 +97,9 @@ y_pred = model(x)
 Treex Modules are implemented on top of [treeo.Tree](https://github.com/cgarciae/treeo), we recommend that you review the core concepts of Treeo but we will provide a brief overview of how to define your own modules. Some terminology:
 
 * Type annotation are type you set in a class variable after the `:` symbol.
-* Field declarations are just `dataclass.field` values assigned to a class variable.
+* Field declarations are class variables whose default value is assigned with `tx.field`. Under the hood these are `dataclass.Field` instances.
+
+For example:
 
 ```python
 class MyModule(tx.Module):
@@ -107,7 +109,7 @@ class MyModule(tx.Module):
     #                                     ^                ^
     #                                node status       field kind
 ```
-where `node=False` would mean that the field is static. The previous can be written more compactly as:
+Here if `node=False` it would mean that the field is static, else is a node. The previous can be written more compactly as:
 
 ```python
 class MyModule(tx.Module):
@@ -118,18 +120,18 @@ Treex Modules follow this recipe:
 * They inherit from `tx.Module`.
 * Parameter-like fields are declared with a `tx.TreePart` subclass kind e.g. `tx.Parameter.node()`
 * Hyper-parameters fields are usually don't contain a declaration so they are static.
-* Submodules fields are usually declared via type annotations that Treeo use to can infer the fields as nodes.
+* Submodules fields are not declared, instead the users provides type annotations that Treeo use to can infer the field as a node.
+* Treex Modules can be defined as dataclasses or regular classes without any limitations.
 
 For example, basic Modules will tend to look like this:
 
 ```python
 class Linear(tx.Module):
-    din: int # static field
+    # din: int # annotation not needed, inferred as static
     w: tp.Union[tx.Initializer, jnp.ndarray] = tx.Parameter.node() # node field
     b: jnp.ndarray = tx.Parameter.node() # node field
 
     def __init__(self, din, dout):
-        
         self.w = tx.Initializer(
             lambda key: jax.random.uniform(key, shape=(din, dout)))
         self.b = jnp.zeros(shape=(dout,))
@@ -144,8 +146,8 @@ While composite Modules will tend to look like this:
 
 ```python
 class MLP(tx.Module):
-    layers: List[tx.Linear] # mandatory annotation, infered as node
     # features: Sequence[int], annotation not needed, infered as static
+    layers: List[tx.Linear] # mandatory annotation, infered as node because Modules are treeo.Trees
 
     def __init__(self, features: Sequence[int]):
         self.layers = [
@@ -177,7 +179,7 @@ sequence
 Check them out in the (API Reference)[https://cgarciae.github.io/treex/] section of the documentation. All modules and functions from `treex.nn` are also available on the base `treex` module so e.g. you can use `tx.Conv` and `tx.BatchNorm`.
 
 ### Treex Kinds
-The role of each field is defined by its kind. While any valid kind is just type, the default annotations from Treex are organized into the following hierarchy:
+The role of each field is defined by its kind. While any valid kind is just a type, the default annotations from Treex are organized into the following hierarchy:
 
 <details>
 <summary>Graph code</summary>
@@ -194,7 +196,6 @@ graph TD;
     TreePart-->Log;
     Log-->Loss;
     Log-->Metric;
-    TreePart-->DiffHyperParam;
 ```
 
 </details>
@@ -217,11 +218,10 @@ Initialization in Treex is done by calling the `init` method on the Module with 
 There are two initialization mechanisms in Treex. The first one is setting the fields we wish to initialize to an `Initializer` object. `Initializer`s contain functions that take a `key` and return the initial value of the field:
 ```python
 class MyModule(tx.Module):
-    a: Union[tx.Initializer, jnp.ndarray = tx.Parameter.node()
-    b: int = tx.node() # we are not setting a kind for this field
+    a: Union[tx.Initializer, jnp.ndarray] = tx.Parameter.node()
+    b: int = tx.node() # we are not setting a kind for this field for no reason
 
     def __init__(self):
-        
         self.a = tx.Initializer(
             lambda key: jax.random.uniform(key, shape=(1,)))
         self.b = 2
@@ -234,26 +234,25 @@ module = module.init(42)
 module # MyModule(a=array([0.034...]), b=2)
 module.initialized # True
 ```
-The second is to override the `module_init` method, which takes a `key` and can initialize any required fields. This is useful for modules that require complex initialization logic or whose field's initialization depends on each other.
+The second is to override the `rng_init` method, which takes a unique `key` derived from the seed passed to `init` and can initialize any required fields. This is useful for modules that require complex initialization logic or whose field's initialization depends on each other.
 ```python
 class MyModule(tx.Module):
     a: Union[jnp.ndarray, tx.Initializer] = tx.Parameter.node()
     b: Union[jnp.ndarray, None] = tx.Parameter.node()
 
     def __init__(self):
-        
         self.a = tx.Initializer(
             lambda key: jax.random.uniform(key, shape=(1,)))
         self.b = None
 
-    def module_init(self, key):
+    def rng_init(self, key):
         # self.a is already initialized at this point
         self.b = 10.0 * self.a + jax.random.normal(key, shape=(1,))
 
 module = MyModule().init(42)
 module # MyModule(a=array([0.3]), b=array([3.2]))
 ```
-As shown here, field `Initializer`s are always called before `module_init`.
+As shown here, field `Initializer`s are always called before `rng_init`.
 
 ### Basic API
 Throught these examples for the functional API we will use the following defintions:
@@ -440,7 +439,7 @@ def train_step(model, x, y, optimizer):
 
 As you see, `tx.Optimizer` follows a similar API as `optax.GradientTransformation` except that:
 1. There is no `opt_state`, instead optimizer IS the state.
-2. You use `update` to update the parameters, if you want the `updates` instead you can set `return_updates=True`.
+2. `update` applies the update the parameters, if you want the `updates` instead you can set `apply_updates=False`.
 3. `update` also updates the internal state of the optimizer in-place.
 
 Notice that since `tx.Optimizer` is a Pytree it was passed through `jit` naturally without the need to specify `static_argnums`.
@@ -449,11 +448,10 @@ Notice that since `tx.Optimizer` is a Pytree it was passed through `jit` natural
 Treex takes a "direct" approach to state management, i.e., state is updated in-place by the Module whenever it needs to. For example, this module will calculate the running average of its input:
 ```python
 class Average(tx.Module):
-    count: tx.State[jnp.ndarray]
-    total: tx.State[jnp.ndarray]
+    count: jnp.ndarray = tx.State.node()
+    total: jnp.ndarray = tx.State.node()
 
     def __init__(self):
-        
         self.count = jnp.array(0)
         self.total = jnp.array(0.0)
 
@@ -466,21 +464,20 @@ class Average(tx.Module):
 Treex Modules that require random state will often keep a `rng` key internally and update it in-place when needed:
 ```python
 class Dropout(tx.Module):
-    rng: tx.Rng[tx.Initializer, jnp.ndarray]  # Initializer | ndarray
+    key: jnp.ndarray = tx.Rng.node()
 
-    def __init__(self, rate: float):
-        ...
-        self.rng = tx.Initializer(lambda key: key)
+    def __init__(self, key: jnp.ndarray):
+        self.key = key
         ...
 
     def __call__(self, x):
-        key, self.rng = jax.random.split(self.rng)
+        key, self.key = jax.random.split(self.key)
         ...
 ```
 Finally `tx.Optimizer` also performs inplace updates inside the `update` method, here is a sketch of how it works:
 ```python
 class Optimizer(tx.Module):
-    opt_state: tx.OptState[Any]
+    opt_state: Any = tx.OptState.node()
     optimizer: optax.GradientTransformation
 
     def update(self, grads, params):
@@ -605,7 +602,6 @@ class Linear(tx.Module):
     b: tx.Parameter[jnp.ndarray]
 
     def __init__(self, din, dout):
-        
         self.w = tx.Initializer(lambda key: jax.random.uniform(key, shape=(din, dout)))
         self.b = jnp.zeros(shape=(dout,))
 

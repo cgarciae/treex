@@ -110,7 +110,7 @@ class Module(to.Tree, metaclass=ModuleMeta):
         1. The input `key` is split and iteratively updated before passing a derived value to any
             process that requires initialization.
         2. `Initializer`s are called and applied to the module first.
-        3. `Module.module_init` methods are called last.
+        3. `Module.rng_init` methods are called last.
 
         Arguments:
             key: The seed to use for initialization.
@@ -138,7 +138,7 @@ class Module(to.Tree, metaclass=ModuleMeta):
 
         def call_module_init(module: Module):
             if isinstance(module, Module) and not module._initialized:
-                module.module_init(next_key())
+                module.rng_init(next_key())
                 module._initialized = True
 
         if inplace:
@@ -204,7 +204,7 @@ class Module(to.Tree, metaclass=ModuleMeta):
         """
         return self.freeze(False, inplace=inplace)
 
-    def module_init(self, key: jnp.ndarray) -> None:
+    def rng_init(self, key: jnp.ndarray) -> None:
         pass
 
     def map(self: M, f: tp.Callable, *filters: Filter, inplace: bool = False) -> M:

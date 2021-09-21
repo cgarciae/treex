@@ -126,7 +126,7 @@ class BatchNorm(Module):
             axis_index_groups=self.axis_index_groups,
         )
 
-    def module_init(self, key: jnp.ndarray):
+    def rng_init(self, key: jnp.ndarray):
 
         batch_size = 10  # random
 

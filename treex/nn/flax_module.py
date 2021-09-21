@@ -55,7 +55,7 @@ class FlaxModule(Module):
         if variables is not None:
             self._update_variables(variables)
 
-    def module_init(self, key: jnp.ndarray) -> None:
+    def rng_init(self, key: jnp.ndarray) -> None:
         if self.variables is None:
             assert self.sample_inputs is not None
             rngs = self._get_rngs(self.rngs + self.init_rngs)

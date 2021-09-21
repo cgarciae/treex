@@ -253,7 +253,7 @@ class Module(types.FieldMixin, metaclass=ModuleMeta):
 
         return module
 
-    def module_init(self, key: jnp.ndarray) -> None:
+    def rng_init(self, key: jnp.ndarray) -> None:
         pass
 
     def copy(self: T) -> T:

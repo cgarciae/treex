@@ -89,7 +89,7 @@ class Linear(Module):
             bias_init=self.bias_init,
         )
 
-    def module_init(self, key: jnp.ndarray):
+    def rng_init(self, key: jnp.ndarray):
         batch_size = 10  # random
         x = jax.random.uniform(key, (batch_size, self.features_in))
 

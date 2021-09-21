@@ -2,6 +2,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import optax
+from optax._src.update import apply_updates
 
 import treex as tx
 
@@ -59,7 +60,7 @@ class TestOptreex:
 
         optax_updates: tx.Linear
         optax_updates, opt_state = optax_optim.update(grads, opt_state, linear)
-        treex_updates = optimizer.update(grads, linear, return_updates=True)
+        treex_updates = optimizer.update(grads, linear, apply_updates=False)
 
         assert all(
             np.allclose(a, b)

@@ -179,7 +179,7 @@ module = module.init(42)
 module # MyModule(a=array([0.034...]), b=2)
 module.initialized # True
 ```
-The second is to override the `module_init` method, which takes a `key` and can initialize any required fields. This is useful for modules that require complex initialization logic or whose field's initialization depends on each other.
+The second is to override the `rng_init` method, which takes a `key` and can initialize any required fields. This is useful for modules that require complex initialization logic or whose field's initialization depends on each other.
 ```python
 class MyModule(tx.Module):
     a: tx.Parameter
@@ -189,14 +189,14 @@ class MyModule(tx.Module):
         self.a = None
         self.b = None
 
-    def module_init(self, key):
+    def rng_init(self, key):
         # some complex initialization
         ...
 
 module = MyModule().init(42)
 module # MyModule(a=array([0.927...]), b=array([0.749...]))
 ```
-We can also mix and match the two strategies, meaning that some parameters can be initialized via `Initializer`s while others via `module_init`. The rule is that `Initializer`s are always going the be called first.
+We can also mix and match the two strategies, meaning that some parameters can be initialized via `Initializer`s while others via `rng_init`. The rule is that `Initializer`s are always going the be called first.
 
 
 ### Filter and Update API

@@ -131,7 +131,7 @@ class Conv(Module):
             bias_init=self.bias_init,
         )
 
-    def module_init(self, key: jnp.ndarray):
+    def rng_init(self, key: jnp.ndarray):
         if isinstance(self.module.kernel_size, int):
             ndim = 1
             mindim = self.module.kernel_size
