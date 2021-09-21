@@ -101,8 +101,8 @@ Treex Modules have the following characteristics:
 
 ```python
 class Linear(tx.Module):
-    w: tx.Parameter[tx.Initializer, jnp.ndarray]
-    b: tx.Parameter[jnp.ndarray]
+    w: tp.Union[tx.Initializer, jnp.ndarray] = tx.Parameter.node()
+    b: jnp.ndarray = tx.Parameter.node()
 
     def __init__(self, din, dout):
         super().__init__()
