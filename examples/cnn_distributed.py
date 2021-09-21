@@ -34,10 +34,12 @@ def loss_fn(
 
     acc_batch = y_pred.argmax(axis=1) == y
 
+    acc_batch = jax.lax.all_gather(acc_batch, axis_name="device")
+
     return loss, (model, acc_batch)
 
 
-@partial(jax.pmap, in_axes=(0, 0, 0, 0), out_axes=(0, 0, 0, 0), axis_name="device")
+@partial(jax.pmap, in_axes=(0, 0, 0, 0), out_axes=(0, 0, 0, None), axis_name="device")
 def train_step(
     model: Model, optimizer: tx.Optimizer, x: jnp.ndarray, y: jnp.ndarray
 ) -> tp.Tuple[jnp.ndarray, Model, tx.Optimizer, jnp.ndarray]:
@@ -50,7 +52,7 @@ def train_step(
     # sync gradients across devices
     grads = jax.lax.pmean(grads, axis_name="device")
 
-    params = optimizer.apply_updates(grads, params)
+    params = optimizer.update(grads, params)
     model = model.update(params)
 
     # sync batch statistics
@@ -59,7 +61,7 @@ def train_step(
     return loss, model, optimizer, acc_batch
 
 
-@partial(jax.pmap, in_axes=(0, 0, 0), out_axes=(0, 0), axis_name="device")
+@partial(jax.pmap, in_axes=(0, 0, 0), out_axes=(0, None), axis_name="device")
 def test_step(
     model: Model, x: jnp.ndarray, y: jnp.ndarray
 ) -> tp.Tuple[jnp.ndarray, jnp.ndarray]:
@@ -244,5 +246,4 @@ def main(
 
 
 if __name__ == "__main__":
-
     typer.run(main)

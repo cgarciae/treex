@@ -120,7 +120,7 @@ y = linear(x)
 Valid type annotations include:
 * Subtypes of `tx.TreePart` e.g. `tx.Parameter`, `tx.BatchStat`, etc.
 * Subtypes of `tx.Module` e.g. `tx.Linear`, custom Module types, etc.
-* Generic subtypes from the `typing` module containing `ProtoModule` subtypes e.g. `List[tx.Linear]` or `Dict[str, tx.Conv]`.
+* Generic subtypes from the `typing` module containing `Module` subtypes e.g. `List[tx.Linear]` or `Dict[str, tx.Conv]`.
 * Generic types cannot contain `tx.TreePart` subtypes e.g. this is not allowed `Tuple[int, tx.Parameter[float]]`.
 
 Fields with annotations that do not comform to the above rules will be counted as static or yield an error when invalid.
@@ -145,7 +145,7 @@ mlp = MLP([3, 5, 2]).init(42)
 ```
 
 #### Auto-annotations
-Adding all proper type annotations for complex modules can be tedious if you have many submodules, for this reason, Treex will automatically detect all fields whose values are `ProtoModule` instances and add the the type annotation for you.
+Adding all proper type annotations for complex modules can be tedious if you have many submodules, for this reason, Treex will automatically detect all fields whose values are `Module` instances and add the the type annotation for you.
 
 ```python
 class CNN(tx.Module):
@@ -378,7 +378,7 @@ def loss_fn(params, model, x, y):
     ...
 
 grads = loss_fn(params, model, x, y)
-params = optimizer.apply_updates(grads, params)
+params = optimizer.update(grads, params)
 ```
 Note that inside `loss_fn` the `params` are immediately merged back into `model` via `update` so they are used in the actual computation.
 
@@ -432,15 +432,15 @@ def main():
 jax.jit # no static_argnums needed
 def train_step(model, x, y, optimizer):
     ...
-    params = optimizer.apply_updates(grads, params)
+    params = optimizer.update(grads, params)
     ...
     return model, loss, optimizer
 ```
 
 As you see, `tx.Optimizer` follows a similar API as `optax.GradientTransformation` except that:
 1. There is no `opt_state`, instead optimizer IS the state.
-2. You use `apply_updates` to update the parameters, if you want the `updates` instead you can set `return_updates=True`.
-3. `apply_updates` also updates the internal state of the optimizer in-place.
+2. You use `update` to update the parameters, if you want the `updates` instead you can set `return_updates=True`.
+3. `update` also updates the internal state of the optimizer in-place.
 
 Notice that since `tx.Optimizer` is a Pytree it was passed through `jit` naturally without the need to specify `static_argnums`.
 
@@ -476,13 +476,13 @@ class Dropout(tx.Module):
         key, self.rng = jax.random.split(self.rng)
         ...
 ```
-Finally `tx.Optimizer` also performs inplace updates inside the `apply_updates` method, here is a sketch of how it works:
+Finally `tx.Optimizer` also performs inplace updates inside the `update` method, here is a sketch of how it works:
 ```python
-class Optimizer(tx.ProtoModule):
+class Optimizer(tx.Module):
     opt_state: tx.OptState[Any]
     optimizer: optax.GradientTransformation
 
-    def apply_updates(self, grads, params):
+    def update(self, grads, params):
         ...
         updates, self.opt_state = self.optimizer.update(
             grads, self.opt_state, params
@@ -774,7 +774,7 @@ def train_step(model, x, y, optimizer):
     (loss, model), grads = loss_fn(params, model, x, y)
 
     # here model == params
-    model = optimizer.apply_updates(grads, model)
+    model = optimizer.update(grads, model)
 
     return loss, model, optimizer
 

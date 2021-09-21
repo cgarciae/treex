@@ -125,7 +125,7 @@ def train_step(model: NoisyLinear, optimizer: tx.Optimizer, x, y):
     (loss, model), grads = loss_fn(params, model, x, y)
 
     # apply optax update
-    new_params = optimizer.apply_updates(grads, params)
+    new_params = optimizer.update(grads, params)
 
     # update new_params
     model = model.update(new_params)

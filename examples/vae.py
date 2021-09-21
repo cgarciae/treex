@@ -28,7 +28,7 @@ class Encoder(tx.Module):
     linear_mean: tx.Linear
     linear_std: tx.Linear
     next_key: tx.KeySeq
-    kl_loss: tx.Loss[jnp.ndarray]
+    kl_loss: jnp.ndarray = tx.Loss.node()
 
     def __init__(
         self,
@@ -133,7 +133,7 @@ def train_step(
     params = model.filter(tx.Parameter)
     (loss, model), grads = loss_fn(params, model, x)
 
-    params = optimizer.apply_updates(grads, params)
+    params = optimizer.update(grads, params)
     model = model.update(params)
 
     return loss, model, optimizer

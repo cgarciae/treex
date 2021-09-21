@@ -45,7 +45,7 @@ def train_step(
         params, model, x, y
     )
 
-    params = optimizer.apply_updates(grads, params)
+    params = optimizer.update(grads, params)
     model = model.update(params)
 
     return loss, model, optimizer, acc_batch

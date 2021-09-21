@@ -7,16 +7,16 @@ import jax
 import jax.numpy as jnp
 import optax
 import treeo as to
+from rich.text import Text
 
-from treex import types
-from treex.treex import ProtoModule
+from treex import types, utils
 
 O = tp.TypeVar("O", bound="Optimizer")
 A = tp.TypeVar("A", bound="tp.Any")
 
 
 @dataclass
-class Optimizer(ProtoModule):
+class Optimizer(to.Tree):
     """Wraps an optax optimizer and turn it into a Pytree while maintaining a similar API.
 
     The main difference with optax is that tx.Optimizer contains its own state, thus, there is
@@ -44,7 +44,7 @@ class Optimizer(ProtoModule):
     * `init` return a new optimizer instance, there is no `opt_state`.
     * `update` doesn't get `opt_state` as an argument, instead it performs updates
         to its internal state inplace.
-    * `update` applies the updates to the params and returns them by default, use `apply_updates=False` to
+    * `update` applies the updates to the params and returns them by default, use `update=False` to
         to get the param updates instead.
 
     Arguments:
@@ -80,10 +80,10 @@ class Optimizer(ProtoModule):
         return module
 
     # NOTE: params are flattened because:
-    # - The flat list is not a ProtoModule, thus all of its internal parameters in the list are marked as
+    # - The flat list is not a Module, thus all of its internal parameters in the list are marked as
     # OptState by a single annotation (no need to rewrite the module's annotations)
     # - It ignores the static part of TreeObjects which if changed Optax yields an error.
-    def apply_updates(
+    def update(
         self, grads: A, params: tp.Optional[A] = None, return_updates: bool = False
     ) -> A:
         """
@@ -91,7 +91,7 @@ class Optimizer(ProtoModule):
 
         Arguments:
             grads: the gradients to perform the update.
-            params: the parameters to update. If `None` then `apply_updates` has to be `False`.
+            params: the parameters to update. If `None` then `update` has to be `False`.
             return_updates: if `True` then the updates are returned instead of being applied.
 
         Returns:
@@ -130,6 +130,10 @@ class Optimizer(ProtoModule):
             output = optax.apply_updates(opt_params, param_updates)
 
         return jax.tree_unflatten(treedef, output)
+
+    def __repr__(self) -> str:
+        rep = utils._get_repr(self, level=0, array_type=None, inline=False)
+        return utils._get_rich_repr(Text.from_markup(rep))
 
     # THE FOLOWING METHODS ARE AUTOMATICALLY GENERATED
     # >>> DO NOT MODIFY <<<

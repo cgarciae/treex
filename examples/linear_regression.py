@@ -46,7 +46,7 @@ def train_step(model, x, y, optimizer):
     (loss, model), grads = loss_fn(params, model, x, y)
 
     # here model == params
-    model = optimizer.apply_updates(grads, model)
+    model = optimizer.update(grads, model)
 
     return loss, model, optimizer
 

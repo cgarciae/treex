@@ -41,7 +41,7 @@ def train_step(model, x, y, optimizer):
     params = model.filter(tx.Parameter)
     (loss, model), grads = loss_fn(params, model, x, y)
 
-    new_params = optimizer.apply_updates(grads, params)
+    new_params = optimizer.update(grads, params)
     model = model.update(new_params)
 
     return loss, model, optimizer

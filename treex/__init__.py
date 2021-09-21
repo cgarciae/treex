@@ -7,8 +7,7 @@ from treex.key_seq import *
 from treex.module import *
 from treex.nn import *
 from treex.optimizer import *
-from treex.treex import *
 from treex.types import *
 from treex.utils import *
 
-from . import key_seq, module, nn, optimizer, treex, types, utils
+from . import key_seq, module, nn, optimizer, types, utils

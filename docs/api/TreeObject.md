@@ -1,6 +1,6 @@
 
-# treex.ProtoModule
+# treex.Module
 
-::: treex.module.ProtoModule
+::: treex.module.Module
     selection:
         inherited_members: true

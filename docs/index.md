@@ -314,7 +314,7 @@ class Dropout(tx.Module):
 ```
 Finally `tx.Optimizer` also performs inplace updates inside the `update` method, here is a sketch of how it works:
 ```python
-class Optimizer(tx.ProtoModule):
+class Optimizer(tx.Module):
     opt_state: tx.OptState
     optimizer: optax.GradientTransformation
 

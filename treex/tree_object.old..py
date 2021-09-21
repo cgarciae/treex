@@ -23,7 +23,7 @@ from treex import types, utils
 
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
-T = tp.TypeVar("T", bound="ProtoModule")
+T = tp.TypeVar("T", bound="Module")
 Filter = tp.Union[
     tp.Type["types.TreePart"],
     tp.Callable[["FieldInfo"], bool],
@@ -42,9 +42,7 @@ class FlattenMode(enum.Enum):
 @dataclass
 class _Context(threading.local):
     add_field_info: bool = False
-    call_info: tp.Optional[
-        tp.Dict["ProtoModule", tp.Tuple[types.Inputs, tp.Any]]
-    ] = None
+    call_info: tp.Optional[tp.Dict["Module", tp.Tuple[types.Inputs, tp.Any]]] = None
     flatten_mode: FlattenMode = FlattenMode.normal
 
     def __enter__(self):
@@ -75,7 +73,7 @@ class FieldInfo:
         name: tp.Optional[str],
         value: tp.Any,
         annotation: tp.Type[tp.Any],
-        module: tp.Optional["ProtoModule"],
+        module: tp.Optional["Module"],
     ):
         self.name = name
         self.value = value
@@ -84,13 +82,13 @@ class FieldInfo:
 
 
 # -----------------------------------------
-# ProtoModule
+# Module
 # -----------------------------------------
 
 
 class TreeObjectMeta(ABCMeta):
-    def __call__(cls, *args, **kwargs) -> "ProtoModule":
-        obj: ProtoModule = cls.__new__(cls)
+    def __call__(cls, *args, **kwargs) -> "Module":
+        obj: Module = cls.__new__(cls)
 
         obj._field_metadata = obj._field_metadata.copy()
 
@@ -103,7 +101,7 @@ class TreeObjectMeta(ABCMeta):
 
         # auto-annotations
         for field, value in vars(obj).items():
-            if field not in obj._field_metadata and isinstance(value, ProtoModule):
+            if field not in obj._field_metadata and isinstance(value, Module):
                 obj._field_metadata[field] = types.FieldMetadata(
                     node=True,
                     kind=type(value),
@@ -118,7 +116,7 @@ class TreeObjectMeta(ABCMeta):
 
 # override __call__
 def _get_call(orig_call):
-    def _meta_call(self: "ProtoModule", *args, **kwargs):
+    def _meta_call(self: "Module", *args, **kwargs):
         outputs = orig_call(self, *args, **kwargs)
 
         if _CONTEXT.call_info is not None:
@@ -130,7 +128,7 @@ def _get_call(orig_call):
     return _meta_call
 
 
-class ProtoModule(types.FieldMixin, metaclass=TreeObjectMeta):
+class Module(types.FieldMixin, metaclass=TreeObjectMeta):
     _init_called: bool = False
     _field_metadata: tp.Dict[str, types.FieldMetadata]
 
@@ -181,8 +179,7 @@ class ProtoModule(types.FieldMixin, metaclass=TreeObjectMeta):
 
         for field, value in annotations.items():
             if field not in cls._field_metadata and any(
-                issubclass(t, (types.TreePart, ProtoModule))
-                for t in utils._all_types(value)
+                issubclass(t, (types.TreePart, Module)) for t in utils._all_types(value)
             ):
                 cls._field_metadata[field] = types.FieldMetadata(
                     node=True,
@@ -206,7 +203,7 @@ class ProtoModule(types.FieldMixin, metaclass=TreeObjectMeta):
         else:
             for field, value in fields.items():
                 # auto-annotations
-                if field not in self._field_metadata and isinstance(value, ProtoModule):
+                if field not in self._field_metadata and isinstance(value, Module):
                     self._field_metadata[field] = types.FieldMetadata(
                         node=True,
                         kind=type(value),
@@ -314,7 +311,7 @@ class ProtoModule(types.FieldMixin, metaclass=TreeObjectMeta):
 
         Example:
         ```python
-        class MyModule(tx.ProtoModule):
+        class MyModule(tx.Module):
             a: tx.Parameter = 1
             b: tx.BatchStat = 2
 
@@ -420,7 +417,7 @@ class ProtoModule(types.FieldMixin, metaclass=TreeObjectMeta):
 
         Arguments:
             depth: The maximum depth of the representation in terms of nested Modules, -1 means no limit.
-            signature: Whether to show the signature of the ProtoModule.
+            signature: Whether to show the signature of the Module.
             param_types: Whether to show the types of the parameters.
         Returns:
             A string containing the tabular representation.
@@ -559,7 +556,7 @@ class ProtoModule(types.FieldMixin, metaclass=TreeObjectMeta):
 
     def parameters(self: T, *filters: Filter) -> T:
         """
-        Returns a copy of the ProtoModule with only tx.Parameter TreeParts, alias for `filter(tx.Parameter)`.
+        Returns a copy of the Module with only tx.Parameter TreeParts, alias for `filter(tx.Parameter)`.
 
         Arguments:
             filters: additional filters passed to `filter`.
@@ -568,7 +565,7 @@ class ProtoModule(types.FieldMixin, metaclass=TreeObjectMeta):
 
     def batch_stats(self: T, *filters: Filter) -> T:
         """
-        Returns a copy of the ProtoModule with only tx.BatchStat TreeParts, alias for `filter(tx.BatchStat)`.
+        Returns a copy of the Module with only tx.BatchStat TreeParts, alias for `filter(tx.BatchStat)`.
 
         Arguments:
             filters: additional filters passed to `filter`.
@@ -577,7 +574,7 @@ class ProtoModule(types.FieldMixin, metaclass=TreeObjectMeta):
 
     def rngs(self: T, *filters: Filter) -> T:
         """
-        Returns a copy of the ProtoModule with only tx.Rng TreeParts, alias for `filter(tx.Rng)`.
+        Returns a copy of the Module with only tx.Rng TreeParts, alias for `filter(tx.Rng)`.
 
         Arguments:
             filters: additional filters passed to `filter`.
@@ -586,7 +583,7 @@ class ProtoModule(types.FieldMixin, metaclass=TreeObjectMeta):
 
     def model_states(self: T, *filters: Filter) -> T:
         """
-        Returns a copy of the ProtoModule with only tx.ModelState TreeParts, alias for `filter(tx.ModelState)`.
+        Returns a copy of the Module with only tx.ModelState TreeParts, alias for `filter(tx.ModelState)`.
 
         Arguments:
             filters: additional filters passed to `filter`.
@@ -595,7 +592,7 @@ class ProtoModule(types.FieldMixin, metaclass=TreeObjectMeta):
 
     def states(self: T, *filters: Filter) -> T:
         """
-        Returns a copy of the ProtoModule with only tx.State TreeParts, alias for `filter(tx.State)`.
+        Returns a copy of the Module with only tx.State TreeParts, alias for `filter(tx.State)`.
 
         Arguments:
             filters: additional filters passed to `filter`.
@@ -604,7 +601,7 @@ class ProtoModule(types.FieldMixin, metaclass=TreeObjectMeta):
 
     def metrics(self: T, *filters: Filter) -> T:
         """
-        Returns a copy of the ProtoModule with only tx.Metric TreeParts, alias for `filter(tx.Metric)`.
+        Returns a copy of the Module with only tx.Metric TreeParts, alias for `filter(tx.Metric)`.
 
         Arguments:
             filters: additional filters passed to `filter`.
@@ -613,7 +610,7 @@ class ProtoModule(types.FieldMixin, metaclass=TreeObjectMeta):
 
     def losses(self: T, *filters: Filter) -> T:
         """
-        Returns a copy of the ProtoModule with only tx.Loss TreeParts, alias for `filter(tx.Loss)`.
+        Returns a copy of the Module with only tx.Loss TreeParts, alias for `filter(tx.Loss)`.
 
         Arguments:
             filters: additional filters passed to `filter`.
@@ -622,7 +619,7 @@ class ProtoModule(types.FieldMixin, metaclass=TreeObjectMeta):
 
     def logs(self: T, *filters: Filter) -> T:
         """
-        Returns a copy of the ProtoModule with only tx.Log TreeParts, alias for `filter(tx.Log)`.
+        Returns a copy of the Module with only tx.Log TreeParts, alias for `filter(tx.Log)`.
 
         Arguments:
             filters: additional filters passed to `filter`.
@@ -663,16 +660,16 @@ def object_apply(
     objs = (obj,) + rest
 
     def nested_fn(obj, *rest):
-        if isinstance(obj, ProtoModule):
+        if isinstance(obj, Module):
             object_apply(f, obj, *rest, inplace=True)
 
     jax.tree_map(
         nested_fn,
         *objs,
-        is_leaf=lambda x: isinstance(x, ProtoModule) and not x in objs,
+        is_leaf=lambda x: isinstance(x, Module) and not x in objs,
     )
 
-    if isinstance(obj, ProtoModule):
+    if isinstance(obj, Module):
         f(obj, *rest)
 
     return obj
@@ -680,7 +677,7 @@ def object_apply(
 
 def map(f: tp.Callable, obj: A, *filters: Filter) -> A:
     """
-    Functional version of `ProtoModule.map` but it can be applied to any pytree, useful if
+    Functional version of `Module.map` but it can be applied to any pytree, useful if
     you have TreeObjects that are embedded in a pytree. The `filters` are applied according
     to `tx.filter`.
 
@@ -719,10 +716,10 @@ def map(f: tp.Callable, obj: A, *filters: Filter) -> A:
 
 def filter(obj: A, *filters: Filter) -> A:
     """
-    Functional version of `ProtoModule.filter` but can filter arbitrary pytrees. This is useful
+    Functional version of `Module.filter` but can filter arbitrary pytrees. This is useful
     if you have TreeObjects that are embedded in a larger pytree e.g. a list of TreeObjects.
 
-    Leaves that are not part of a ProtoModule will get assigned the following `FieldInfo`:
+    Leaves that are not part of a Module will get assigned the following `FieldInfo`:
 
     ```python
      FieldInfo(
@@ -732,7 +729,7 @@ def filter(obj: A, *filters: Filter) -> A:
         module=None,
     )
     ```
-    where `leaf_value` is the value of the leaf. This means that non-ProtoModule leaves will be
+    where `leaf_value` is the value of the leaf. This means that non-Module leaves will be
     filtered with a query like:
 
     ```python
@@ -742,7 +739,7 @@ def filter(obj: A, *filters: Filter) -> A:
     assert isinstance(filtered["a"], tx.Nothing)
     ```
 
-    However, you query non-ProtoModule based on their value:
+    However, you query non-Module based on their value:
 
     ```python
     tree = dict(a=1, b=tx.Linear(3, 4))
@@ -861,7 +858,7 @@ def _get_repr(
 ) -> str:
     indent_level = space * level
 
-    if isinstance(obj, ProtoModule):
+    if isinstance(obj, Module):
 
         (tree,), _ = obj.tree_flatten()
 
@@ -870,14 +867,14 @@ def _get_repr(
 
         for field, value in tree.items():
             annotation: tp.Union[
-                tp.Type[ProtoModule], tp.Type[types.TreePart], None
+                tp.Type[Module], tp.Type[types.TreePart], None
             ] = _first_issubclass(
-                obj.field_metadata[field].kind, (types.TreePart, ProtoModule)
+                obj.field_metadata[field].kind, (types.TreePart, Module)
             )
 
             if annotation is None:
                 continue
-            if _generic_issubclass(annotation, ProtoModule):
+            if _generic_issubclass(annotation, Module):
                 submodules[field] = value
             elif _generic_issubclass(annotation, types.TreePart):
                 params[field] = value
@@ -954,7 +951,7 @@ def _get_tabulate_rows(
     include_signature,
     include_param_type,
 ) -> tp.Iterable[tp.List[tp.Any]]:
-    if isinstance(obj, ProtoModule):
+    if isinstance(obj, Module):
         (tree,), not_tree = obj.tree_flatten()
 
         params = {}
@@ -962,14 +959,14 @@ def _get_tabulate_rows(
 
         for field, value in tree.items():
             annotation: tp.Union[
-                tp.Type[ProtoModule], tp.Type[types.TreePart], None
+                tp.Type[Module], tp.Type[types.TreePart], None
             ] = _first_issubclass(
-                obj.field_metadata[field].kind, (types.TreePart, ProtoModule)
+                obj.field_metadata[field].kind, (types.TreePart, Module)
             )
 
             if annotation is None:
                 continue
-            if issubclass(annotation, ProtoModule):
+            if issubclass(annotation, Module):
                 submodules[field] = value
             elif issubclass(annotation, types.TreePart):
                 params[field] = value
@@ -1088,7 +1085,7 @@ def _simplify(obj):
         return obj
 
 
-def _format_module_signature(obj: ProtoModule) -> tp.Dict[str, str]:
+def _format_module_signature(obj: Module) -> tp.Dict[str, str]:
     signature = {}
     simple_types = {int, str, float, bool}
     cls = obj.__class__
