@@ -21,7 +21,7 @@ nav:
     Rng: api/Rng.md
     Sequence: api/Sequence.md
     State: api/State.md
-    TreeObject: api/TreeObject.md
+    ProtoModule: api/ProtoModule.md
     TreePart: api/TreePart.md
     sequence: api/sequence.md
 extra:

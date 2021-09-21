@@ -4,10 +4,11 @@ import flax
 import jax
 import jax.numpy as jnp
 import numpy as np
+import treeo as to
 from flax.core.frozen_dict import FrozenDict
 from flax.core.scope import FrozenVariableDict
 
-from treex import tree_object, types
+from treex import types
 from treex.key_seq import KeySeq
 from treex.module import Module
 
@@ -15,7 +16,7 @@ from treex.module import Module
 class FlaxModule(Module):
 
     # static
-    module: types.Hashable[flax.linen.Module]
+    module: to.Hashable[flax.linen.Module]
     sample_inputs: tp.Optional[types.Inputs]
     mutable: tp.Tuple[str, ...]
     rngs: tp.Tuple[str, ...]
@@ -38,7 +39,7 @@ class FlaxModule(Module):
         variables: tp.Optional[FrozenDict] = None,
     ) -> None:
         super().__init__()
-        self.module = types.Hashable(module)
+        self.module = to.Hashable(module)
         self.mutable = tuple(mutable)
         self.rngs = tuple(rngs)
         self.init_rngs = tuple(init_rngs)

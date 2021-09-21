@@ -5,7 +5,7 @@ import jax.numpy as jnp
 import numpy as np
 from flax.linen import linear as flax_module
 
-from treex import tree_object, types
+from treex import types
 from treex.module import Module
 
 

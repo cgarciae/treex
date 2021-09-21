@@ -1,18 +1,22 @@
 import functools
 import inspect
 import typing as tp
+from dataclasses import dataclass
 
 import jax
 import jax.numpy as jnp
 import optax
+import treeo as to
 
-from treex import tree_object, types
+from treex import types
+from treex.treex import ProtoModule
 
 O = tp.TypeVar("O", bound="Optimizer")
 A = tp.TypeVar("A", bound="tp.Any")
 
 
-class Optimizer(tree_object.TreeObject):
+@dataclass
+class Optimizer(ProtoModule):
     """Wraps an optax optimizer and turn it into a Pytree while maintaining a similar API.
 
     The main difference with optax is that tx.Optimizer contains its own state, thus, there is
@@ -42,27 +46,21 @@ class Optimizer(tree_object.TreeObject):
         to its internal state inplace.
     * `update` applies the updates to the params and returns them by default, use `apply_updates=False` to
         to get the param updates instead.
+
+    Arguments:
+        optimizer: An optax optimizer.
     """
 
-    opt_state: tp.Optional[tp.Any] = types.OptState.node()
     optimizer: optax.GradientTransformation
-    _n_params: tp.Optional[int]
+    opt_state: tp.Optional[tp.Any] = types.OptState.node(None, init=False)
+    _n_params: tp.Optional[int] = to.static(None, init=False)
 
-    _initialized: bool = False
+    # use to.field to copy class vars to instance
+    _initialized: bool = to.static(False)
 
     @property
     def initialized(self) -> bool:
         return self._initialized
-
-    def __init__(self, optimizer: optax.GradientTransformation):
-        """
-        Arguments:
-            optimizer: An optax optimizer.
-        """
-        super().__init__()
-        self.opt_state = None
-        self.optimizer = optimizer
-        self._n_params = None
 
     def init(self: O, params: tp.Any) -> O:
         """
@@ -82,7 +80,7 @@ class Optimizer(tree_object.TreeObject):
         return module
 
     # NOTE: params are flattened because:
-    # - The flat list is not a TreeObject, thus all of its internal parameters in the list are marked as
+    # - The flat list is not a ProtoModule, thus all of its internal parameters in the list are marked as
     # OptState by a single annotation (no need to rewrite the module's annotations)
     # - It ignores the static part of TreeObjects which if changed Optax yields an error.
     def apply_updates(

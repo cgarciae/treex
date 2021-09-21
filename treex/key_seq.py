@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from treex import tree_object, types
+from treex import treex, types
 from treex.module import Module
 
 

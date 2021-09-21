@@ -130,7 +130,7 @@ def main(
     X_train = X_train[..., None]
     X_test = X_test[..., None]
 
-    model.tabulate(signature=True)
+    print(model.tabulate(signature=True))
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)

@@ -1,23 +1,15 @@
 import dataclasses
 import typing as tp
-from abc import ABCMeta
 from dataclasses import dataclass
 
 import jax
 import jax.numpy as jnp
 import jax.tree_util
 import numpy as np
-
-from treex import utils
+import treeo as to
 
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
-
-
-@tp.runtime_checkable
-class ArrayLike(tp.Protocol):
-    shape: tp.Tuple[int, ...]
-    dtype: np.dtype
 
 
 # -----------------------------------------
@@ -25,73 +17,7 @@ class ArrayLike(tp.Protocol):
 # -----------------------------------------
 
 
-class FieldMixin:
-    @classmethod
-    def field(
-        cls,
-        default=dataclasses.MISSING,
-        *,
-        node: bool,
-        default_factory=dataclasses.MISSING,
-        init: bool = True,
-        repr: bool = True,
-        hash: tp.Optional[bool] = None,
-        compare: bool = True,
-    ) -> tp.Any:
-        return utils.field(
-            default=default,
-            node=node,
-            kind=cls,
-            default_factory=default_factory,
-            init=init,
-            repr=repr,
-            hash=hash,
-            compare=compare,
-        )
-
-    @classmethod
-    def node(
-        cls,
-        default=dataclasses.MISSING,
-        *,
-        default_factory=dataclasses.MISSING,
-        init: bool = True,
-        repr: bool = True,
-        hash: tp.Optional[bool] = None,
-        compare: bool = True,
-    ) -> tp.Any:
-        return utils.node(
-            default=default,
-            kind=cls,
-            default_factory=default_factory,
-            init=init,
-            repr=repr,
-            hash=hash,
-            compare=compare,
-        )
-
-    @classmethod
-    def static(
-        cls,
-        default=dataclasses.MISSING,
-        default_factory=dataclasses.MISSING,
-        init: bool = True,
-        repr: bool = True,
-        hash: tp.Optional[bool] = None,
-        compare: bool = True,
-    ) -> tp.Any:
-        return cls.field(
-            default=default,
-            node=False,
-            default_factory=default_factory,
-            init=init,
-            repr=repr,
-            hash=hash,
-            compare=compare,
-        )
-
-
-class TreePart(FieldMixin):
+class TreePart(to.KindMixin):
     pass
 
 
@@ -135,60 +61,19 @@ class Metric(Log):
     pass
 
 
-class TrivialPytree:
-    def tree_flatten(self):
-        tree = vars(self)
-        children = (tree,)
-        return (children, ())
-
-    @classmethod
-    def tree_unflatten(cls, aux, children):
-        (tree,) = children
-
-        obj = cls.__new__(cls)
-        obj.__dict__.update(tree)
-
-        return obj
-
-    def __init_subclass__(cls):
-        jax.tree_util.register_pytree_node_class(cls)
-
-
 @dataclass
-class FieldMetadata(TrivialPytree):
-    node: bool
-    kind: type
+class Named(to.Tree, tp.Generic[A]):
+    value: A = to.node()
+    name: str = to.static(opaque=True)
 
 
-class Named(tp.Generic[A]):
-    def __init__(self, name: str, value: A):
-        super().__init__()
-        self.name = name
-        self.value = value
-
-    def tree_flatten(self):
-        tree = (self.value,)
-        static = (self.name,)
-
-        return tree, static
-
-    @classmethod
-    def tree_unflatten(cls, static, tree):
-        module = cls.__new__(cls)
-        module.name = static[0]
-        module.value = tree[0]
-        return module
-
-    def __init_subclass__(cls):
-        jax.tree_util.register_pytree_node_class(cls)
-
-
-@jax.tree_util.register_pytree_node_class
-class Initializer:
+class Initializer(to.Tree):
     """Initialize a field from a function that expects a single argument with a PRNGKey.
 
     Initializers are called by `Module.init` and replace the value of the field they are assigned to.
     """
+
+    f: tp.Callable[[jnp.ndarray], tp.Any]
 
     def __init__(self, f: tp.Callable[[jnp.ndarray], tp.Any]):
         """
@@ -203,49 +88,6 @@ class Initializer:
     def __repr__(self) -> str:
         return "Initializer"
 
-    # ------------------------
-    # Pytree implementation
-    # ------------------------
-    def tree_flatten(self):
-        tree = ()
-        static = (self.f,)
-
-        return tree, static
-
-    @classmethod
-    def tree_unflatten(cls, static, tree):
-        obj = cls.__new__(cls)
-        obj.f = static[0]
-        return obj
-
-
-@jax.tree_util.register_pytree_node_class
-class Nothing:
-    def tree_flatten(self):
-        return (), None
-
-    @classmethod
-    def tree_unflatten(cls, _aux_data, children):
-        return cls()
-
-    def __repr__(self) -> str:
-        return "Nothing"
-
-    def __eq__(self, o: object) -> bool:
-        return isinstance(o, Nothing)
-
-
-class Hashable(tp.Generic[A]):
-    """A hashable immutable wrapper around non-hashable values"""
-
-    value: A
-
-    def __init__(self, value: A):
-        self.__dict__["value"] = value
-
-    def __setattr__(self, name: str, value: tp.Any) -> None:
-        raise AttributeError(f"Hashable is immutable")
-
 
 class Inputs:
     args: tp.Tuple[tp.Any, ...]
@@ -254,7 +96,3 @@ class Inputs:
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
-
-
-class Missing:
-    pass

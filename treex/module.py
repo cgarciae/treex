@@ -4,25 +4,21 @@ import jax
 import jax.numpy as jnp
 import jax.tree_util
 import numpy as np
+import treeo as to
 
 from treex import types
-from treex.tree_object import TreeObject, object_apply
+from treex.treex import ProtoModule
 
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
 M = tp.TypeVar("M", bound="Module")
 
 
-class Module(TreeObject):
-    _training: bool
-    _initialized: bool
-    _frozen: bool
-
-    def __init__(self) -> None:
-        self._training = True
-        self._initialized = False
-        self._frozen = False
-        super().__init__()
+class Module(ProtoModule):
+    # use to.field to copy class vars to instance
+    _training: bool = to.static(True)
+    _initialized: bool = to.static(False)
+    _frozen: bool = to.static(False)
 
     @property
     def initialized(self) -> bool:
@@ -44,7 +40,7 @@ class Module(TreeObject):
         1. The input `key` is split and iteratively updated before passing a derived value to any
             process that requires initialization.
         2. `Initializer`s are called and applied to the module first.
-        3. `TreeObject.module_init` methods are called last.
+        3. `ProtoModule.module_init` methods are called last.
 
         Arguments:
             key: The seed to use for initialization.
@@ -70,7 +66,7 @@ class Module(TreeObject):
             is_leaf=lambda x: isinstance(x, types.Initializer),
         )
 
-        def call_module_init(module: TreeObject):
+        def call_module_init(module: ProtoModule):
             if isinstance(module, Module) and not module._initialized:
                 module.module_init(next_key())
                 module._initialized = True
@@ -79,11 +75,11 @@ class Module(TreeObject):
             # here we update initialized fields by the above tree_map
             module = self.update(module, inplace=True)
 
-        return object_apply(call_module_init, module, inplace=inplace)
+        return to.apply(call_module_init, module, inplace=inplace)
 
     def train(self: M, mode: bool = True, inplace: bool = False) -> M:
         """
-        Creates a new module with the same structure, but with `TreeObject.training` set to the given value.
+        Creates a new module with the same structure, but with `ProtoModule.training` set to the given value.
 
         Arguments:
             mode: The new training mode.
@@ -93,11 +89,11 @@ class Module(TreeObject):
             if `inplace` is `True` then `self` is returned.
         """
 
-        def set_training(module: TreeObject):
+        def set_training(module: ProtoModule):
             if isinstance(module, Module):
                 module._training = mode
 
-        return object_apply(set_training, self, inplace=inplace)
+        return to.apply(set_training, self, inplace=inplace)
 
     def eval(self: M, inplace: bool = False) -> M:
         """
@@ -110,7 +106,7 @@ class Module(TreeObject):
 
     def freeze(self: M, mode: bool = True, inplace: bool = False) -> M:
         """
-        Creates a new module with the same structure, but with `TreeObject.frozen` set
+        Creates a new module with the same structure, but with `ProtoModule.frozen` set
         to the given value.
 
         Arguments:
@@ -121,11 +117,11 @@ class Module(TreeObject):
             if `inplace` is `True` then `self` is returned.
         """
 
-        def set_frozen(module: TreeObject):
+        def set_frozen(module: ProtoModule):
             if isinstance(module, Module):
                 module._frozen = mode
 
-        return object_apply(set_frozen, self, inplace=inplace)
+        return to.apply(set_frozen, self, inplace=inplace)
 
     def unfreeze(self: M, inplace: bool = False) -> M:
         """

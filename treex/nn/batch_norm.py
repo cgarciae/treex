@@ -3,9 +3,10 @@ import typing as tp
 import jax
 import jax.numpy as jnp
 import numpy as np
+import treeo as to
 from flax.linen import normalization as flax_module
 
-from treex import tree_object, types, utils
+from treex import types, utils
 from treex.module import Module
 
 
@@ -27,11 +28,11 @@ class BatchNorm(Module):
     var: tp.Optional[jnp.ndarray] = types.BatchStat.node()
     scale: tp.Optional[jnp.ndarray] = types.Parameter.node()
     bias: tp.Optional[jnp.ndarray] = types.Parameter.node()
-    momentum: jnp.ndarray = utils.node()
+    momentum: jnp.ndarray = to.node()
 
     # props
     features_in: int
-    axis: int = -1
+    axis: int
     epsilon: float
     dtype: flax_module.Dtype
     use_bias: bool

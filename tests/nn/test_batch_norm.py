@@ -134,7 +134,7 @@ class BatchNormTest(unittest.TestCase):
         assert len(flat) == 2
 
         flat = jax.tree_leaves(
-            module.filter(lambda field: not issubclass(field.annotation, tx.TreePart))
+            module.filter(lambda field: not issubclass(field.kind, tx.TreePart))
         )
         assert len(flat) == 1
 

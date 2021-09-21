@@ -119,34 +119,6 @@ class TestTreex:
         assert isinstance(mlp.linear2.b, jnp.DeviceArray)
         assert isinstance(mlp.linear2.n, jnp.DeviceArray)
 
-    def test_update_field_metadata(self):
-
-        mlp = MLP(2, 3, 5)
-
-        mlp.linear1 = mlp.linear1.update_field_metadata("w", node=False)
-
-        @jax.jit
-        def idfn(x):
-            return x
-
-        assert not isinstance(mlp.linear1.w, jnp.DeviceArray)
-        assert not isinstance(mlp.linear1.b, jnp.DeviceArray)
-        assert not isinstance(mlp.linear1.n, jnp.DeviceArray)
-
-        assert not isinstance(mlp.linear2.w, jnp.DeviceArray)
-        assert not isinstance(mlp.linear2.b, jnp.DeviceArray)
-        assert not isinstance(mlp.linear1.n, jnp.DeviceArray)
-
-        mlp = idfn(mlp)
-
-        assert not isinstance(mlp.linear1.w, jnp.DeviceArray)
-        assert isinstance(mlp.linear1.b, jnp.DeviceArray)
-        assert isinstance(mlp.linear1.n, jnp.DeviceArray)
-
-        assert isinstance(mlp.linear2.w, jnp.DeviceArray)
-        assert isinstance(mlp.linear2.b, jnp.DeviceArray)
-        assert isinstance(mlp.linear2.n, jnp.DeviceArray)
-
     def test_filter(self):
 
         mlp = MLP(2, 3, 5)
@@ -440,13 +412,13 @@ class TestTreex:
     def test_tabulate_inputs(self):
         class MyModule(tx.Module):
             a: tp.Dict[str, tp.List[tx.MLP]]
-            b: tp.List[tp.Union[jnp.ndarray, tx.Initializer]] = tx.Parameter.node()
+            b: tp.List[tp.Union[jnp.ndarray]] = tx.Parameter.node()
 
             def __init__(self):
                 super().__init__()
                 self.a = {"mlps": [tx.MLP([256, 1024, 512]), tx.MLP([256, 1024, 512])]}
                 self.b = [
-                    tx.Initializer(lambda key: jnp.zeros((512, 256))),
+                    jnp.zeros((512, 256)),
                     jnp.zeros((512, 128)),
                 ]
 
@@ -639,7 +611,7 @@ class TestTreex:
         def map_fn(x):
             x.a = 2
 
-        module2 = tx.object_apply(map_fn, module)
+        module2 = tx.apply(map_fn, module)
 
         assert module.a == 1
         assert module2.a == 2
