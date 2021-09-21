@@ -1,4 +1,5 @@
 import typing as tp
+from dataclasses import dataclass
 from inspect import istraceback, signature
 
 import jax
@@ -17,7 +18,7 @@ class Linear(tx.Module):
     n: int = tx.State.node()
 
     def __init__(self, din, dout, name="linear"):
-        super().__init__()
+
         self.din = din
         self.dout = dout
         self.w = np.random.uniform(size=(din, dout))
@@ -31,7 +32,7 @@ class MLP(tx.Module):
     linear2: Linear
 
     def __init__(self, din, dmid, dout, name="mlp"):
-        super().__init__()
+
         self.din = din
         self.dmid = dmid
         self.dout = dout
@@ -209,7 +210,6 @@ class TestTreex:
             params: tp.List[np.ndarray] = tx.Parameter.node()
 
             def __init__(self, din, dout, name="linear"):
-                super().__init__()
 
                 self.din = din
                 self.dout = dout
@@ -238,7 +238,7 @@ class TestTreex:
             linears: tp.List[Linear]
 
             def __init__(self, din, dmid, dout, name="mlp"):
-                super().__init__()
+
                 self.linears = [
                     Linear(din, dmid, name="linear1"),
                     Linear(dmid, dout, name="linear2"),
@@ -355,7 +355,7 @@ class TestTreex:
             linear2: tx.Linear
 
             def __init__(self, din, dmid, dout, name="mlp"):
-                super().__init__()
+
                 self.linear1 = tx.Linear(din, dmid)
                 self.linear2 = tx.Linear(dmid, dout)
 
@@ -367,7 +367,7 @@ class TestTreex:
             b: tp.List[tp.Union[tx.Initializer, jnp.ndarray]] = tx.Parameter.node()
 
             def __init__(self):
-                super().__init__()
+
                 self.a = {"mlps": [MLP(2, 3, 5), MLP(2, 3, 5)]}
                 self.b = [
                     tx.Initializer(lambda key: jnp.zeros((10, 4))),
@@ -390,7 +390,7 @@ class TestTreex:
             b: tp.List[tp.Union[jnp.ndarray, tx.Initializer]] = tx.Parameter.node()
 
             def __init__(self):
-                super().__init__()
+
                 self.a = {"mlps": [MLP(256, 1024, 512), MLP(256, 1024, 512)]}
                 self.b = [
                     tx.Initializer(lambda key: jnp.zeros((512, 256))),
@@ -415,7 +415,7 @@ class TestTreex:
             b: tp.List[tp.Union[jnp.ndarray]] = tx.Parameter.node()
 
             def __init__(self):
-                super().__init__()
+
                 self.a = {"mlps": [tx.MLP([256, 1024, 512]), tx.MLP([256, 1024, 512])]}
                 self.b = [
                     jnp.zeros((512, 256)),
@@ -447,7 +447,7 @@ class TestTreex:
             b: tx.Linear = tx.static()
 
             def __init__(self):
-                super().__init__()
+
                 self.a = tx.Linear(3, 4)
                 self.b = tx.Linear(3, 4)
 
@@ -466,7 +466,7 @@ class TestTreex:
     def test_auto_annotations(self):
         class MLP(tx.Module):
             def __init__(self, din, dmid, dout, name="mlp"):
-                super().__init__()
+
                 self.din = din
                 self.dmid = dmid
                 self.dout = dout
@@ -482,7 +482,7 @@ class TestTreex:
     def test_auto_annotations_inserted(self):
         class MLP(tx.Module):
             def __init__(self, din, dmid, dout, name="mlp"):
-                super().__init__()
+
                 self.din = din
                 self.dmid = dmid
                 self.dout = dout
@@ -504,7 +504,7 @@ class TestTreex:
             linear2: Linear = tx.static()
 
             def __init__(self, din, dmid, dout, name="mlp"):
-                super().__init__()
+
                 self.din = din
                 self.dmid = dmid
                 self.dout = dout
@@ -523,7 +523,7 @@ class TestTreex:
             linear3: Linear  # missing field
 
             def __init__(self, din, dmid, dout, name="mlp"):
-                super().__init__()
+
                 self.din = din
                 self.dmid = dmid
                 self.dout = dout
@@ -542,7 +542,7 @@ class TestTreex:
             a: tx.Hashable[np.ndarray]
 
             def __init__(self):
-                super().__init__()
+
                 self.a = tx.Hashable(np.ones((3, 4), dtype=np.float32))
 
         m = M().init(42)
@@ -583,7 +583,7 @@ class TestTreex:
             a: tp.Union[np.ndarray, tx.Initializer] = tx.Parameter.node()
 
             def __init__(self):
-                super().__init__()
+
                 self.a = tx.Initializer(lambda k: jax.random.uniform(k, shape=[3, 5]))
 
         module = MyModule()
@@ -603,7 +603,7 @@ class TestTreex:
     def test_module_map(self):
         class A(tx.Module):
             def __init__(self):
-                super().__init__()
+
                 self.a = 1
 
         module = A()

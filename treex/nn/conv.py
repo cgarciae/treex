@@ -96,7 +96,7 @@ class Conv(Module):
             kernel_init: initializer for the convolutional kernel.
             bias_init: initializer for the bias.
         """
-        super().__init__()
+
         self.features_in = features_in
         self.features_out = features_out
         self.kernel_size = kernel_size

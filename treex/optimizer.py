@@ -82,7 +82,7 @@ class Optimizer(to.Tree):
     # NOTE: params are flattened because:
     # - The flat list is not a Module, thus all of its internal parameters in the list are marked as
     # OptState by a single annotation (no need to rewrite the module's annotations)
-    # - It ignores the static part of TreeObjects which if changed Optax yields an error.
+    # - It ignores the static part of Modules which if changed Optax yields an error.
     def update(
         self, grads: A, params: tp.Optional[A] = None, return_updates: bool = False
     ) -> A:

@@ -78,7 +78,6 @@ class Sequential(Module):
         Arguments:
             *layers: A list of layers or callables to apply to apply in sequence.
         """
-        super().__init__()
 
         self.layers = [
             layer if isinstance(layer, Module) else Lambda(layer) for layer in layers
@@ -102,7 +101,7 @@ class Lambda(Module):
         Arguments:
             f: A function to apply to the input.
         """
-        super().__init__()
+
         self.f = f
         self.f = f
 

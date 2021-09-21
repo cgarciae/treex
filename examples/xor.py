@@ -27,7 +27,7 @@ class Linear(tx.Module):
 
 class CustomMLP(tx.Module):
     def __init__(self, din, dhid, dout):
-        super().__init__()
+
         self.l1 = Linear(din, dhid)
         self.l2 = Linear(dhid, dout)
 

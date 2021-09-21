@@ -7,6 +7,7 @@ import treex as tx
 class TestMLP:
     def test_basic(self):
         mlp = tx.MLP([2, 32, 8, 4]).init(42)
+        mlp = mlp.filter(tx.Parameter)
 
         x = np.random.uniform(-1, 1, (10, 2))
         y = mlp(x)

@@ -92,7 +92,7 @@ class BatchNorm(Module):
                 the examples on the first two and last two devices. See `jax.lax.psum`
                 for more details.
         """
-        super().__init__()
+
         self.features_in = features_in
         self.axis = axis
         self.momentum = jnp.asarray(momentum)

@@ -38,7 +38,7 @@ class FlaxModule(Module):
         init_rngs: tp.Sequence[str] = ("params",),
         variables: tp.Optional[FrozenDict] = None,
     ) -> None:
-        super().__init__()
+
         self.module = to.Hashable(module)
         self.mutable = tuple(mutable)
         self.rngs = tuple(rngs)

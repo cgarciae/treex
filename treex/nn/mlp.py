@@ -51,7 +51,6 @@ class MLP(Module):
             kernel_init: initializer function for the weight matrix.
             bias_init: initializer function for the bias.
         """
-        super().__init__()
 
         if len(features) < 2:
             raise ValueError("features must have at least 2 elements")

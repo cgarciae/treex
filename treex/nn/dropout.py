@@ -44,7 +44,7 @@ class Dropout(Module):
             rate: the dropout probability.  (_not_ the keep rate!)
             broadcast_dims: dimensions that will share the same dropout mask
         """
-        super().__init__()
+
         self.rate = rate
         self.broadcast_dims = broadcast_dims
         self.next_key = KeySeq()

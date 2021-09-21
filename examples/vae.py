@@ -36,7 +36,7 @@ class Encoder(tx.Module):
         hidden_size: int,
         latent_size: int,
     ):
-        super().__init__()
+
         self.linear1 = tx.Linear(np.prod(image_shape), hidden_size)
         self.linear_mean = tx.Linear(hidden_size, latent_size)
         self.linear_std = tx.Linear(hidden_size, latent_size)
@@ -72,7 +72,7 @@ class Decoder(tx.Module):
         hidden_size: int,
         image_shape: tp.Sequence[int],
     ):
-        super().__init__()
+
         self.linear1 = tx.Linear(latent_size, hidden_size)
         self.linear2 = tx.Linear(hidden_size, np.prod(image_shape))
         self.output_shape = image_shape
@@ -97,7 +97,7 @@ class VAE(tx.Module):
         hidden_size: int,
         latent_size: int,
     ):
-        super().__init__()
+
         self.encoder = Encoder(image_shape, hidden_size, latent_size)
         self.decoder = Decoder(latent_size, hidden_size, image_shape)
 

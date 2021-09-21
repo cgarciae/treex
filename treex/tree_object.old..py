@@ -86,7 +86,7 @@ class FieldInfo:
 # -----------------------------------------
 
 
-class TreeObjectMeta(ABCMeta):
+class ModuleMeta(ABCMeta):
     def __call__(cls, *args, **kwargs) -> "Module":
         obj: Module = cls.__new__(cls)
 
@@ -96,7 +96,7 @@ class TreeObjectMeta(ABCMeta):
 
         if not obj._init_called:
             raise RuntimeError(
-                f"{obj.__class__.__name__} not initialized properly, constructor must call `super().__init__()`"
+                f"{obj.__class__.__name__} not initialized properly, constructor must call ``"
             )
 
         # auto-annotations
@@ -128,7 +128,7 @@ def _get_call(orig_call):
     return _meta_call
 
 
-class Module(types.FieldMixin, metaclass=TreeObjectMeta):
+class Module(types.FieldMixin, metaclass=ModuleMeta):
     _init_called: bool = False
     _field_metadata: tp.Dict[str, types.FieldMetadata]
 
@@ -636,8 +636,8 @@ def object_apply(
     f: tp.Callable[..., None], obj: A, *rest: A, inplace: bool = False
 ) -> A:
     """
-    Applies a function to all TreeObjects in a Pytree. Function very similar to `jax.tree_map`,
-    but works on TreeObjects instead of values and `f` should apply the changes inplace to the
+    Applies a function to all Modules in a Pytree. Function very similar to `jax.tree_map`,
+    but works on Modules instead of values and `f` should apply the changes inplace to the
     first object.
 
     If `inplace` is `False`, a copy of the first object is returned with the changes applied.
@@ -645,12 +645,12 @@ def object_apply(
 
     Arguments:
         f: The function to apply.
-        obj: a pytree possibly containing TreeObjects.
+        obj: a pytree possibly containing Modules.
         *rest: additional pytrees.
         inplace: If `True`, the input `obj` is mutated.
 
     Returns:
-        A new pytree with the updated TreeObjects or the same input `obj` if `inplace` is `True`.
+        A new pytree with the updated Modules or the same input `obj` if `inplace` is `True`.
     """
     rest = jax.tree_map(lambda x: x, rest)
 
@@ -678,7 +678,7 @@ def object_apply(
 def map(f: tp.Callable, obj: A, *filters: Filter) -> A:
     """
     Functional version of `Module.map` but it can be applied to any pytree, useful if
-    you have TreeObjects that are embedded in a pytree. The `filters` are applied according
+    you have Modules that are embedded in a pytree. The `filters` are applied according
     to `tx.filter`.
 
     Example:
@@ -717,7 +717,7 @@ def map(f: tp.Callable, obj: A, *filters: Filter) -> A:
 def filter(obj: A, *filters: Filter) -> A:
     """
     Functional version of `Module.filter` but can filter arbitrary pytrees. This is useful
-    if you have TreeObjects that are embedded in a larger pytree e.g. a list of TreeObjects.
+    if you have Modules that are embedded in a larger pytree e.g. a list of Modules.
 
     Leaves that are not part of a Module will get assigned the following `FieldInfo`:
 

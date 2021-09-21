@@ -34,7 +34,7 @@ class KeySeq(Module):
         Arguments:
             key: An optional PRNGKey to initialize the KeySeq with.
         """
-        super().__init__()
+
         self.key = (
             jax.random.PRNGKey(key)
             if isinstance(key, int)
