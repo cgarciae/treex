@@ -72,7 +72,7 @@ class Optimizer(to.Tree):
         Returns:
             A new optimizer instance.
         """
-        module = self.copy()
+        module = to.copy(self)
         params = jax.tree_leaves(params)
         module.opt_state = module.optimizer.init(params)
         module._n_params = len(params)

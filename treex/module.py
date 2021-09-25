@@ -104,7 +104,9 @@ class Module(to.Tree, metaclass=ModuleMeta):
 
     def init(self: M, key: tp.Union[int, jnp.ndarray], inplace: bool = False) -> M:
         """
-        Creates a new module with the same structure, but with its fields initialized given a seed `key`. The following
+        Method version of `tx.init`, it applies `self` as first argument.
+
+        `init` creates a new module with the same structure, but with its fields initialized given a seed `key`. The following
         procedure is used:
 
         1. The input `key` is split and iteratively updated before passing a derived value to any
@@ -126,7 +128,7 @@ class Module(to.Tree, metaclass=ModuleMeta):
             next_key, key = jax.random.split(key)
             return next_key
 
-        module: M = jax.tree_map(
+        tree_out: M = jax.tree_map(
             lambda initializer: (
                 initializer(next_key())
                 if isinstance(initializer, types.Initializer)
@@ -136,16 +138,16 @@ class Module(to.Tree, metaclass=ModuleMeta):
             is_leaf=lambda x: isinstance(x, types.Initializer),
         )
 
+        if inplace:
+            # here we update initialized fields by the above tree_map
+            tree_out = to.update(self, tree_out, inplace=True)
+
         def call_module_init(module: Module):
             if isinstance(module, Module) and not module._initialized:
                 module.rng_init(next_key())
                 module._initialized = True
 
-        if inplace:
-            # here we update initialized fields by the above tree_map
-            module = self.update(module, inplace=True)
-
-        return to.apply(call_module_init, module, inplace=inplace)
+        return to.apply(call_module_init, tree_out, inplace=inplace)
 
     def train(self: M, mode: bool = True, inplace: bool = False) -> M:
         """
@@ -210,14 +212,8 @@ class Module(to.Tree, metaclass=ModuleMeta):
     def map(self: M, f: tp.Callable, *filters: Filter, inplace: bool = False) -> M:
         """
         Applies a function to all leaves in a pytree using `jax.tree_map`. If `filters` are given then
-        the function will be applied only to the subset of leaves that match the filters.
-
-        For example, if we want to zero all batch stats we can do:
-
-        ```python
-        module = SomeCompleModule()
-        module = module.map(jnp.zeros_like, tx.BatchStat)
-        ```
+        the function will be applied only to the subset of leaves that match the filters. For more information see
+        [map's user guide](https://cgarciae.github.io/treex/user-guide/api/map).
 
         Arguments:
             f: The function to apply to the leaves.
@@ -235,96 +231,34 @@ class Module(to.Tree, metaclass=ModuleMeta):
         else:
             return module
 
-    def filter(self: M, *filters: Filter) -> M:
+    def filter(
+        self: M,
+        *filters: Filter,
+        inplace: bool = False,
+        flatten_mode: tp.Union[to.FlattenMode, str, None] = None,
+    ) -> M:
         """
-        Creates a new module with the same structure, but sets to `Nothing` leaves that
-        do not match **all** of the given filters. If a type `t` is given, the filter
-
-        ```python
-        _filter(x: Type[types.TreePart]) = issubclass(x, t)
-        ```
-
-        will be created for that type.
-
-        Example:
-        ```python
-        class MyModule(tx.Module):
-            a: tx.Parameter = 1
-            b: tx.BatchStat = 2
-
-        module = MyModule()
-
-        module.filter(tx.Parameter) # MyModule(a=1, b=Nothing)
-        module.filter(tx.BatchStat) # MyModule(a=Nothing, b=2)
-        ```
-
-        More fancy filters can be created by using callables:
-
-        ```python
-        # all States that are not OptStates
-        module.filter(
-            lambda field: issubclass(field.kind, tx.State)
-            and not issubclass(field.kind, tx.OptState)
-        )
-        # MyModule(a=Nothing, b=2)
-        ```
+        Allows you to select a subtree by filtering based on a predicate or `kind` type,
+        leaves that pass all filters are kept, the rest are set to `Nothing`. For more information see
+        [filter's user guide](https://cgarciae.github.io/treex/user-guide/api/filter).
 
         Arguments:
-            filters: Types to filter by, membership is determined by `issubclass`, or
+            *filters: Types to filter by, membership is determined by `issubclass`, or
                 callables that take in a `FieldInfo` and return a `bool`.
+            inplace: If `True`, the input `obj` is mutated and returned.
+            flatten_mode: Sets a new `FlattenMode` context for the operation.
         Returns:
-            The new module with the filtered fields.
+            A new pytree with the filtered fields. If `inplace` is `True`, `obj` is returned.
 
         """
 
-        return to.filter(self, *filters)
+        return to.filter(self, *filters, inplace=inplace, flatten_mode=flatten_mode)
 
     def update(self: M, other: M, *rest: M, inplace: bool = False) -> M:
         """
         Creates a new module with the same structure, but its values
-        updated based on the values from the incoming modules. Updates are performed using
-        the following rules:
-
-        * Updates are performed in the order of the input modules from left to right.
-        * If a leaf value from an incoming module is `Nothing`, it wont update
-            the corresponding value on the currently aggregated module.
-        * The static state of the output module (`initialized`, `training`, and user defined static fields)
-            is the same as the current module (`self`).
-
-        Example:
-
-        ```python
-        a = MyModule(x=Nothing, y=2, z=3)
-        b = MyModule(x=1, y=Nothing, z=4)
-
-        a.update(b) # MyModule(x=1, y=2, z=4)
-        ```
-        Notice the following:
-
-        * The value of `x` and `z` were updated since they were present in `b`.
-        * The value of `y` was not updated since `b.y` was `Nothing`.
-
-        When using `update` with multiple modules the following equivalence holds:
-
-        ```
-        m1.update(m2, m3) = m1.update(m2).update(m3)
-        ```
-
-        If you want to update the current module instead of creating a new one use `inplace=True`.
-        This is useful when applying transformation inside a method where reassigning `self` is not possible:
-
-        ```python
-        def double_params(self):
-            # this is not doing what you expect
-            self = jax.tree_map(lambda x: 2 * x, self)
-        ```
-        Instead do this:
-
-        ```python
-        def double_params(self):
-            doubled = jax.tree_map(lambda x: 2 * x, self)
-            self.update(doubled, inplace=True)
-        ```
+        updated based on the values from the incoming modules. For more information see
+        [update's user guide](https://cgarciae.github.io/treex/user-guide/api/update).
 
         Arguments:
             other: The first to get the values to update from.
@@ -359,7 +293,7 @@ class Module(to.Tree, metaclass=ModuleMeta):
         Returns:
             A string containing the tabular representation.
         """
-        self = self.copy()
+        self = to.copy(self)
 
         if inputs is not None:
             if not isinstance(inputs, types.Inputs):
@@ -566,6 +500,11 @@ class Module(to.Tree, metaclass=ModuleMeta):
             filters: additional filters passed to `filter`.
         """
         return self.filter(types.Log, *filters)
+
+
+# --------------------------------------------------
+# functions
+# --------------------------------------------------
 
 
 # --------------------------------------------------

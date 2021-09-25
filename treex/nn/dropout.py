@@ -82,7 +82,7 @@ class Dropout(Module):
         )
 
         if rng is None:
-            rng = self.next_key()
+            rng = self.next_key() if training else self.next_key.key
 
         # call apply
         output = self.module.apply(

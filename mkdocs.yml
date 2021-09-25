@@ -4,7 +4,18 @@ repo_url: https://github.com/cgarciae/treex
 site_url: https://cgarciae.github.io/treex
 nav:
 - Introduction: index.md
-- User Guide: user-guide.md
+- User Guide:
+    Intro: user-guide/intro.md
+    Defining Modules: user-guide/defining-modules.md
+    Initialization: user-guide/initialization.md
+    Module API:
+      Filter: user-guide/api/filter.md
+      Update: user-guide/api/update.md
+      Map: user-guide/api/map.md
+    Optimizer: user-guide/optimizer.md
+    State Management: user-guide/state-management.md
+    Training State: user-guide/training-state.md
+    Freezing Modules: user-guide/freezing-modules.md
 - API Reference:
     BatchNorm: api/BatchNorm.md
     BatchStat: api/BatchStat.md
@@ -69,6 +80,8 @@ theme:
 markdown_extensions:
 - pymdownx.arithmatex
 - admonition
+- pymdownx.highlight
+- pymdownx.superfences
 - codehilite:
     guess_lang: false
     use_pygments: true
