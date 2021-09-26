@@ -71,8 +71,6 @@ class BatchNorm(Module):
         """
         Arguments:
             features_in: the number of input features.
-            use_running_average: if True, the statistics stored in batch_stats
-                will be used instead of computing the batch statistics on the input.
             axis: the feature or non-batch axis of the input.
             momentum: decay rate for the exponential moving average of
                 the batch statistics.

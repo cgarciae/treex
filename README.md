@@ -7,9 +7,9 @@ _A Pytree Module system for Deep Learning in JAX_
 * **Expressive**: In Treex you use type annotations to define what the different parts of your module represent (submodules, parameters, batch statistics, etc), this leads to a very flexible and powerful state management solution.
 * **Flax-based Implementations**: Writing high-quality, battle-tested code for common layers is hard. For this reason Modules in `treex.nn` are wrappers over their Flax counterparts. We keep identical signatures, enabling Flax users to feel at home but still benefiting from the simpler Pytorch-like experience Treex brings.
 
-Treex is implemented on top of [Treeo](https://github.com/cgarciae/treeo). All of Treeo's public API is also available through Treex.
+Treex is implemented on top of [Treeo](https://github.com/cgarciae/treeo), Treex vendors all of Treeo's public API for ease of usage.
 
-[Documentation](https://cgarciae.github.io/treex) | [User Guide](https://cgarciae.github.io/treex/user-guide/)
+[Documentation](https://cgarciae.github.io/treex) | [User Guide](https://cgarciae.github.io/treex/user-guide/intro)
 
 ## Why Treex?
 Despite all JAX benefits, current Module systems are not intuitive to new users and add additional complexity not present in frameworks like PyTorch or Keras. Treex takes inspiration from S4TF and delivers an intuitive experience using JAX Pytree infrastructure.
@@ -37,6 +37,7 @@ pip install treex
 Treex is in an early stage, things might brake between versions but we will respect semanting versioning. While more testing is needed, since Treex layers are numerically equivalent to Flax this borrows some maturity and yields more confidence over its results. Feedback is much appreciated.
 
 **Roadmap**:
+
 - [x] Finish prototyping core API
 - [ ] Wrap all Flax Linen Modules
 - [x] Document public API

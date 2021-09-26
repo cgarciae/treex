@@ -3,9 +3,9 @@ repo_name: cgarciae/treex
 repo_url: https://github.com/cgarciae/treex
 site_url: https://cgarciae.github.io/treex
 nav:
-- Introduction: index.md
+- Treex: index.md
 - User Guide:
-    Intro: user-guide/intro.md
+    User Guide: user-guide/intro.md
     Defining Modules: user-guide/defining-modules.md
     Initialization: user-guide/initialization.md
     Module API:
