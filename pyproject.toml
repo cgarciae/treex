@@ -6,8 +6,8 @@ authors = ["Cristian Garcia <cgarcia.e88@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-jax = "^0.2.18"
-jaxlib = "^0.1.70"
+jax = "0.2.21"
+jaxlib = "^0.1.71"
 flax = "^0.3.4"
 PyYAML = "^5.4.1"
 rich = "^10.7.0"

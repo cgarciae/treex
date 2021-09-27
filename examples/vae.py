@@ -28,7 +28,7 @@ class Encoder(tx.Module):
     linear_mean: tx.Linear
     linear_std: tx.Linear
     next_key: tx.KeySeq
-    kl_loss: jnp.ndarray = tx.Loss.node()
+    kl_loss: jnp.ndarray = tx.LossLog.node()
 
     def __init__(
         self,
@@ -119,7 +119,7 @@ def loss_fn(params: VAE, model: VAE, x: np.ndarray) -> tp.Tuple[jnp.ndarray, VAE
     x_pred = model(x)
 
     crossentropy_loss = jnp.mean(optax.sigmoid_binary_cross_entropy(x_pred, x))
-    aux_losses = jax.tree_leaves(model.filter(tx.Loss))
+    aux_losses = jax.tree_leaves(model.filter(tx.LossLog))
 
     loss = crossentropy_loss + sum(aux_losses, 0.0)
 

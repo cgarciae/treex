@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from treex import types
+from treex import types, utils
 from treex.module import Module
 
 
@@ -51,5 +51,5 @@ class KeySeq(Module):
             A PRNGKey.
         """
         assert isinstance(self.key, jnp.ndarray)
-        key, self.key = jax.random.split(self.key)
+        key, self.key = utils.iter_split(self.key)
         return key

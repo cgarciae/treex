@@ -407,6 +407,9 @@ class TestTreex:
 
         print(rep)
 
+        assert '.a["mlps"]' in rep
+        assert "b:" in rep
+
         print(mlp.a["mlps"][1].linear2)
 
     def test_tabulate_inputs(self):
@@ -440,6 +443,10 @@ class TestTreex:
         rep = mlp.tabulate(inputs=tx.Inputs(x))
 
         print(rep)
+
+        assert "(\x1b[32m10, 256\x1b[0m)" in rep
+        assert "y1:" in rep
+        assert "y2:" in rep
 
     def test_static_annotation(self):
         class Mod(tx.Module):

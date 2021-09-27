@@ -53,12 +53,12 @@ class DropoutTest(unittest.TestCase):
             .freeze(frozen)
         )
 
-        flax_key, _ = jax.random.split(key)  # emulate init split
+        flax_key, _ = tx.iter_split(key)  # emulate init split
         variables = flax_module.init({"dropout": flax_key}, x)
         treex_module = treex_module.init(key)
 
         # split key same way tx.Dropout does internally
-        rng, _ = jax.random.split(flax_key, 2)
+        rng, _ = tx.iter_split(flax_key, 2)
 
         y_flax = flax_module.apply(variables, x, rng=rng)
         y_treex = treex_module(x)

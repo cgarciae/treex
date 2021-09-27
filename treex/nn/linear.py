@@ -93,7 +93,7 @@ class Linear(Module):
         batch_size = 10  # random
         x = jax.random.uniform(key, (batch_size, self.features_in))
 
-        variables = self.module.init(key, x)
+        variables = self.module.init({"params": key}, x)
 
         # Extract collections
         params = variables["params"].unfreeze()

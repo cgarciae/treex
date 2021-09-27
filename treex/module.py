@@ -59,32 +59,21 @@ _CONTEXT = _Context()
 # -----------------------------------------
 
 
-class ModuleMeta(to.TreeMeta):
-    def __call__(cls, *args, **kwargs) -> "Module":
-        obj = tp.cast(Module, super().__call__(*args, **kwargs))
-
-        if isinstance(obj, tp.Callable):
-            new_call = _get_call(cls.__call__)
-            cls.__call__ = functools.wraps(cls.__call__)(new_call)
-
-        return obj
-
-
 # override __call__
 def _get_call(orig_call):
-    def _meta_call(self: Module, *args, **kwargs):
+    def call_wrapper(self: Module, *args, **kwargs):
         outputs = orig_call(self, *args, **kwargs)
 
-        if _CONTEXT.call_info is not None:
+        if _CONTEXT.call_info is not None and self not in _CONTEXT.call_info:
             inputs = types.Inputs(*args, **kwargs)
             _CONTEXT.call_info[self] = (inputs, outputs)
 
         return outputs
 
-    return _meta_call
+    return call_wrapper
 
 
-class Module(to.Tree, metaclass=ModuleMeta):
+class Module(to.Tree):
     # use to.field to copy class vars to instance
     _training: bool = to.static(True)
     _initialized: bool = to.static(False)
@@ -101,6 +90,13 @@ class Module(to.Tree, metaclass=ModuleMeta):
     @property
     def frozen(self) -> bool:
         return self._frozen
+
+    def __init_subclass__(cls):
+        if issubclass(cls, tp.Callable):
+            new_call = _get_call(cls.__call__)
+            cls.__call__ = functools.wraps(cls.__call__)(new_call)
+
+        return super().__init_subclass__()
 
     def init(self: M, key: tp.Union[int, jnp.ndarray], inplace: bool = False) -> M:
         """
@@ -124,8 +120,8 @@ class Module(to.Tree, metaclass=ModuleMeta):
 
         def next_key() -> jnp.ndarray:
             nonlocal key
-            assert isinstance(key, jnp.ndarray)
-            next_key, key = jax.random.split(key)
+            assert isinstance(key, (np.ndarray, jnp.ndarray))
+            next_key, key = utils.iter_split(key)
             return next_key
 
         tree_out: M = jax.tree_map(
@@ -481,7 +477,7 @@ class Module(to.Tree, metaclass=ModuleMeta):
         Arguments:
             filters: additional filters passed to `filter`.
         """
-        return self.filter(types.Metric, *filters)
+        return self.filter(types.MetricLog, *filters)
 
     def losses(self: M, *filters: Filter) -> M:
         """
@@ -490,7 +486,7 @@ class Module(to.Tree, metaclass=ModuleMeta):
         Arguments:
             filters: additional filters passed to `filter`.
         """
-        return self.filter(types.Loss, *filters)
+        return self.filter(types.LossLog, *filters)
 
     def logs(self: M, *filters: Filter) -> M:
         """

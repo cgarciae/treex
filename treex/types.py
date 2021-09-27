@@ -6,10 +6,12 @@ import jax.numpy as jnp
 import jax.tree_util
 import numpy as np
 import treeo as to
+import typing_extensions as tpe
 
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
 
+IndexLike = tp.Union[str, int, tp.Sequence[tp.Union[str, int]]]
 
 # -----------------------------------------
 # TreeParts
@@ -29,6 +31,10 @@ class State(TreePart):
 
 
 class Rng(State):
+    pass
+
+
+class MetricState(State):
     pass
 
 
@@ -52,11 +58,11 @@ class Log(TreePart):
     pass
 
 
-class Loss(Log):
+class LossLog(Log):
     pass
 
 
-class Metric(Log):
+class MetricLog(Log):
     pass
 
 
@@ -95,3 +101,11 @@ class Inputs:
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
+
+
+@tpe.runtime_checkable
+class WrappedCall(tp.Protocol):
+    _orig_call: tp.Callable[..., tp.Any]
+
+    def __call__(self, *args, **kwargs) -> tp.Any:
+        ...

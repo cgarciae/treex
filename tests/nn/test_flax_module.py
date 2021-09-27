@@ -42,7 +42,7 @@ class TestFlaxModule:
         rng = jax.random.PRNGKey(42)
 
         flax_module = SomeModule()
-        params_key, dropout_key = jax.random.split(jax.random.PRNGKey(0))
+        params_key, dropout_key = tx.iter_split(jax.random.PRNGKey(0))
         variables = flax_module.init(
             {"params": params_key, "dropout": dropout_key},
             x,
@@ -101,7 +101,7 @@ class TestFlaxModule:
         training = True
 
         flax_module = SomeModule()
-        params_key, dropout_key = jax.random.split(jax.random.PRNGKey(0))
+        params_key, dropout_key = tx.iter_split(jax.random.PRNGKey(0))
         variables = flax_module.init(
             {"params": params_key, "dropout": dropout_key},
             x,
@@ -116,7 +116,7 @@ class TestFlaxModule:
         flax_key = treex_module.next_key.key
 
         # step 1
-        next_key, flax_key = jax.random.split(flax_key)
+        next_key, flax_key = tx.iter_split(flax_key)
         y_flax, updates = flax_module.apply(
             variables,
             x,
@@ -130,7 +130,7 @@ class TestFlaxModule:
         assert np.allclose(flax_key, treex_module.next_key.key)
 
         # step 2
-        next_key, flax_key = jax.random.split(flax_key)
+        next_key, flax_key = tx.iter_split(flax_key)
         y_flax, updates = flax_module.apply(
             variables,
             x,

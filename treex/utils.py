@@ -1,7 +1,8 @@
 import dataclasses
+import functools
 import inspect
 import io
-import types
+import re
 import typing as tp
 
 import jax
@@ -9,6 +10,7 @@ import jax.numpy as jnp
 import numpy as np
 import treeo as to
 import yaml
+from jax._src.numpy.lax_numpy import split
 from rich.console import Console
 
 from treex import types
@@ -42,10 +44,19 @@ def _get_repr(
         submodules = {}
 
         for field, value in tree.items():
+            tree_types = jax.tree_flatten(
+                getattr(obj, field), is_leaf=lambda x: isinstance(x, to.Tree)
+            )[0]
+            tree_types = [type(x) for x in tree_types if isinstance(x, to.Tree)]
+
             annotation: tp.Union[
                 tp.Type[to.Tree], tp.Type[types.TreePart], None
-            ] = _first_issubclass(
-                obj.field_metadata[field].kind, (types.TreePart, to.Tree)
+            ] = _first_issubclass(obj.field_metadata[field].kind, types.TreePart) or (
+                to.Tree
+                if len(tree_types) > 1
+                else tree_types[0]
+                if len(tree_types) == 1
+                else None
             )
 
             if annotation is None:
@@ -134,10 +145,19 @@ def _get_tabulate_rows(
         submodules = {}
 
         for field, value in tree.items():
+            tree_types = jax.tree_flatten(
+                getattr(obj, field), is_leaf=lambda x: isinstance(x, to.Tree)
+            )[0]
+            tree_types = [type(x) for x in tree_types if isinstance(x, to.Tree)]
+
             annotation: tp.Union[
                 tp.Type[to.Tree], tp.Type[types.TreePart], None
-            ] = _first_issubclass(
-                obj.field_metadata[field].kind, (types.TreePart, to.Tree)
+            ] = _first_issubclass(obj.field_metadata[field].kind, types.TreePart) or (
+                to.Tree
+                if len(tree_types) > 1
+                else tree_types[0]
+                if len(tree_types) == 1
+                else None
             )
 
             if annotation is None:
@@ -395,3 +415,54 @@ def _first_issubclass(cls: type, __class_or_tuple) -> tp.Optional[tp.Type[tp.Any
     for t in to.utils._all_types(cls):
         if issubclass(t, __class_or_tuple):
             return t
+
+
+def _lower_snake_case(s: str) -> str:
+    s = re.sub(r"(?<!^)(?=[A-Z])", "_", s).lower()
+    parts = s.split("_")
+    output_parts = []
+
+    for i in range(len(parts)):
+        if i == 0 or len(parts[i - 1]) > 1:
+            output_parts.append(parts[i])
+        else:
+            output_parts[-1] += parts[i]
+
+    return "_".join(output_parts)
+
+
+def _get_name(obj) -> str:
+    if hasattr(obj, "name") and obj.name:
+        return obj.name
+    elif hasattr(obj, "__name__") and obj.__name__:
+        return obj.__name__
+    elif hasattr(obj, "__class__") and obj.__class__.__name__:
+        return _lower_snake_case(obj.__class__.__name__)
+    else:
+        raise ValueError(f"Could not get name for: {obj}")
+
+
+def _check_rejit(f):
+
+    cache_args = None
+    cache_kwargs = None
+
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        nonlocal cache_args, cache_kwargs
+
+        if cache_args is None or cache_kwargs is None:
+            cache_args = args
+            cache_kwargs = kwargs
+        else:
+            jax.tree_map(lambda *xs: None, args, cache_args)
+            jax.tree_map(lambda *xs: None, kwargs, cache_kwargs)
+
+        return f(*args, **kwargs)
+
+    return wrapper
+
+
+def iter_split(key: tp.Any, num: int = 2) -> tp.Tuple[tp.Any, ...]:
+    splits = jax.random.split(key, num)
+    return tuple(splits[i] for i in range(num))

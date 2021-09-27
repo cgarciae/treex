@@ -8,7 +8,7 @@ import treeo as to
 from flax.core.frozen_dict import FrozenDict
 from flax.core.scope import FrozenVariableDict
 
-from treex import types
+from treex import types, utils
 from treex.key_seq import KeySeq
 from treex.module import Module
 
@@ -102,7 +102,7 @@ class FlaxModule(Module):
             rngs = {all_collections[0]: key}
         elif len(all_collections) > 1:
             key = self.next_key()
-            keys = jax.random.split(key, len(all_collections))
+            keys = utils.iter_split(key, len(all_collections))
             rngs = dict(zip(all_collections, keys))
         else:
             raise Exception("Not reachable")

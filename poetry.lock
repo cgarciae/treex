@@ -862,7 +862,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 
 [[package]]
 name = "jax"
-version = "0.2.19"
+version = "0.2.21"
 description = "Differentiate, compile, and transform Numpy code."
 category = "main"
 optional = false
@@ -872,19 +872,18 @@ python-versions = ">=3.7"
 absl-py = "*"
 numpy = ">=1.18"
 opt_einsum = "*"
+scipy = ">=1.2.1"
 
 [package.extras]
-cpu = ["jaxlib (==0.1.70)"]
-cuda101 = ["jaxlib (==0.1.70+cuda101)"]
-cuda102 = ["jaxlib (==0.1.70+cuda102)"]
-cuda110 = ["jaxlib (==0.1.70+cuda110)"]
-cuda111 = ["jaxlib (==0.1.70+cuda111)"]
+cpu = ["jaxlib (==0.1.71)"]
+cuda102 = ["jaxlib (==0.1.71+cuda102)"]
+cuda111 = ["jaxlib (==0.1.71+cuda111)"]
 minimum-jaxlib = ["jaxlib (==0.1.69)"]
-tpu = ["jaxlib (==0.1.70)", "libtpu-nightly (==0.1.dev20210809)", "requests"]
+tpu = ["jaxlib (==0.1.71)", "libtpu-nightly (==0.1.dev20210809)", "requests"]
 
 [[package]]
 name = "jaxlib"
-version = "0.1.70"
+version = "0.1.71"
 description = "XLA library for JAX"
 category = "main"
 optional = false
@@ -2152,6 +2151,24 @@ ipython-genutils = "*"
 test = ["pytest"]
 
 [[package]]
+name = "treeo"
+version = "0.0.3"
+description = ""
+category = "main"
+optional = false
+python-versions = "^3.7"
+develop = true
+
+[package.dependencies]
+jax = "^0.2.18"
+jaxlib = "^0.1.70"
+typing-extensions = "^3.10.0"
+
+[package.source]
+type = "directory"
+url = "../treeo"
+
+[[package]]
 name = "typed-ast"
 version = "1.4.3"
 description = "a fork of Python 2 and 3 ast modules with type comment support"
@@ -2320,7 +2337,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "fcc081d234018d50052857f21636b2e3e9ec4e6b63ae727a3c1c5f49bd41bc08"
+content-hash = "a6e8f39344e54c38185d2951f3bf323b06eca502ca0eacc510996bb36e73df68"
 
 [metadata.files]
 absl-py = [
@@ -2747,15 +2764,15 @@ isort = [
     {file = "jaraco.windows-5.6.0.tar.gz", hash = "sha256:67b599919184490e8c71b2ece74049cb61c1ad07ff473185996e7af86aaf8e35"},
 ]
 jax = [
-    {file = "jax-0.2.19.tar.gz", hash = "sha256:e55534680a05b6ced92dadde307bd3b2207efd1aaaec304e96197b00ad7560d3"},
+    {file = "jax-0.2.21.tar.gz", hash = "sha256:7c760468ecb07b0a91144c8edddfcb04692cbeced2b56eede6dd6c7aa968c823"},
 ]
 jaxlib = [
-    {file = "jaxlib-0.1.70-cp37-none-macosx_10_9_x86_64.whl", hash = "sha256:c2d69253153f2a5afe947cba3d927815290cba7c3b63c096bccbcfdb785251f5"},
-    {file = "jaxlib-0.1.70-cp37-none-manylinux2010_x86_64.whl", hash = "sha256:61a14a13f1279c9febd74aae572feb247ef076656165ba2eb15f4ab204009843"},
-    {file = "jaxlib-0.1.70-cp38-none-macosx_10_9_x86_64.whl", hash = "sha256:470e381d77de3dc3fd4a4557f73266212076e461aa2444347ac55dc195369f46"},
-    {file = "jaxlib-0.1.70-cp38-none-manylinux2010_x86_64.whl", hash = "sha256:89570d3215f5e641d975568b99279b1399e638b5287353d35d2f344ac1472708"},
-    {file = "jaxlib-0.1.70-cp39-none-macosx_10_9_x86_64.whl", hash = "sha256:a513d782860ed67fee1657c66e452579b6024a3a05bd5ba684d44a80095df250"},
-    {file = "jaxlib-0.1.70-cp39-none-manylinux2010_x86_64.whl", hash = "sha256:9b2b4c4eaa1abe9b916b08f9d8c539fe2163dbb486966f036a8439bddff76ecb"},
+    {file = "jaxlib-0.1.71-cp37-none-macosx_10_9_x86_64.whl", hash = "sha256:ad36895ceb68782bb74f0657da127cece06c19ce1e72ad9c660f79bce549618e"},
+    {file = "jaxlib-0.1.71-cp37-none-manylinux2010_x86_64.whl", hash = "sha256:059eb572121e3f13e3b841c07137a72f3d0aeb76dc6ddf178922a327994f60b8"},
+    {file = "jaxlib-0.1.71-cp38-none-macosx_10_9_x86_64.whl", hash = "sha256:c823b65c95aa7b6d8eb4a45bc6389d43c8d6dd20fe0c531345753819c70cff54"},
+    {file = "jaxlib-0.1.71-cp38-none-manylinux2010_x86_64.whl", hash = "sha256:8f4447d6053b55bab9565e365b60c80ff186b0cb05407146ea844d328eaba2bf"},
+    {file = "jaxlib-0.1.71-cp39-none-macosx_10_9_x86_64.whl", hash = "sha256:f5fc1873c25a7b07f9406bcb09540cef6e2b151aa139be52e34cf35f7b8390b0"},
+    {file = "jaxlib-0.1.71-cp39-none-manylinux2010_x86_64.whl", hash = "sha256:c66a1bdb57934093938fd6e1767216c198bd1a102b8f5636fdb1f9a5b0d11067"},
 ]
 jedi = [
     {file = "jedi-0.18.0-py2.py3-none-any.whl", hash = "sha256:18456d83f65f400ab0c2d3319e48520420ef43b23a086fdc05dff34132f0fb93"},
@@ -3573,6 +3590,7 @@ traitlets = [
     {file = "traitlets-5.0.5-py3-none-any.whl", hash = "sha256:69ff3f9d5351f31a7ad80443c2674b7099df13cc41fc5fa6e2f6d3b0330b0426"},
     {file = "traitlets-5.0.5.tar.gz", hash = "sha256:178f4ce988f69189f7e523337a3e11d91c786ded9360174a3d9ca83e79bc5396"},
 ]
+treeo = []
 typed-ast = [
     {file = "typed_ast-1.4.3-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:2068531575a125b87a41802130fa7e29f26c09a2833fea68d9a40cf33902eba6"},
     {file = "typed_ast-1.4.3-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:c907f561b1e83e93fad565bac5ba9c22d96a54e7ea0267c708bffe863cbe4075"},
