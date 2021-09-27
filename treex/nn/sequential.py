@@ -6,7 +6,7 @@ import treeo as to
 
 from treex.module import Module
 
-CallableModule = tp.Callable[[jnp.ndarray], jnp.ndarray]
+CallableModule = tp.Callable[..., jnp.ndarray]
 
 
 def sequence(*layers: CallableModule) -> CallableModule:

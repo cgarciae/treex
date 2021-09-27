@@ -15,83 +15,93 @@ from treex import metrics
 from treex.utils import _check_rejit
 
 Batch = tp.Mapping[str, np.ndarray]
-Model = tx.Sequential
+Module = tx.Sequential
 Metric = tx.metrics.Accuracy
 np.random.seed(420)
 
-
-@partial(jax.jit, static_argnums=(2,))
-def init_step(
-    model: Model, optiizer: tx.Optimizer, seed: int
-) -> tp.Tuple[Model, tx.Optimizer]:
-    model = model.init(seed)
-    optiizer = optiizer.init(model.parameters())
-
-    return model, optiizer
+M = tp.TypeVar("M", bound="Model")
 
 
-@jax.jit
-def reset_step(metric: Metric) -> Metric:
-    metric.reset()
-    return metric
+class Model(tx.Module):
+    def __init__(
+        self,
+        module: Module,
+        optimizer: optax.GradientTransformation,
+        metric: Metric,
+    ) -> None:
+        self.module = module
+        self.optimizer = tx.Optimizer(optimizer)
+        self.metric = metric
 
+    def __call__(self, *args, **kwargs) -> tp.Any:
+        return self.module(*args, **kwargs)
 
-def loss_fn(
-    params: Model,
-    model: Model,
-    x: jnp.ndarray,
-    y: jnp.ndarray,
-) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, jnp.ndarray]]:
-    model = model.update(params)
-    y_pred = model(x)
+    @partial(jax.jit, static_argnums=(1,))
+    def init_step(self: M, seed: int) -> M:
+        self.module = self.module.init(seed)
+        self.optimizer = self.optimizer.init(self.module.parameters())
 
-    loss = jnp.mean(
-        optax.softmax_cross_entropy(
-            y_pred,
-            jax.nn.one_hot(y, 10),
+        return self
+
+    @jax.jit
+    def reset_step(self: M) -> M:
+        self.metric.reset()
+        return self
+
+    @staticmethod
+    def loss_fn(
+        params: Module,
+        module: Module,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+    ) -> tp.Tuple[jnp.ndarray, tp.Tuple[Module, jnp.ndarray]]:
+        module = module.update(params)
+        y_pred = module(x)
+
+        loss = jnp.mean(
+            optax.softmax_cross_entropy(
+                y_pred,
+                jax.nn.one_hot(y, 10),
+            )
         )
-    )
 
-    return loss, (model, y_pred)
+        return loss, (module, y_pred)
 
+    @jax.jit
+    def train_step(
+        self: M,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+    ) -> tp.Tuple[jnp.ndarray, M]:
+        print("JITTTTING")
+        params = self.module.parameters()
 
-@jax.jit
-def train_step(
-    model: Model,
-    optimizer: tx.Optimizer,
-    metric: Metric,
-    x: jnp.ndarray,
-    y: jnp.ndarray,
-) -> tp.Tuple[jnp.ndarray, Model, tx.Optimizer, Metric]:
-    print("JITTTTING")
-    params = model.parameters()
+        (loss, (self.module, y_pred)), grads = jax.value_and_grad(
+            self.loss_fn, has_aux=True
+        )(params, self.module, x, y)
 
-    (loss, (model, y_pred)), grads = jax.value_and_grad(loss_fn, has_aux=True)(
-        params, model, x, y
-    )
+        params = self.optimizer.update(grads, params)
+        self.module = self.module.update(params)
+        _batch_metric = self.metric(y_true=y, y_pred=y_pred)
 
-    params = optimizer.update(grads, params)
-    model = model.update(params)
-    _batch_metric = metric(y_true=y, y_pred=y_pred)
+        return loss, self
 
-    return loss, model, optimizer, metric
+    @jax.jit
+    def op(
+        self: M,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+    ) -> tp.Tuple[jnp.ndarray, M]:
 
+        loss, (self.module, y_pred) = self.loss_fn(self.module, self.module, x, y)
 
-@jax.jit
-def test_step(
-    model: Model, metric: Metric, x: jnp.ndarray, y: jnp.ndarray
-) -> tp.Tuple[jnp.ndarray, Metric]:
+        _batch_metric = self.metric(y_true=y, y_pred=y_pred)
 
-    loss, (model, y_pred) = loss_fn(model, model, x, y)
+        return loss, self
 
-    _batch_metric = metric(y_true=y, y_pred=y_pred)
-
-    return loss, metric
-
-
-@jax.jit
-def predict(model: Model, x: jnp.ndarray):
-    return model(x).argmax(axis=1)
+    @jax.jit
+    def predict(self, x: jnp.ndarray) -> jnp.ndarray:
+        return self.module(x).argmax(axis=1)
 
 
 # define parameters
@@ -101,31 +111,32 @@ def main(
     steps_per_epoch: int = -1,
 ):
 
-    model = tx.Sequential(
-        tx.Conv(1, 32, [3, 3], strides=[2, 2]),
-        tx.BatchNorm(32),
-        tx.Dropout(0.05),
-        jax.nn.relu,
-        tx.Conv(32, 64, [3, 3], strides=[2, 2]),
-        tx.BatchNorm(64),
-        tx.Dropout(0.1),
-        jax.nn.relu,
-        tx.Conv(64, 128, [3, 3], strides=[2, 2]),
-        partial(jnp.mean, axis=[1, 2]),
-        tx.Linear(128, 10),
+    model = Model(
+        module=tx.Sequential(
+            tx.Conv(1, 32, [3, 3], strides=[2, 2]),
+            tx.BatchNorm(32),
+            tx.Dropout(0.05),
+            jax.nn.relu,
+            tx.Conv(32, 64, [3, 3], strides=[2, 2]),
+            tx.BatchNorm(64),
+            tx.Dropout(0.1),
+            jax.nn.relu,
+            tx.Conv(64, 128, [3, 3], strides=[2, 2]),
+            partial(jnp.mean, axis=[1, 2]),
+            tx.Linear(128, 10),
+        ),
+        optimizer=optax.adamw(1e-3),
+        metric=tx.metrics.Accuracy(argmax_preds=True),
     )
 
-    optimizer = tx.Optimizer(optax.adamw(1e-3))
-    metric = tx.metrics.Accuracy(argmax_preds=True)
-
-    model, optimizer = init_step(model, optimizer, seed=42)
+    model: Model = model.init_step(seed=42)
 
     # load data
     X_train, y_train, X_test, y_test = dataget.image.mnist().get()
     X_train = X_train[..., None]
     X_test = X_test[..., None]
 
-    print(model.tabulate(X_train[:batch_size], signature=True))
+    print(model.module.tabulate(X_train[:batch_size], signature=True))
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)
@@ -141,7 +152,7 @@ def main(
         # ---------------------------------------
         train_losses = []
         model = model.train()
-        metric = reset_step(metric)
+        model = model.reset_step()
         for step in tqdm(
             range(
                 len(X_train) // batch_size if steps_per_epoch < 1 else steps_per_epoch
@@ -153,19 +164,19 @@ def main(
             idx = np.random.choice(len(X_train), batch_size)
             x = X_train[idx]
             y = y_train[idx]
-            loss, model, optimizer, metric = train_step(model, optimizer, metric, x, y)
+            loss, model = model.train_step(x, y)
             train_losses.append(loss)
 
         epoch_train_loss = jnp.mean(jnp.stack(train_losses))
         epoch_train_losses.append(epoch_train_loss)
-        epoch_train_accs.append(metric.compute())
+        epoch_train_accs.append(model.metric.compute())
 
         # ---------------------------------------
         # test
         # ---------------------------------------
         test_losses = []
         model = model.eval()
-        metric = reset_step(metric)
+        model = model.reset_step()
         for step in tqdm(
             range(
                 len(X_test) // batch_size if steps_per_epoch < 1 else steps_per_epoch
@@ -177,12 +188,12 @@ def main(
             idx = np.random.choice(len(X_test), batch_size)
             x = X_test[idx]
             y = y_test[idx]
-            loss, metric = test_step(model, metric, x, y)
+            loss, model = model.op(x, y)
             test_losses.append(loss)
 
         epoch_test_loss = jnp.mean(jnp.stack(test_losses))
         epoch_test_losses.append(epoch_test_loss)
-        epoch_test_accs.append(metric.compute())
+        epoch_test_accs.append(model.metric.compute())
 
         print(
             f"[{epoch}] loss_train={epoch_train_loss}, acc_train={epoch_train_accs[-1]}, loss_test={epoch_test_loss}, acc_test={epoch_test_accs[-1]}"
@@ -204,7 +215,7 @@ def main(
     idxs = np.random.choice(len(X_test), 10)
     x_sample = X_test[idxs]
 
-    y_pred = predict(model, x_sample)
+    y_pred = model.predict(x_sample)
 
     plt.figure()
     for i in range(5):

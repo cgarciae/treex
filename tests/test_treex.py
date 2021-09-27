@@ -502,7 +502,7 @@ class TestTreex:
 
         mlp.linear3 = Linear(7, 8, name="linear3").init(42)
 
-        jax.tree_leaves(mlp)  # force flatten
+        mlp.check_metadata_updates()  # find field
 
         assert "linear3" in mlp.field_metadata
 

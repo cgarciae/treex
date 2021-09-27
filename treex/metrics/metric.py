@@ -17,10 +17,9 @@ class MetricMeta(to.TreeMeta):
         metric = tp.cast(Metric, metric)
 
         # save initial state
-        field_metadata = to.copy(metric).field_metadata  # force flatten
         metric._initial_state = {
             field: getattr(metric, field)
-            for field, metadata in field_metadata.items()
+            for field, metadata in metric.field_metadata.items()
             if metadata.node and field != "_initial_state"
         }
 

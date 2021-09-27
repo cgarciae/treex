@@ -15,7 +15,6 @@ O = tp.TypeVar("O", bound="Optimizer")
 A = tp.TypeVar("A", bound="tp.Any")
 
 
-@dataclass
 class Optimizer(to.Tree):
     """Wraps an optax optimizer and turn it into a Pytree while maintaining a similar API.
 
@@ -57,6 +56,9 @@ class Optimizer(to.Tree):
 
     # use to.field to copy class vars to instance
     _initialized: bool = to.static(False)
+
+    def __init__(self, optimizer: optax.GradientTransformation) -> None:
+        self.optimizer = optimizer
 
     @property
     def initialized(self) -> bool:

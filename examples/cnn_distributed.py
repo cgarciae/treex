@@ -184,7 +184,9 @@ def main(
         model = model.eval()
         for step in tqdm(
             range(
-                len(X_test) // batch_size if steps_per_epoch < 1 else steps_per_epoch
+                len(X_test) // (batch_size * n_devices)
+                if steps_per_epoch < 1
+                else steps_per_epoch
             ),
             desc="testing",
             unit="batch",
