@@ -1,6 +1,6 @@
 
-# treex.Metric
+# treex.Merge
 
-::: treex.metrics.metric.Metric
+::: treeo.mixins.Merge
     selection:
         inherited_members: true

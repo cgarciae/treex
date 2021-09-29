@@ -1,6 +1,6 @@
 
 # treex.apply
 
-::: treeo.tree.apply
+::: treeo.api.apply
     selection:
         inherited_members: true

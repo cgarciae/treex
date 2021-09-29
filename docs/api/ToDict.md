@@ -1,6 +1,6 @@
 
-# treex.Metric
+# treex.ToDict
 
-::: treex.metrics.metric.Metric
+::: treeo.mixins.ToDict
     selection:
         inherited_members: true

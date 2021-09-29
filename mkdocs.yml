@@ -17,11 +17,14 @@ nav:
     Training State: user-guide/training-state.md
     Freezing Modules: user-guide/freezing-modules.md
 - API Reference:
+    Apply: api/Apply.md
     BatchNorm: api/BatchNorm.md
     BatchStat: api/BatchStat.md
     Cache: api/Cache.md
     Conv: api/Conv.md
+    Copy: api/Copy.md
     Dropout: api/Dropout.md
+    Extensions: api/Extensions.md
     FieldInfo: api/FieldInfo.md
     FieldMetadata: api/FieldMetadata.md
     FlaxModule: api/FlaxModule.md
@@ -33,34 +36,44 @@ nav:
     Lambda: api/Lambda.md
     Linear: api/Linear.md
     Log: api/Log.md
-    Loss: api/Loss.md
+    LossLog: api/LossLog.md
     MLP: api/MLP.md
+    Map: api/Map.md
+    Merge: api/Merge.md
     Metric: api/Metric.md
+    MetricLog: api/MetricLog.md
+    MetricState: api/MetricState.md
     Missing: api/Missing.md
     ModelState: api/ModelState.md
     Module: api/Module.md
-    ModuleMeta: api/ModuleMeta.md
     Named: api/Named.md
     Nothing: api/Nothing.md
     Opaque: api/Opaque.md
     OptState: api/OptState.md
     Optimizer: api/Optimizer.md
     Parameter: api/Parameter.md
+    Repr: api/Repr.md
     Rng: api/Rng.md
     Sequential: api/Sequential.md
     State: api/State.md
+    ToDict: api/ToDict.md
+    ToString: api/ToString.md
     Tree: api/Tree.md
     TreeMeta: api/TreeMeta.md
     TreePart: api/TreePart.md
+    Treex: api/Treex.md
     add_field_info: api/add_field_info.md
     apply: api/apply.md
     field: api/field.md
     filter: api/filter.md
+    iter_split: api/iter_split.md
     map: api/map.md
+    merge: api/merge.md
     node: api/node.md
     sequence: api/sequence.md
     static: api/static.md
-    update: api/update.md
+    to_dict: api/to_dict.md
+    to_string: api/to_string.md
 extra:
   search:
     language: en

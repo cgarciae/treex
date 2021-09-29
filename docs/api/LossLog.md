@@ -1,6 +1,6 @@
 
-# treex.Metric
+# treex.LossLog
 
-::: treex.metrics.metric.Metric
+::: treex.types.LossLog
     selection:
         inherited_members: true

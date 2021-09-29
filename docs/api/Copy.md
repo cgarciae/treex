@@ -1,6 +1,6 @@
 
-# treex.ModuleMeta
+# treex.Copy
 
-::: treex.module.ModuleMeta
+::: treeo.mixins.Copy
     selection:
         inherited_members: true

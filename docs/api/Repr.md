@@ -1,6 +1,6 @@
 
-# treex.Metric
+# treex.Repr
 
-::: treex.metrics.metric.Metric
+::: treeo.mixins.Repr
     selection:
         inherited_members: true

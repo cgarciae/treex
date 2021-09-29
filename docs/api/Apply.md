@@ -1,6 +1,6 @@
 
-# treex.Loss
+# treex.Apply
 
-::: treex.types.Loss
+::: treeo.mixins.Apply
     selection:
         inherited_members: true

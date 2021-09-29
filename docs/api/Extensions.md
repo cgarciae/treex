@@ -1,6 +1,6 @@
 
-# treex.Metric
+# treex.Extensions
 
-::: treex.metrics.metric.Metric
+::: treeo.mixins.Extensions
     selection:
         inherited_members: true

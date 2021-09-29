@@ -1,6 +1,6 @@
 
-# treex.update
+# treex.iter_split
 
-::: treeo.tree.update
+::: treex.utils.iter_split
     selection:
         inherited_members: true

@@ -1,6 +1,6 @@
 
-# treex.Metric
+# treex.to_dict
 
-::: treex.metrics.metric.Metric
+::: treeo.api.to_dict
     selection:
         inherited_members: true

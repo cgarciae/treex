@@ -1,6 +1,6 @@
 
-# treex.Metric
+# treex.Map
 
-::: treex.metrics.metric.Metric
+::: treeo.mixins.Map
     selection:
         inherited_members: true

@@ -1,6 +1,6 @@
 
-# treex.Metric
+# treex.to_string
 
-::: treex.metrics.metric.Metric
+::: treeo.api.to_string
     selection:
         inherited_members: true

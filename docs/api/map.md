@@ -1,6 +1,6 @@
 
 # treex.map
 
-::: treeo.tree.map
+::: treeo.api.map
     selection:
         inherited_members: true

@@ -1,6 +1,6 @@
 
-# treex.Metric
+# treex.ToString
 
-::: treex.metrics.metric.Metric
+::: treeo.mixins.ToString
     selection:
         inherited_members: true
