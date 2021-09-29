@@ -22,7 +22,7 @@ np.random.seed(420)
 def loss_fn(
     params: Model, model: Model, x: jnp.ndarray, y: jnp.ndarray
 ) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, jnp.ndarray]]:
-    model = model.update(params)
+    model = model.merge(params)
     y_pred = model(x)
 
     loss = jnp.mean(
@@ -53,7 +53,7 @@ def train_step(
     grads = jax.lax.pmean(grads, axis_name="device")
 
     params = optimizer.update(grads, params)
-    model = model.update(params)
+    model = model.merge(params)
 
     # sync batch statistics
     model = model.map(partial(jax.lax.pmean, axis_name="device"), tx.BatchStat)

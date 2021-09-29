@@ -153,7 +153,7 @@ class TestTreex:
         mlp_params = mlp.filter(tx.Parameter)
         mlp_states = mlp.filter(tx.State)
 
-        mlp_next = mlp_params.update(mlp_states)
+        mlp_next = mlp_params.merge(mlp_states)
 
         assert not isinstance(mlp_next.linear1.w, tx.Nothing)
         assert not isinstance(mlp_next.linear1.b, tx.Nothing)
@@ -167,7 +167,7 @@ class TestTreex:
         m = tx.Linear(2, 3)
         m2 = m.init(42)
 
-        m = m.update(m2)
+        m = m.merge(m2)
 
         assert isinstance(m.kernel, jnp.ndarray)
 
@@ -178,7 +178,7 @@ class TestTreex:
         mlp_params = mlp.filter(tx.Parameter)
         mlp_states = mlp.filter(tx.State)
 
-        mlp_params.update(mlp_states, inplace=True)
+        mlp_params.merge(mlp_states, inplace=True)
 
         assert not isinstance(mlp_params.linear1.w, tx.Nothing)
         assert not isinstance(mlp_params.linear1.b, tx.Nothing)
@@ -195,7 +195,7 @@ class TestTreex:
         mlp_params = mlp.filter(tx.Parameter)
         mlp_states = mlp.filter(tx.State)
 
-        mlp_params.update(mlp_states)
+        mlp_params.merge(mlp_states)
 
         assert not isinstance(mlp_params.linear1.w, tx.Nothing)
         assert not isinstance(mlp_params.linear1.b, tx.Nothing)

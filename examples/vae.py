@@ -115,7 +115,7 @@ class VAE(tx.Module):
 
 @partial(jax.value_and_grad, has_aux=True)
 def loss_fn(params: VAE, model: VAE, x: np.ndarray) -> tp.Tuple[jnp.ndarray, VAE]:
-    model = model.update(params)
+    model = model.merge(params)
     x_pred = model(x)
 
     crossentropy_loss = jnp.mean(optax.sigmoid_binary_cross_entropy(x_pred, x))
@@ -134,7 +134,7 @@ def train_step(
     (loss, model), grads = loss_fn(params, model, x)
 
     params = optimizer.update(grads, params)
-    model = model.update(params)
+    model = model.merge(params)
 
     return loss, model, optimizer
 

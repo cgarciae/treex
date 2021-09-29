@@ -25,6 +25,10 @@ M = tp.TypeVar("M", bound="Model")
 
 
 class Model(tx.Module):
+    module: Module
+    optimizer: tx.Optimizer
+    metric: Metric
+
     def __init__(
         self,
         module: Module,
@@ -67,7 +71,7 @@ class Model(tx.Module):
         x: jnp.ndarray,
         y: jnp.ndarray,
     ) -> tp.Tuple[jnp.ndarray, tp.Tuple[Module, jnp.ndarray]]:
-        module = module.update(params)
+        module = module.merge(params)
         y_pred = module(x)
 
         loss = jnp.mean(
@@ -92,11 +96,20 @@ class Model(tx.Module):
             self.loss_fn, has_aux=True
         )(params, self.module, x, y)
 
-        params = self.optimizer.update(grads, params)
-        self.module = self.module.update(params)
+        assert isinstance(self.module, Module)
 
+        params = self.optimizer.update(grads, params)
+        self.module = self.module.merge(params)
+
+        # sync batch statistics
+        self.module = self.module.map(
+            partial(jax.lax.pmean, axis_name="device"),
+            tx.BatchStat,
+        )
+
+        # update metric
         y, y_pred = jax.lax.all_gather((y, y_pred), axis_name="device")
-        _batch_metric = self.metric(y_true=y, y_pred=y_pred)
+        self.metric.update(y_true=y, y_pred=y_pred)
 
         return loss, self
 

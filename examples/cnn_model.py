@@ -55,7 +55,7 @@ class Model(tx.Module):
         x: jnp.ndarray,
         y: jnp.ndarray,
     ) -> tp.Tuple[jnp.ndarray, tp.Tuple[Module, jnp.ndarray]]:
-        module = module.update(params)
+        module = module.merge(params)
         y_pred = module(x)
 
         loss = jnp.mean(

@@ -136,7 +136,7 @@ class Module(to.Tree):
 
         if inplace:
             # here we update initialized fields by the above tree_map
-            tree_out = to.update(self, tree_out, inplace=True)
+            tree_out = to.merge(self, tree_out, inplace=True)
 
         def call_module_init(module: Module):
             if isinstance(module, Module) and not module._initialized:
@@ -205,7 +205,13 @@ class Module(to.Tree):
     def rng_init(self, key: jnp.ndarray) -> None:
         pass
 
-    def map(self: M, f: tp.Callable, *filters: Filter, inplace: bool = False) -> M:
+    def map(
+        self: M,
+        f: tp.Callable,
+        *filters: Filter,
+        inplace: bool = False,
+        flatten_mode: tp.Union[to.FlattenMode, str, None] = None,
+    ) -> M:
         """
         Applies a function to all leaves in a pytree using `jax.tree_map`. If `filters` are given then
         the function will be applied only to the subset of leaves that match the filters. For more information see
@@ -219,13 +225,7 @@ class Module(to.Tree):
         Returns:
             The object with the changes applied, if `inplace` is `True` then `self` is returned.
         """
-        module = to.map(f, self, *filters)
-
-        if inplace:
-            self.__dict__.update(module.__dict__)
-            return self
-        else:
-            return module
+        return to.map(f, self, *filters, inplace=inplace, flatten_mode=flatten_mode)
 
     def filter(
         self: M,
@@ -250,7 +250,14 @@ class Module(to.Tree):
 
         return to.filter(self, *filters, inplace=inplace, flatten_mode=flatten_mode)
 
-    def update(self: M, other: M, *rest: M, inplace: bool = False) -> M:
+    def merge(
+        self: M,
+        other: M,
+        *rest: M,
+        inplace: bool = False,
+        flatten_mode: tp.Union[to.FlattenMode, str, None] = None,
+        ignore_static: bool = False,
+    ) -> M:
         """
         Creates a new module with the same structure, but its values
         updated based on the values from the incoming modules. For more information see
@@ -264,13 +271,14 @@ class Module(to.Tree):
         Returns:
             A new module with the updated values or `None` if `inplace` is `True`.
         """
-        module = to.update(self, other, *rest)
-
-        if inplace:
-            self.__dict__.update(module.__dict__)
-            return self
-        else:
-            return module
+        return to.merge(
+            self,
+            other,
+            *rest,
+            inplace=inplace,
+            flatten_mode=flatten_mode,
+            ignore_static=ignore_static,
+        )
 
     def tabulate(
         self,

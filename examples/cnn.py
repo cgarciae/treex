@@ -42,7 +42,7 @@ def loss_fn(
     x: jnp.ndarray,
     y: jnp.ndarray,
 ) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, jnp.ndarray]]:
-    model = model.update(params)
+    model = model.merge(params)
     y_pred = model(x)
 
     loss = jnp.mean(
@@ -71,7 +71,7 @@ def train_step(
     )
 
     params = optimizer.update(grads, params)
-    model = model.update(params)
+    model = model.merge(params)
     _batch_metric = metric(y_true=y, y_pred=y_pred)
 
     return loss, model, optimizer, metric
@@ -126,6 +126,7 @@ def main(
     X_test = X_test[..., None]
 
     print(model.tabulate(X_train[:batch_size], signature=True))
+    print(tx.to_string(model, static_fields=False))
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)

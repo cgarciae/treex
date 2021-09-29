@@ -98,7 +98,7 @@ from functools import partial
 @partial(jax.value_and_grad, has_aux=True)
 def loss_fn(params: NoisyLinear, model: NoisyLinear, x, y):
     # update params into model
-    model = model.update(params)
+    model = model.merge(params)
     # apply model
     pred_y = model(x)
     # MSE loss
@@ -129,7 +129,7 @@ def train_step(model: NoisyLinear, optimizer: tx.Optimizer, x, y):
     new_params = optimizer.update(grads, params)
 
     # update new_params
-    model = model.update(new_params)
+    model = model.merge(new_params)
 
     return model, optimizer, loss
 
