@@ -7,6 +7,7 @@ import treeo as to
 from rich.text import Text
 
 from treex import types, utils
+from treex.treex import Treex
 
 M = tp.TypeVar("M", bound="Metric")
 
@@ -26,7 +27,7 @@ class MetricMeta(to.TreeMeta):
         return metric
 
 
-class Metric(to.Tree, metaclass=MetricMeta):
+class Metric(Treex, metaclass=MetricMeta):
     """
     Encapsulates metric logic and state. Metrics accumulate state between calls such
     that their output value reflect the metric as if calculated on the whole data

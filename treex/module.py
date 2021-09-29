@@ -1,8 +1,4 @@
-import dataclasses
-import enum
 import functools
-import inspect
-import io
 import threading
 import typing as tp
 from contextlib import contextmanager
@@ -17,6 +13,7 @@ from rich.table import Table
 from rich.text import Text
 
 from treex import types, utils
+from treex.treex import Treex
 
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
@@ -59,21 +56,7 @@ _CONTEXT = _Context()
 # -----------------------------------------
 
 
-# override __call__
-def _get_call(orig_call):
-    def call_wrapper(self: Module, *args, **kwargs):
-        outputs = orig_call(self, *args, **kwargs)
-
-        if _CONTEXT.call_info is not None and self not in _CONTEXT.call_info:
-            inputs = types.Inputs(*args, **kwargs)
-            _CONTEXT.call_info[self] = (inputs, outputs)
-
-        return outputs
-
-    return call_wrapper
-
-
-class Module(to.Tree):
+class Module(Treex):
     # use to.field to copy class vars to instance
     _training: bool = to.static(True)
     _initialized: bool = to.static(False)
@@ -93,8 +76,19 @@ class Module(to.Tree):
 
     def __init_subclass__(cls):
         if issubclass(cls, tp.Callable):
-            new_call = _get_call(cls.__call__)
-            cls.__call__ = functools.wraps(cls.__call__)(new_call)
+            orig_call = cls.__call__
+
+            @functools.wraps(cls.__call__)
+            def new_call(self: Module, *args, **kwargs):
+                outputs = orig_call(self, *args, **kwargs)
+
+                if _CONTEXT.call_info is not None and self not in _CONTEXT.call_info:
+                    inputs = types.Inputs(*args, **kwargs)
+                    _CONTEXT.call_info[self] = (inputs, outputs)
+
+                return outputs
+
+            cls.__call__ = new_call
 
         return super().__init_subclass__()
 
@@ -204,81 +198,6 @@ class Module(to.Tree):
 
     def rng_init(self, key: jnp.ndarray) -> None:
         pass
-
-    def map(
-        self: M,
-        f: tp.Callable,
-        *filters: Filter,
-        inplace: bool = False,
-        flatten_mode: tp.Union[to.FlattenMode, str, None] = None,
-    ) -> M:
-        """
-        Applies a function to all leaves in a pytree using `jax.tree_map`. If `filters` are given then
-        the function will be applied only to the subset of leaves that match the filters. For more information see
-        [map's user guide](https://cgarciae.github.io/treex/user-guide/api/map).
-
-        Arguments:
-            f: The function to apply to the leaves.
-            filters: The filters used to select the leaves to which the function will be applied.
-            inplace: If `True` then the object will be mutated with the changes.
-
-        Returns:
-            The object with the changes applied, if `inplace` is `True` then `self` is returned.
-        """
-        return to.map(f, self, *filters, inplace=inplace, flatten_mode=flatten_mode)
-
-    def filter(
-        self: M,
-        *filters: Filter,
-        inplace: bool = False,
-        flatten_mode: tp.Union[to.FlattenMode, str, None] = None,
-    ) -> M:
-        """
-        Allows you to select a subtree by filtering based on a predicate or `kind` type,
-        leaves that pass all filters are kept, the rest are set to `Nothing`. For more information see
-        [filter's user guide](https://cgarciae.github.io/treex/user-guide/api/filter).
-
-        Arguments:
-            *filters: Types to filter by, membership is determined by `issubclass`, or
-                callables that take in a `FieldInfo` and return a `bool`.
-            inplace: If `True`, the input `obj` is mutated and returned.
-            flatten_mode: Sets a new `FlattenMode` context for the operation.
-        Returns:
-            A new pytree with the filtered fields. If `inplace` is `True`, `obj` is returned.
-
-        """
-
-        return to.filter(self, *filters, inplace=inplace, flatten_mode=flatten_mode)
-
-    def merge(
-        self: M,
-        other: M,
-        *rest: M,
-        inplace: bool = False,
-        flatten_mode: tp.Union[to.FlattenMode, str, None] = None,
-        ignore_static: bool = False,
-    ) -> M:
-        """
-        Creates a new module with the same structure, but its values
-        updated based on the values from the incoming modules. For more information see
-        [update's user guide](https://cgarciae.github.io/treex/user-guide/api/update).
-
-        Arguments:
-            other: The first to get the values to update from.
-            rest: Additional modules to perform the update in order from left to right.
-            inplace: If `True`, the current module is modified with the updated values.
-
-        Returns:
-            A new module with the updated values or `None` if `inplace` is `True`.
-        """
-        return to.merge(
-            self,
-            other,
-            *rest,
-            inplace=inplace,
-            flatten_mode=flatten_mode,
-            ignore_static=ignore_static,
-        )
 
     def tabulate(
         self,
@@ -425,10 +344,6 @@ class Module(to.Tree):
 
         return utils._get_rich_repr(table)
 
-    def __repr__(self) -> str:
-        rep = utils._get_repr(self, level=0, array_type=None, inline=False)
-        return utils._get_rich_repr(Text.from_markup(rep))
-
     # --------------------------------------
     # filter shortcuts
     # --------------------------------------
@@ -504,13 +419,3 @@ class Module(to.Tree):
             filters: additional filters passed to `filter`.
         """
         return self.filter(types.Log, *filters)
-
-
-# --------------------------------------------------
-# functions
-# --------------------------------------------------
-
-
-# --------------------------------------------------
-# utils
-# --------------------------------------------------

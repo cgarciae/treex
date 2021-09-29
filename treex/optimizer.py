@@ -10,12 +10,13 @@ import treeo as to
 from rich.text import Text
 
 from treex import types, utils
+from treex.treex import Treex
 
 O = tp.TypeVar("O", bound="Optimizer")
 A = tp.TypeVar("A", bound="tp.Any")
 
 
-class Optimizer(to.Tree):
+class Optimizer(Treex):
     """Wraps an optax optimizer and turn it into a Pytree while maintaining a similar API.
 
     The main difference with optax is that tx.Optimizer contains its own state, thus, there is
@@ -132,10 +133,6 @@ class Optimizer(to.Tree):
             output = param_updates
 
         return jax.tree_unflatten(treedef, output)
-
-    def __repr__(self) -> str:
-        rep = utils._get_repr(self, level=0, array_type=None, inline=False)
-        return utils._get_rich_repr(Text.from_markup(rep))
 
     # THE FOLOWING METHODS ARE AUTOMATICALLY GENERATED
     # >>> DO NOT MODIFY <<<
