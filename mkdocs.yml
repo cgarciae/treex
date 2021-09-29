@@ -10,7 +10,7 @@ nav:
     Initialization: user-guide/initialization.md
     Module API:
       Filter: user-guide/api/filter.md
-      Update: user-guide/api/update.md
+      Merge: user-guide/api/merge.md
       Map: user-guide/api/map.md
     Optimizer: user-guide/optimizer.md
     State Management: user-guide/state-management.md

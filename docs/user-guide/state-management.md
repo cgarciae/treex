@@ -53,7 +53,7 @@ State management is one of the most challenging things in JAX because of its fun
 * The Pytree approach requires the user to be aware that if a Module is stateful it should propagate its state as output to jitted functions, on the other hand implementation and usage if very simple.
 * Frameworks like Flax and Haiku are more explicit as to when state is updated but introduce a lot of complexity to do so.
 
-A standard solution to this problem is: **always output the Module to update its state**. For example, a typical loss function that contains a stateful model would look like this:
+A standard solution to this problem is: **always output the Module to merge its state**. For example, a typical loss function that contains a stateful model would look like this:
 
 ```python
 @partial(jax.value_and_grad, has_aux=True)
