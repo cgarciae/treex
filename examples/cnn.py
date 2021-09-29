@@ -101,7 +101,7 @@ def main(
     steps_per_epoch: int = -1,
 ):
 
-    model = tx.Sequential(
+    model: Model = tx.Sequential(
         tx.Conv(1, 32, [3, 3], strides=[2, 2]),
         tx.BatchNorm(32),
         tx.Dropout(0.05),
@@ -126,7 +126,6 @@ def main(
     X_test = X_test[..., None]
 
     print(model.tabulate(X_train[:batch_size], signature=True))
-    print(tx.to_string(model, static_fields=False))
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)

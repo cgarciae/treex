@@ -7,7 +7,7 @@ import pytest
 import treex as tx
 
 
-class TestReduce:
+class TestAccuracy:
     def test_jit(self):
         N = 0
 
@@ -23,7 +23,13 @@ class TestReduce:
         y_pred = jnp.array([0, 1, 2, 3, 0, 5, 6, 7, 0, 9])
 
         metric = f(metric, y_true, y_pred)
-        metric = f(metric, y_true, y_pred)
-
-        assert metric.count == 20
+        assert metric.count == 10
+        assert metric.total == 8
         assert N == 1
+        assert metric.compute() == 0.8
+
+        metric = f(metric, y_true, y_pred)
+        assert metric.count == 20
+        assert metric.total == 16
+        assert N == 1
+        assert metric.compute() == 0.8
