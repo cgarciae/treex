@@ -116,7 +116,7 @@ def main(
     )
 
     optimizer = tx.Optimizer(optax.adamw(1e-3))
-    metric = tx.metrics.Accuracy(argmax_preds=True)
+    metric = tx.metrics.Accuracy()
 
     model, optimizer = init_step(model, optimizer, seed=42)
 

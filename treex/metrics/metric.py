@@ -103,7 +103,3 @@ class Metric(Treex, metaclass=MetricMeta):
             return old_call(self, *args, **kwargs)
 
         cls.__call__ = new_call
-
-    def __repr__(self) -> str:
-        rep = utils._get_repr(self, level=0, array_type=None, inline=False)
-        return utils._get_rich_repr(Text.from_markup(rep))
