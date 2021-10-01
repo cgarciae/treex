@@ -7,7 +7,9 @@ from treex import types
 Tensor = jnp.ndarray
 tensor = jnp.array
 from treex.metrics.functional.classification.stat_scores import (
-    _stat_scores_compute, _stat_scores_update)
+    _stat_scores_compute,
+    _stat_scores_update,
+)
 from treex.metrics.metric import Metric
 from treex.metrics.utilities.enums import AverageMethod, MDMCAverageMethod
 
