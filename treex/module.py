@@ -51,11 +51,10 @@ class Module(TreeObject):
         Returns:
             The new module with the fields initialized.
         """
-        if isinstance(key, int):
-            key = jax.random.PRNGKey(key)
-
         def next_key() -> jnp.ndarray:
             nonlocal key
+            if isinstance(key, int):
+                key = jax.random.PRNGKey(key)
             assert isinstance(key, jnp.ndarray)
             next_key, key = jax.random.split(key)
             return next_key
