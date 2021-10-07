@@ -45,6 +45,8 @@ Treex is in an early stage, things might brake between versions but we will resp
 
 
 ## Getting Started
+<!-- Remake Getting Started now that most content is in the User Guide -->
+
 This is a small appetizer to give you a feel for how using Treex looks like, be sure to checkout the [Guide section](#guide) below for details on more advanced usage.
 ```python
 from typing import Sequence, List
@@ -56,7 +58,7 @@ import treex as tx
 
 # you can use tx.MLP but we will create our own as an example
 class MLP(tx.Module):
-    layers: List[tx.Linear]
+    layers: List[tx.Linear] = tx.node()
 
     def __init__(self, features: Sequence[int]):
         self.layers = [
@@ -97,11 +99,7 @@ y_pred = model(x)
 Here is an example of creating a stateful module of a `RollingMean` metric and using them with `jax.jit`:
 
 ```python
-class Metric(tx.Module):
-    def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
-        raise NotImplementedError()
-
-class RollingMean(Metric):
+class RollingMean(tx.Module):
     count: jnp.ndarray = tx.State.node()
     total: jnp.ndarray = tx.State.node()
 
@@ -116,7 +114,7 @@ class RollingMean(Metric):
         return self.total / self.count
 
 @jax.jit
-def update(x: jnp.ndarray, metric: Metric) -> Tuple[jnp.ndarray, Metric]:
+def update(x: jnp.ndarray, metric: RollingMean) -> Tuple[jnp.ndarray, RollingMean]:
     mean = metric(x)
     return mean, metric # return mean value and updated metric
 

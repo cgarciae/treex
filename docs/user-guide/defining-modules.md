@@ -13,12 +13,13 @@ For example, a basic Module will tend to look like this:
 ```python
 class Linear(tx.Module):
     # din: int # annotation not needed, inferred as static
-    w: tp.Union[tx.Initializer, jnp.ndarray] = tx.Parameter.node() # node field
+    w: Union[tx.Initializer, jnp.ndarray] = tx.Parameter.node() # node field
     b: jnp.ndarray = tx.Parameter.node() # node field
 
     def __init__(self, din, dout):
         self.w = tx.Initializer(
-            lambda key: jax.random.uniform(key, shape=(din, dout)))
+            lambda key: jax.random.uniform(key, shape=(din, dout))
+        )
         self.b = jnp.zeros(shape=(dout,))
 
     def __call__(self, x):
