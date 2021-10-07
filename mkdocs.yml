@@ -21,6 +21,7 @@ nav:
     BatchNorm: api/BatchNorm.md
     BatchStat: api/BatchStat.md
     Cache: api/Cache.md
+    Compact: api/Compact.md
     Conv: api/Conv.md
     Copy: api/Copy.md
     Dropout: api/Dropout.md
@@ -64,6 +65,7 @@ nav:
     Treex: api/Treex.md
     add_field_info: api/add_field_info.md
     apply: api/apply.md
+    compact: api/compact.md
     field: api/field.md
     filter: api/filter.md
     iter_split: api/iter_split.md
