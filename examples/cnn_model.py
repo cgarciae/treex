@@ -81,7 +81,7 @@ class Model(tx.Module):
         )(params, self.module, x, y)
 
         params = self.optimizer.update(grads, params)
-        self.module = self.module.update(params)
+        self.module = self.module.merge(params)
         _batch_metric = self.metric(y_true=y, y_pred=y_pred)
 
         return loss, self
@@ -126,7 +126,7 @@ def main(
             tx.Linear(128, 10),
         ),
         optimizer=optax.adamw(1e-3),
-        metric=tx.metrics.Accuracy(argmax_preds=True),
+        metric=tx.metrics.Accuracy(),
     )
 
     model: Model = model.init_step(seed=42)

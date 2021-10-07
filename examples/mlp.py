@@ -29,7 +29,7 @@ class MLP(tx.Module):
 
 @partial(jax.value_and_grad, has_aux=True)
 def loss_fn(params, model, x, y):
-    model = model.update(params)
+    model = model.merge(params)
     y_pred = model(x)
     loss = jnp.mean((y_pred - y) ** 2)
 
@@ -42,7 +42,7 @@ def train_step(model, x, y, optimizer):
     (loss, model), grads = loss_fn(params, model, x, y)
 
     new_params = optimizer.update(grads, params)
-    model = model.update(new_params)
+    model = model.merge(new_params)
 
     return loss, model, optimizer
 

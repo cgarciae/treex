@@ -104,7 +104,7 @@ class Inputs:
 
 
 @tpe.runtime_checkable
-class WrappedCall(tp.Protocol):
+class WrappedCall(tpe.Protocol):
     _orig_call: tp.Callable[..., tp.Any]
 
     def __call__(self, *args, **kwargs) -> tp.Any:
