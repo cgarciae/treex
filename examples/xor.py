@@ -1,4 +1,5 @@
 from functools import partial
+from typing import Union
 
 import jax
 import jax.numpy as jnp
@@ -13,11 +14,10 @@ y = jnp.array([0, 1, 1, 0], dtype=jnp.float32)[:, None]
 
 # treex already defines tx.Linear but we can define our own
 class Linear(tx.Module):
-    w: tx.Parameter[tx.Initializer, jnp.ndarray]
-    b: tx.Parameter[jnp.ndarray]
+    w: Union[tx.Initializer, jnp.ndarray] = tx.Parameter.node()
+    b: jnp.ndarray = tx.Parameter.node()
 
     def __init__(self, din, dout):
-        super().__init__()
         self.w = tx.Initializer(lambda key: jax.random.uniform(key, shape=(din, dout)))
         self.b = jnp.zeros(shape=(dout,))
 
@@ -27,7 +27,7 @@ class Linear(tx.Module):
 
 class CustomMLP(tx.Module):
     def __init__(self, din, dhid, dout):
-        super().__init__()
+
         self.l1 = Linear(din, dhid)
         self.l2 = Linear(dhid, dout)
 
@@ -51,11 +51,11 @@ def loss_fn(model, x, y):
 
 
 @jax.jit
-def train_step(model, x, y, optimizer):
+def train_step(model, x, y, optimizer: tx.Optimizer):
     loss, grads = loss_fn(model, x, y)
 
     # here model == params
-    model = optimizer.apply_updates(grads, model)
+    model = optimizer.update(grads, model)
 
     return loss, model, optimizer
 

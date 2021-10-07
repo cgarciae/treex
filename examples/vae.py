@@ -27,8 +27,8 @@ class Encoder(tx.Module):
     linear1: tx.Linear
     linear_mean: tx.Linear
     linear_std: tx.Linear
-    rng: tx.RngSeq
-    kl_loss: tx.Loss[jnp.ndarray]
+    next_key: tx.KeySeq
+    kl_loss: jnp.ndarray = tx.LossLog.node()
 
     def __init__(
         self,
@@ -36,11 +36,11 @@ class Encoder(tx.Module):
         hidden_size: int,
         latent_size: int,
     ):
-        super().__init__()
+
         self.linear1 = tx.Linear(np.prod(image_shape), hidden_size)
         self.linear_mean = tx.Linear(hidden_size, latent_size)
         self.linear_std = tx.Linear(hidden_size, latent_size)
-        self.rng = tx.RngSeq()
+        self.next_key = tx.KeySeq()
         self.kl_loss = jnp.array(0.0)
 
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
@@ -52,7 +52,7 @@ class Encoder(tx.Module):
         log_std = self.linear_std(x)
         stddev = jnp.exp(log_std)
 
-        key = self.rng.next()
+        key = self.next_key()
         z = mean + stddev * jax.random.normal(key, mean.shape)
 
         self.kl_loss = 2e-1 * kl_divergence(mean, stddev)
@@ -72,7 +72,7 @@ class Decoder(tx.Module):
         hidden_size: int,
         image_shape: tp.Sequence[int],
     ):
-        super().__init__()
+
         self.linear1 = tx.Linear(latent_size, hidden_size)
         self.linear2 = tx.Linear(hidden_size, np.prod(image_shape))
         self.output_shape = image_shape
@@ -97,7 +97,7 @@ class VAE(tx.Module):
         hidden_size: int,
         latent_size: int,
     ):
-        super().__init__()
+
         self.encoder = Encoder(image_shape, hidden_size, latent_size)
         self.decoder = Decoder(latent_size, hidden_size, image_shape)
 
@@ -115,11 +115,11 @@ class VAE(tx.Module):
 
 @partial(jax.value_and_grad, has_aux=True)
 def loss_fn(params: VAE, model: VAE, x: np.ndarray) -> tp.Tuple[jnp.ndarray, VAE]:
-    model = model.update(params)
+    model = model.merge(params)
     x_pred = model(x)
 
     crossentropy_loss = jnp.mean(optax.sigmoid_binary_cross_entropy(x_pred, x))
-    aux_losses = jax.tree_leaves(model.filter(tx.Loss))
+    aux_losses = jax.tree_leaves(model.filter(tx.LossLog))
 
     loss = crossentropy_loss + sum(aux_losses, 0.0)
 
@@ -133,8 +133,8 @@ def train_step(
     params = model.filter(tx.Parameter)
     (loss, model), grads = loss_fn(params, model, x)
 
-    params = optimizer.apply_updates(grads, params)
-    model = model.update(params)
+    params = optimizer.update(grads, params)
+    model = model.merge(params)
 
     return loss, model, optimizer
 

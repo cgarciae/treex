@@ -16,37 +16,38 @@ We will showcase each of the above features by creating a very contrived but com
 """
 
 # %%
-from typing import Tuple
+import typing as tp
 
 import jax.numpy as jnp
 import numpy as np
+
 
 import treex as tx
 
 
 class NoisyLinear(tx.Module):
     # tree parts are defined by treex annotations
-    w: tx.Parameter
-    b: tx.Parameter
-    rng: tx.Rng  # tx.Rng inherits from tx.State
+    w: tp.Union[jnp.ndarray, tx.Initializer] = tx.Parameter.node()
+    b: tp.Union[jnp.ndarray, tx.Initializer] = tx.Parameter.node()
+    key: tp.Union[jnp.ndarray, tx.Initializer] = tx.Rng.node()
 
     # other annotations are possible but ignored by type
     name: str
 
     def __init__(self, din, dout):
-        super().__init__()
+
         # Initializers only expect RNG key
         self.w = tx.Initializer(lambda k: jax.random.uniform(k, shape=(din, dout)))
         self.b = tx.Initializer(lambda k: jax.random.uniform(k, shape=(dout,)))
 
         # random state is JUST state, we can keep it locally
-        self.rng = tx.Initializer(lambda k: k)
+        self.key = tx.Initializer(lambda k: k)
 
     def __call__(self, x: np.ndarray) -> np.ndarray:
-        assert isinstance(self.rng, jnp.ndarray)
+        assert isinstance(self.key, jnp.ndarray)
 
         # update state in place
-        key, self.rng = jax.random.split(self.rng, 2)
+        key, self.key = jax.random.split(self.key, 2)
 
         # your typical linear operation
         y = jnp.dot(x, self.w) + self.b
@@ -97,7 +98,7 @@ from functools import partial
 @partial(jax.value_and_grad, has_aux=True)
 def loss_fn(params: NoisyLinear, model: NoisyLinear, x, y):
     # update params into model
-    model = model.update(params)
+    model = model.merge(params)
     # apply model
     pred_y = model(x)
     # MSE loss
@@ -125,10 +126,10 @@ def train_step(model: NoisyLinear, optimizer: tx.Optimizer, x, y):
     (loss, model), grads = loss_fn(params, model, x, y)
 
     # apply optax update
-    new_params = optimizer.apply_updates(grads, params)
+    new_params = optimizer.update(grads, params)
 
     # update new_params
-    model = model.update(new_params)
+    model = model.merge(new_params)
 
     return model, optimizer, loss
 
@@ -145,15 +146,15 @@ import numpy as np
 np.random.seed(0)
 
 
-def get_data(dataset_size: int) -> Tuple[np.ndarray, np.ndarray]:
+def get_data(dataset_size: int) -> tp.Tuple[np.ndarray, np.ndarray]:
     x = np.random.normal(size=(dataset_size, 1))
     y = 5 * x - 2 + 0.4 * np.random.normal(size=(dataset_size, 1))
     return x, y
 
 
 def get_batch(
-    data: Tuple[np.ndarray, np.ndarray], batch_size: int
-) -> Tuple[np.ndarray, np.ndarray]:
+    data: tp.Tuple[np.ndarray, np.ndarray], batch_size: int
+) -> tp.Tuple[np.ndarray, np.ndarray]:
     idx = np.random.choice(len(data[0]), batch_size)
     return jax.tree_map(lambda x: x[idx], data)
 

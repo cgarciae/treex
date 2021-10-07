@@ -30,11 +30,16 @@ def getinfo():
         else [
             name
             for name, obj in inspect.getmembers(module)
-            if (isinstance(obj, ModuleType) and obj.__name__.startswith("treex"))
+            if (
+                isinstance(obj, ModuleType)
+                and (
+                    obj.__name__.startswith("treex") or obj.__name__.startswith("treeo")
+                )
+            )
             or (
                 hasattr(obj, "__module__")
                 and obj.__class__.__module__ != "typing"
-                and "treex" in obj.__module__
+                and ("treex" in obj.__module__ or "treeo" in obj.__module__)
                 and (inspect.isclass(obj) or inspect.isfunction(obj))
             )
         ]

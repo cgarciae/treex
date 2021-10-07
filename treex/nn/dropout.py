@@ -6,8 +6,8 @@ import numpy as np
 from flax.linen import stochastic as flax_module
 
 from treex import types
+from treex.key_seq import KeySeq
 from treex.module import Module
-from treex.rnq_seq import RngSeq
 
 
 class Dropout(Module):
@@ -26,7 +26,7 @@ class Dropout(Module):
     """
 
     # pytree
-    rng: RngSeq
+    next_key: KeySeq
 
     # static
     rate: float
@@ -44,10 +44,10 @@ class Dropout(Module):
             rate: the dropout probability.  (_not_ the keep rate!)
             broadcast_dims: dimensions that will share the same dropout mask
         """
-        super().__init__()
+
         self.rate = rate
         self.broadcast_dims = broadcast_dims
-        self.rng = RngSeq()
+        self.next_key = KeySeq()
 
     @property
     def module(self) -> flax_module.Dropout:
@@ -82,7 +82,7 @@ class Dropout(Module):
         )
 
         if rng is None:
-            rng = self.rng.next()
+            rng = self.next_key() if training else self.next_key.key
 
         # call apply
         output = self.module.apply(

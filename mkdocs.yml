@@ -3,27 +3,79 @@ repo_name: cgarciae/treex
 repo_url: https://github.com/cgarciae/treex
 site_url: https://cgarciae.github.io/treex
 nav:
-- Introduction: index.md
+- Treex: index.md
+- User Guide:
+    User Guide: user-guide/intro.md
+    Defining Modules: user-guide/defining-modules.md
+    Initialization: user-guide/initialization.md
+    Module API:
+      Filter: user-guide/api/filter.md
+      Merge: user-guide/api/merge.md
+      Map: user-guide/api/map.md
+    Optimizer: user-guide/optimizer.md
+    State Management: user-guide/state-management.md
+    Training State: user-guide/training-state.md
+    Freezing Modules: user-guide/freezing-modules.md
 - API Reference:
+    Apply: api/Apply.md
     BatchNorm: api/BatchNorm.md
     BatchStat: api/BatchStat.md
+    Cache: api/Cache.md
+    Compact: api/Compact.md
     Conv: api/Conv.md
+    Copy: api/Copy.md
     Dropout: api/Dropout.md
+    Extensions: api/Extensions.md
+    FieldInfo: api/FieldInfo.md
+    FieldMetadata: api/FieldMetadata.md
+    FlaxModule: api/FlaxModule.md
+    Hashable: api/Hashable.md
     Initializer: api/Initializer.md
+    Inputs: api/Inputs.md
+    KeySeq: api/KeySeq.md
+    KindMixin: api/KindMixin.md
     Lambda: api/Lambda.md
     Linear: api/Linear.md
+    Log: api/Log.md
+    LossLog: api/LossLog.md
     MLP: api/MLP.md
+    Map: api/Map.md
+    Merge: api/Merge.md
+    Metric: api/Metric.md
+    MetricLog: api/MetricLog.md
+    MetricState: api/MetricState.md
+    Missing: api/Missing.md
+    ModelState: api/ModelState.md
     Module: api/Module.md
+    Named: api/Named.md
     Nothing: api/Nothing.md
+    Opaque: api/Opaque.md
     OptState: api/OptState.md
     Optimizer: api/Optimizer.md
     Parameter: api/Parameter.md
+    Repr: api/Repr.md
     Rng: api/Rng.md
-    Sequence: api/Sequence.md
+    Sequential: api/Sequential.md
     State: api/State.md
-    TreeObject: api/TreeObject.md
+    ToDict: api/ToDict.md
+    ToString: api/ToString.md
+    Tree: api/Tree.md
+    TreeMeta: api/TreeMeta.md
     TreePart: api/TreePart.md
+    Treex: api/Treex.md
+    add_field_info: api/add_field_info.md
+    apply: api/apply.md
+    compact: api/compact.md
+    field: api/field.md
+    filter: api/filter.md
+    iter_split: api/iter_split.md
+    map: api/map.md
+    merge: api/merge.md
+    node: api/node.md
     sequence: api/sequence.md
+    static: api/static.md
+    to_dict: api/to_dict.md
+    to_string: api/to_string.md
 extra:
   search:
     language: en
@@ -43,6 +95,8 @@ theme:
 markdown_extensions:
 - pymdownx.arithmatex
 - admonition
+- pymdownx.highlight
+- pymdownx.superfences
 - codehilite:
     guess_lang: false
     use_pygments: true

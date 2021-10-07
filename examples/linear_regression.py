@@ -1,4 +1,5 @@
 from functools import partial
+from typing import Union
 
 import jax
 import jax.numpy as jnp
@@ -11,13 +12,13 @@ import treex as tx
 x = np.random.uniform(size=(500, 1))
 y = 1.4 * x - 0.3 + np.random.normal(scale=0.1, size=(500, 1))
 
-# treex already defines tx.Linear but we can define our own
+
 class Linear(tx.Module):
-    w: tx.Parameter[tx.Initializer, jnp.ndarray]
-    b: tx.Parameter[jnp.ndarray]
+    w: Union[tx.Initializer, jnp.ndarray] = tx.Parameter.node()
+    b: jnp.ndarray = tx.Parameter.node()
 
     def __init__(self, din, dout):
-        super().__init__()
+
         self.w = tx.Initializer(lambda key: jax.random.uniform(key, shape=(din, dout)))
         self.b = jnp.zeros(shape=(dout,))
 
@@ -25,14 +26,9 @@ class Linear(tx.Module):
         return jnp.dot(x, self.w) + self.b
 
 
-model = Linear(1, 1).init(42)
-optimizer = tx.Optimizer(optax.adam(0.01))
-optimizer = optimizer.init(model.filter(tx.Parameter))
-
-
 @partial(jax.value_and_grad, has_aux=True)
 def loss_fn(params, model, x, y):
-    model = model.update(params)
+    model = model.merge(params)
 
     y_pred = model(x)
     loss = jnp.mean((y_pred - y) ** 2)
@@ -46,10 +42,14 @@ def train_step(model, x, y, optimizer):
     (loss, model), grads = loss_fn(params, model, x, y)
 
     # here model == params
-    model = optimizer.apply_updates(grads, model)
+    model = optimizer.update(grads, model)
 
     return loss, model, optimizer
 
+
+model = Linear(1, 1).init(42)
+optimizer = tx.Optimizer(optax.adam(0.01))
+optimizer = optimizer.init(model)
 
 for step in range(1000):
     loss, model, optimizer = train_step(model, x, y, optimizer)

@@ -1,6 +1,6 @@
 
-# treex.Sequence
+# treex.iter_split
 
-::: treex.nn.sequence.Sequence
+::: treex.utils.iter_split
     selection:
         inherited_members: true

@@ -4,37 +4,37 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from treex import types
+from treex import types, utils
 from treex.module import Module
 
 
-class RngSeq(Module):
-    """RNGSeq is simple module that can produce a sequence of PRNGKeys.
+class KeySeq(Module):
+    """KeySeq is simple module that can produce a sequence of PRNGKeys.
 
     Example:
     ```python
     class Dropout(Module):
-        rng: RNGSeq()
+        rng: KeySeq()
 
         def __init__(self, rate: float):
-            self.rng = RNGSeq()
+            self.next_key = KeySeq()
             ...
 
         def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
-            key = self.rng.next()
+            key = self.next_key()
             mask = jax.random.bernoulli(key, 1.0 - self.rate)
             ...
     ```
     """
 
-    key: types.Rng[types.Initializer, jnp.ndarray]
+    key: tp.Union[types.Initializer, jnp.ndarray] = types.Rng.node()
 
     def __init__(self, key: tp.Optional[tp.Union[jnp.ndarray, int]] = None):
         """
         Arguments:
-            key: An optional PRNGKey to initialize the RNGSeq with.
+            key: An optional PRNGKey to initialize the KeySeq with.
         """
-        super().__init__()
+
         self.key = (
             jax.random.PRNGKey(key)
             if isinstance(key, int)
@@ -43,7 +43,7 @@ class RngSeq(Module):
             else types.Initializer(lambda key: key)
         )
 
-    def next(self) -> jnp.ndarray:
+    def __call__(self) -> jnp.ndarray:
         """
         Return a new PRNGKey and updates the internal rng state.
 
@@ -51,5 +51,5 @@ class RngSeq(Module):
             A PRNGKey.
         """
         assert isinstance(self.key, jnp.ndarray)
-        key, self.key = jax.random.split(self.key)
+        key, self.key = utils.iter_split(self.key)
         return key

@@ -16,7 +16,7 @@ class MLP(tx.Module):
     linear2: tx.Linear
 
     def __init__(self, din, dmid, dout, dropout: float = 0.5):
-        super().__init__()
+
         self.linear1 = tx.Linear(din, dmid)
         self.dropout1 = tx.Dropout(dropout)
         self.linear2 = tx.Linear(dmid, dout)
@@ -29,7 +29,7 @@ class MLP(tx.Module):
 
 @partial(jax.value_and_grad, has_aux=True)
 def loss_fn(params, model, x, y):
-    model = model.update(params)
+    model = model.merge(params)
     y_pred = model(x)
     loss = jnp.mean((y_pred - y) ** 2)
 
@@ -41,8 +41,8 @@ def train_step(model, x, y, optimizer):
     params = model.filter(tx.Parameter)
     (loss, model), grads = loss_fn(params, model, x, y)
 
-    new_params = optimizer.apply_updates(grads, params)
-    model = model.update(new_params)
+    new_params = optimizer.update(grads, params)
+    model = model.merge(new_params)
 
     return loss, model, optimizer
 

@@ -84,7 +84,7 @@ class ConvTest(unittest.TestCase):
             bias_init=bias_init,
         ).train(training)
 
-        flax_key, _ = jax.random.split(key)  # emulate init split
+        flax_key, _ = tx.iter_split(key)  # emulate init split
         variables = flax_module.init(flax_key, x)
         treex_module = treex_module.init(key)
 

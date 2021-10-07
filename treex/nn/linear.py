@@ -21,8 +21,8 @@ class Linear(Module):
     """
 
     # pytree
-    kernel: types.Parameter[jnp.ndarray, None]
-    bias: types.Parameter[jnp.ndarray, None]
+    kernel: tp.Optional[jnp.ndarray] = types.Parameter.node()
+    bias: tp.Optional[jnp.ndarray] = types.Parameter.node()
 
     # static
     features_in: int
@@ -66,7 +66,6 @@ class Linear(Module):
             kernel_init: initializer function for the weight matrix.
             bias_init: initializer function for the bias.
         """
-        super().__init__()
 
         self.features_in = features_in
         self.features_out = features_out
@@ -90,11 +89,11 @@ class Linear(Module):
             bias_init=self.bias_init,
         )
 
-    def module_init(self, key: jnp.ndarray):
+    def rng_init(self, key: jnp.ndarray):
         batch_size = 10  # random
         x = jax.random.uniform(key, (batch_size, self.features_in))
 
-        variables = self.module.init(key, x)
+        variables = self.module.init({"params": key}, x)
 
         # Extract collections
         params = variables["params"].unfreeze()

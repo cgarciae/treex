@@ -79,7 +79,7 @@ class BatchNormTest(unittest.TestCase):
             .freeze(frozen)
         )
 
-        flax_key, _ = jax.random.split(key)  # emulate init split
+        flax_key, _ = tx.iter_split(key)  # emulate init split
         variables = flax_module.init(flax_key, x)
         treex_module = treex_module.init(key)
 
@@ -133,7 +133,9 @@ class BatchNormTest(unittest.TestCase):
         flat = jax.tree_leaves(module.filter(tx.BatchStat))
         assert len(flat) == 2
 
-        flat = jax.tree_leaves(module.filter(tx.DiffHyperParam))
+        flat = jax.tree_leaves(
+            module.filter(lambda field: not issubclass(field.kind, tx.TreePart))
+        )
         assert len(flat) == 1
 
     def test_jit(self):

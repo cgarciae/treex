@@ -20,7 +20,7 @@ np.random.seed(420)
 def loss_fn(
     params: tx.FlaxModule, model: tx.FlaxModule, x: jnp.ndarray, y: jnp.ndarray
 ) -> tp.Tuple[jnp.ndarray, tp.Tuple[tx.FlaxModule, jnp.ndarray]]:
-    model = model.update(params)
+    model = model.merge(params)
     y_pred = model(x, training=model.training)
 
     loss = jnp.mean(
@@ -45,8 +45,8 @@ def train_step(
         params, model, x, y
     )
 
-    params = optimizer.apply_updates(grads, params)
-    model = model.update(params)
+    params = optimizer.update(grads, params)
+    model = model.merge(params)
 
     return loss, model, optimizer, acc_batch
 

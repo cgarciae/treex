@@ -21,8 +21,8 @@ class Conv(Module):
     """
 
     # pytree
-    kernel: types.Parameter[jnp.ndarray, None]
-    bias: types.Parameter[jnp.ndarray, None]
+    kernel: tp.Optional[jnp.ndarray] = types.Parameter.node()
+    bias: tp.Optional[jnp.ndarray] = types.Parameter.node()
 
     # props
     features_in: int
@@ -96,7 +96,7 @@ class Conv(Module):
             kernel_init: initializer for the convolutional kernel.
             bias_init: initializer for the bias.
         """
-        super().__init__()
+
         self.features_in = features_in
         self.features_out = features_out
         self.kernel_size = kernel_size
@@ -131,7 +131,7 @@ class Conv(Module):
             bias_init=self.bias_init,
         )
 
-    def module_init(self, key: jnp.ndarray):
+    def rng_init(self, key: jnp.ndarray):
         if isinstance(self.module.kernel_size, int):
             ndim = 1
             mindim = self.module.kernel_size

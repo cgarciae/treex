@@ -11,15 +11,38 @@ import typer
 from tqdm import tqdm
 
 import treex as tx
+from treex import metrics
+from treex.utils import _check_rejit
 
 Batch = tp.Mapping[str, np.ndarray]
+Model = tx.Sequential
+Metric = tx.metrics.Accuracy
 np.random.seed(420)
 
 
+@partial(jax.jit, static_argnums=(2,))
+def init_step(
+    model: Model, optiizer: tx.Optimizer, seed: int
+) -> tp.Tuple[Model, tx.Optimizer]:
+    model = model.init(seed)
+    optiizer = optiizer.init(model.parameters())
+
+    return model, optiizer
+
+
+@jax.jit
+def reset_step(metric: Metric) -> Metric:
+    metric.reset()
+    return metric
+
+
 def loss_fn(
-    params: tx.Sequential, model: tx.Sequential, x: jnp.ndarray, y: jnp.ndarray
-) -> tp.Tuple[jnp.ndarray, tp.Tuple[tx.Sequential, jnp.ndarray]]:
-    model = model.update(params)
+    params: Model,
+    model: Model,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, jnp.ndarray]]:
+    model = model.merge(params)
     y_pred = model(x)
 
     loss = jnp.mean(
@@ -29,39 +52,45 @@ def loss_fn(
         )
     )
 
-    acc_batch = y_pred.argmax(axis=1) == y
-
-    return loss, (model, acc_batch)
+    return loss, (model, y_pred)
 
 
 @jax.jit
 def train_step(
-    model: tx.Sequential, optimizer: tx.Optimizer, x: jnp.ndarray, y: jnp.ndarray
-) -> tp.Tuple[jnp.ndarray, tx.Sequential, tx.Optimizer, jnp.ndarray]:
-    params = model.filter(tx.Parameter)
+    model: Model,
+    optimizer: tx.Optimizer,
+    metric: Metric,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+) -> tp.Tuple[jnp.ndarray, Model, tx.Optimizer, Metric]:
+    print("JITTTTING")
+    params = model.parameters()
 
-    (loss, (model, acc_batch)), grads = jax.value_and_grad(loss_fn, has_aux=True)(
+    (loss, (model, y_pred)), grads = jax.value_and_grad(loss_fn, has_aux=True)(
         params, model, x, y
     )
 
-    params = optimizer.apply_updates(grads, params)
-    model = model.update(params)
+    params = optimizer.update(grads, params)
+    model = model.merge(params)
+    _batch_metric = metric(y_true=y, y_pred=y_pred)
 
-    return loss, model, optimizer, acc_batch
+    return loss, model, optimizer, metric
 
 
 @jax.jit
 def test_step(
-    model: tx.Sequential, x: jnp.ndarray, y: jnp.ndarray
-) -> tp.Tuple[jnp.ndarray, jnp.ndarray]:
+    model: Model, metric: Metric, x: jnp.ndarray, y: jnp.ndarray
+) -> tp.Tuple[jnp.ndarray, Metric]:
 
-    loss, (model, acc_batch) = loss_fn(model, model, x, y)
+    loss, (model, y_pred) = loss_fn(model, model, x, y)
 
-    return loss, acc_batch
+    _batch_metric = metric(y_true=y, y_pred=y_pred)
+
+    return loss, metric
 
 
 @jax.jit
-def predict(model: tx.Sequential, x: jnp.ndarray):
+def predict(model: Model, x: jnp.ndarray):
     return model(x).argmax(axis=1)
 
 
@@ -72,7 +101,7 @@ def main(
     steps_per_epoch: int = -1,
 ):
 
-    model = tx.Sequential(
+    model: Model = tx.Sequential(
         tx.Conv(1, 32, [3, 3], strides=[2, 2]),
         tx.BatchNorm(32),
         tx.Dropout(0.05),
@@ -84,10 +113,12 @@ def main(
         tx.Conv(64, 128, [3, 3], strides=[2, 2]),
         partial(jnp.mean, axis=[1, 2]),
         tx.Linear(128, 10),
-    ).init(42)
+    )
 
     optimizer = tx.Optimizer(optax.adamw(1e-3))
-    optimizer = optimizer.init(model.filter(tx.Parameter))
+    metric = tx.metrics.Accuracy()
+
+    model, optimizer = init_step(model, optimizer, seed=42)
 
     # load data
     X_train, y_train, X_test, y_test = dataget.image.mnist().get()
@@ -109,8 +140,8 @@ def main(
         # train
         # ---------------------------------------
         train_losses = []
-        train_accs = []
         model = model.train()
+        metric = reset_step(metric)
         for step in tqdm(
             range(
                 len(X_train) // batch_size if steps_per_epoch < 1 else steps_per_epoch
@@ -122,21 +153,19 @@ def main(
             idx = np.random.choice(len(X_train), batch_size)
             x = X_train[idx]
             y = y_train[idx]
-            loss, model, optimizer, acc = train_step(model, optimizer, x, y)
+            loss, model, optimizer, metric = train_step(model, optimizer, metric, x, y)
             train_losses.append(loss)
-            train_accs.append(acc)
 
         epoch_train_loss = jnp.mean(jnp.stack(train_losses))
-        epoch_train_acc = jnp.mean(jnp.stack(train_accs))
         epoch_train_losses.append(epoch_train_loss)
-        epoch_train_accs.append(epoch_train_acc)
+        epoch_train_accs.append(metric.compute())
 
         # ---------------------------------------
         # test
         # ---------------------------------------
         test_losses = []
-        test_accs = []
         model = model.eval()
+        metric = reset_step(metric)
         for step in tqdm(
             range(
                 len(X_test) // batch_size if steps_per_epoch < 1 else steps_per_epoch
@@ -148,17 +177,15 @@ def main(
             idx = np.random.choice(len(X_test), batch_size)
             x = X_test[idx]
             y = y_test[idx]
-            loss, acc = test_step(model, x, y)
+            loss, metric = test_step(model, metric, x, y)
             test_losses.append(loss)
-            test_accs.append(acc)
 
         epoch_test_loss = jnp.mean(jnp.stack(test_losses))
-        epoch_test_acc = jnp.mean(jnp.stack(test_accs))
         epoch_test_losses.append(epoch_test_loss)
-        epoch_test_accs.append(epoch_test_acc)
+        epoch_test_accs.append(metric.compute())
 
         print(
-            f"[{epoch}] loss_train={epoch_train_loss}, acc_train={epoch_train_acc}, loss_test={epoch_test_loss}, acc_test={epoch_test_acc}"
+            f"[{epoch}] loss_train={epoch_train_loss}, acc_train={epoch_train_accs[-1]}, loss_test={epoch_test_loss}, acc_test={epoch_test_accs[-1]}"
         )
 
     model = model.eval()

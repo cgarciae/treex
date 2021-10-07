@@ -1,6 +1,6 @@
 
-# treex.TreeObject
+# treex.Tree
 
-::: treex.module.TreeObject
+::: treeo.tree.Tree
     selection:
         inherited_members: true

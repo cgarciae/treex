@@ -2,13 +2,14 @@ import typing as tp
 
 import jax.numpy as jnp
 import numpy as np
+import treeo as to
 
 from treex.module import Module
 
+CallableModule = tp.Callable[..., jnp.ndarray]
 
-def sequence(
-    *layers: tp.Callable[[jnp.ndarray], jnp.ndarray]
-) -> tp.Callable[[jnp.ndarray], jnp.ndarray]:
+
+def sequence(*layers: CallableModule) -> CallableModule:
     """
     Creates a function that applies a sequence of callables to an input.
 
@@ -42,11 +43,6 @@ def sequence(
     return _sequence
 
 
-CallableModule = tp.cast(
-    tp.Type[tp.Callable[[jnp.ndarray], jnp.ndarray]], tp.List[Module]
-)
-
-
 class Sequential(Module):
     """
     A Module that applies a sequence of Modules or functions in order.
@@ -69,7 +65,7 @@ class Sequential(Module):
     ```
     """
 
-    layers: tp.List[CallableModule]
+    layers: tp.List[CallableModule] = to.node()
 
     def __init__(
         self, *layers: tp.Union[CallableModule, tp.Callable[[jnp.ndarray], jnp.ndarray]]
@@ -78,7 +74,6 @@ class Sequential(Module):
         Arguments:
             *layers: A list of layers or callables to apply to apply in sequence.
         """
-        super().__init__()
 
         self.layers = [
             layer if isinstance(layer, Module) else Lambda(layer) for layer in layers
@@ -102,7 +97,7 @@ class Lambda(Module):
         Arguments:
             f: A function to apply to the input.
         """
-        super().__init__()
+
         self.f = f
         self.f = f
 

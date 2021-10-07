@@ -3,9 +3,10 @@ import typing as tp
 import jax
 import jax.numpy as jnp
 import numpy as np
+import treeo as to
 from flax.linen import normalization as flax_module
 
-from treex import types
+from treex import types, utils
 from treex.module import Module
 
 
@@ -23,15 +24,15 @@ class BatchNorm(Module):
     """
 
     # pytree
-    mean: types.BatchStat[jnp.ndarray, None]
-    var: types.BatchStat[jnp.ndarray, None]
-    scale: types.Parameter[jnp.ndarray, None]
-    bias: types.Parameter[jnp.ndarray, None]
-    momentum: types.DiffHyperParam[jnp.ndarray]
+    mean: tp.Optional[jnp.ndarray] = types.BatchStat.node()
+    var: tp.Optional[jnp.ndarray] = types.BatchStat.node()
+    scale: tp.Optional[jnp.ndarray] = types.Parameter.node()
+    bias: tp.Optional[jnp.ndarray] = types.Parameter.node()
+    momentum: jnp.ndarray = to.node()
 
     # props
     features_in: int
-    axis: int = -1
+    axis: int
     epsilon: float
     dtype: flax_module.Dtype
     use_bias: bool
@@ -70,8 +71,6 @@ class BatchNorm(Module):
         """
         Arguments:
             features_in: the number of input features.
-            use_running_average: if True, the statistics stored in batch_stats
-                will be used instead of computing the batch statistics on the input.
             axis: the feature or non-batch axis of the input.
             momentum: decay rate for the exponential moving average of
                 the batch statistics.
@@ -91,7 +90,7 @@ class BatchNorm(Module):
                 the examples on the first two and last two devices. See `jax.lax.psum`
                 for more details.
         """
-        super().__init__()
+
         self.features_in = features_in
         self.axis = axis
         self.momentum = jnp.asarray(momentum)
@@ -125,7 +124,7 @@ class BatchNorm(Module):
             axis_index_groups=self.axis_index_groups,
         )
 
-    def module_init(self, key: jnp.ndarray):
+    def rng_init(self, key: jnp.ndarray):
 
         batch_size = 10  # random
 

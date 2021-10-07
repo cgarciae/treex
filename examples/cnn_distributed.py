@@ -22,7 +22,7 @@ np.random.seed(420)
 def loss_fn(
     params: Model, model: Model, x: jnp.ndarray, y: jnp.ndarray
 ) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, jnp.ndarray]]:
-    model = model.update(params)
+    model = model.merge(params)
     y_pred = model(x)
 
     loss = jnp.mean(
@@ -34,10 +34,12 @@ def loss_fn(
 
     acc_batch = y_pred.argmax(axis=1) == y
 
+    acc_batch = jax.lax.all_gather(acc_batch, axis_name="device")
+
     return loss, (model, acc_batch)
 
 
-@partial(jax.pmap, in_axes=(0, 0, 0, 0), out_axes=(0, 0, 0, 0), axis_name="device")
+@partial(jax.pmap, in_axes=(0, 0, 0, 0), out_axes=(0, 0, 0, None), axis_name="device")
 def train_step(
     model: Model, optimizer: tx.Optimizer, x: jnp.ndarray, y: jnp.ndarray
 ) -> tp.Tuple[jnp.ndarray, Model, tx.Optimizer, jnp.ndarray]:
@@ -50,8 +52,8 @@ def train_step(
     # sync gradients across devices
     grads = jax.lax.pmean(grads, axis_name="device")
 
-    params = optimizer.apply_updates(grads, params)
-    model = model.update(params)
+    params = optimizer.update(grads, params)
+    model = model.merge(params)
 
     # sync batch statistics
     model = model.map(partial(jax.lax.pmean, axis_name="device"), tx.BatchStat)
@@ -59,7 +61,7 @@ def train_step(
     return loss, model, optimizer, acc_batch
 
 
-@partial(jax.pmap, in_axes=(0, 0, 0), out_axes=(0, 0), axis_name="device")
+@partial(jax.pmap, in_axes=(0, 0, 0), out_axes=(0, None), axis_name="device")
 def test_step(
     model: Model, x: jnp.ndarray, y: jnp.ndarray
 ) -> tp.Tuple[jnp.ndarray, jnp.ndarray]:
@@ -130,7 +132,7 @@ def main(
     X_train = X_train[..., None]
     X_test = X_test[..., None]
 
-    model.tabulate(signature=True)
+    print(model.tabulate(signature=True))
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)
@@ -182,7 +184,9 @@ def main(
         model = model.eval()
         for step in tqdm(
             range(
-                len(X_test) // batch_size if steps_per_epoch < 1 else steps_per_epoch
+                len(X_test) // (batch_size * n_devices)
+                if steps_per_epoch < 1
+                else steps_per_epoch
             ),
             desc="testing",
             unit="batch",
@@ -244,5 +248,4 @@ def main(
 
 
 if __name__ == "__main__":
-
     typer.run(main)

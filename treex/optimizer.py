@@ -1,19 +1,22 @@
 import functools
 import inspect
 import typing as tp
+from dataclasses import dataclass
 
 import jax
 import jax.numpy as jnp
 import optax
+import treeo as to
+from rich.text import Text
 
-from treex import types
-from treex.tree_object import TreeObject
+from treex import types, utils
+from treex.treex import Treex
 
 O = tp.TypeVar("O", bound="Optimizer")
 A = tp.TypeVar("A", bound="tp.Any")
 
 
-class Optimizer(TreeObject):
+class Optimizer(Treex):
     """Wraps an optax optimizer and turn it into a Pytree while maintaining a similar API.
 
     The main difference with optax is that tx.Optimizer contains its own state, thus, there is
@@ -41,29 +44,26 @@ class Optimizer(TreeObject):
     * `init` return a new optimizer instance, there is no `opt_state`.
     * `update` doesn't get `opt_state` as an argument, instead it performs updates
         to its internal state inplace.
-    * `update` applies the updates to the params and returns them by default, use `apply_updates=False` to
+    * `update` applies the updates to the params and returns them by default, use `update=False` to
         to get the param updates instead.
+
+    Arguments:
+        optimizer: An optax optimizer.
     """
 
-    opt_state: types.OptState[tp.Any, None]
     optimizer: optax.GradientTransformation
-    _n_params: tp.Optional[int]
+    opt_state: tp.Optional[tp.Any] = types.OptState.node(None, init=False)
+    _n_params: tp.Optional[int] = to.static(None, init=False)
 
-    _initialized: bool = False
+    # use to.field to copy class vars to instance
+    _initialized: bool = to.static(False)
+
+    def __init__(self, optimizer: optax.GradientTransformation) -> None:
+        self.optimizer = optimizer
 
     @property
     def initialized(self) -> bool:
         return self._initialized
-
-    def __init__(self, optimizer: optax.GradientTransformation):
-        """
-        Arguments:
-            optimizer: An optax optimizer.
-        """
-        super().__init__()
-        self.opt_state = None
-        self.optimizer = optimizer
-        self._n_params = None
 
     def init(self: O, params: tp.Any) -> O:
         """
@@ -75,7 +75,7 @@ class Optimizer(TreeObject):
         Returns:
             A new optimizer instance.
         """
-        module = self.copy()
+        module = to.copy(self)
         params = jax.tree_leaves(params)
         module.opt_state = module.optimizer.init(params)
         module._n_params = len(params)
@@ -83,28 +83,28 @@ class Optimizer(TreeObject):
         return module
 
     # NOTE: params are flattened because:
-    # - The flat list is not a TreeObject, thus all of its internal parameters in the list are marked as
+    # - The flat list is not a Module, thus all of its internal parameters in the list are marked as
     # OptState by a single annotation (no need to rewrite the module's annotations)
-    # - It ignores the static part of TreeObjects which if changed Optax yields an error.
-    def apply_updates(
-        self, grads: A, params: tp.Optional[A] = None, return_updates: bool = False
+    # - It ignores the static part of Modules which if changed Optax yields an error.
+    def update(
+        self, grads: A, params: tp.Optional[A] = None, apply_updates: bool = True
     ) -> A:
         """
         Applies the parameters updates and updates the optimizers internal state inplace.
 
         Arguments:
             grads: the gradients to perform the update.
-            params: the parameters to update. If `None` then `apply_updates` has to be `False`.
-            return_updates: if `True` then the updates are returned instead of being applied.
+            params: the parameters to update. If `None` then `update` has to be `False`.
+            apply_updates: if `False` then the updates are returned instead of being applied.
 
         Returns:
-            The updated parameters. Iftree_leaves `return_updates` is `True` then the updates are returned instead.
+            The updated parameters. If `apply_updates` is `False` then the updates are returned instead.
         """
         if not self.initialized:
             raise RuntimeError("Optimizer is not initialized")
 
         assert self.opt_state is not None
-        if not return_updates and params is None:
+        if apply_updates and params is None:
             raise ValueError("params must be provided if updates are being applied")
 
         opt_grads, treedef = jax.tree_flatten(grads)
@@ -127,10 +127,10 @@ class Optimizer(TreeObject):
         )
 
         output: A
-        if return_updates:
-            output = param_updates
-        else:
+        if apply_updates:
             output = optax.apply_updates(opt_params, param_updates)
+        else:
+            output = param_updates
 
         return jax.tree_unflatten(treedef, output)
 

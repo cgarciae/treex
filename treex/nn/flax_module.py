@@ -4,29 +4,30 @@ import flax
 import jax
 import jax.numpy as jnp
 import numpy as np
+import treeo as to
 from flax.core.frozen_dict import FrozenDict
 from flax.core.scope import FrozenVariableDict
 
-from treex import types
+from treex import types, utils
+from treex.key_seq import KeySeq
 from treex.module import Module
-from treex.rnq_seq import RngSeq
 
 
 class FlaxModule(Module):
 
     # static
-    module: types.Hashable[flax.linen.Module]
+    module: to.Hashable[flax.linen.Module]
     sample_inputs: tp.Optional[types.Inputs]
     mutable: tp.Tuple[str, ...]
     rngs: tp.Tuple[str, ...]
     init_rngs: tp.Tuple[str, ...]
 
     # dynamic
-    params: types.Parameter[tp.Dict[str, tp.Any], None]
-    batch_stats: types.BatchStat[tp.Dict[str, tp.Any], None]
-    cache: types.Cache[tp.Dict[str, tp.Any], None]
-    variables: types.Log[tp.Dict[str, tp.Dict[str, tp.Any]], None]
-    rng_seq: RngSeq
+    params: tp.Optional[tp.Dict[str, tp.Any]] = types.Parameter.node()
+    batch_stats: tp.Optional[tp.Dict[str, tp.Any]] = types.BatchStat.node()
+    cache: tp.Optional[tp.Dict[str, tp.Any]] = types.Cache.node()
+    variables: tp.Union[tp.Dict[str, tp.Dict[str, tp.Any]], None] = types.Log.node()
+    next_key: KeySeq
 
     def __init__(
         self,
@@ -37,15 +38,15 @@ class FlaxModule(Module):
         init_rngs: tp.Sequence[str] = ("params",),
         variables: tp.Optional[FrozenDict] = None,
     ) -> None:
-        super().__init__()
-        self.module = types.Hashable(module)
+
+        self.module = to.Hashable(module)
         self.mutable = tuple(mutable)
         self.rngs = tuple(rngs)
         self.init_rngs = tuple(init_rngs)
         self.sample_inputs = (
             sample_inputs if sample_inputs is not None else types.Inputs()
         )
-        self.rng_seq = RngSeq()
+        self.next_key = KeySeq()
         self.params = None
         self.batch_stats = None
         self.cache = None
@@ -54,7 +55,7 @@ class FlaxModule(Module):
         if variables is not None:
             self._update_variables(variables)
 
-    def module_init(self, key: jnp.ndarray) -> None:
+    def rng_init(self, key: jnp.ndarray) -> None:
         if self.variables is None:
             assert self.sample_inputs is not None
             rngs = self._get_rngs(self.rngs + self.init_rngs)
@@ -97,11 +98,11 @@ class FlaxModule(Module):
         if len(all_collections) == 0:
             rngs = {}
         elif len(all_collections) == 1:
-            key = self.rng_seq.next()
+            key = self.next_key()
             rngs = {all_collections[0]: key}
         elif len(all_collections) > 1:
-            key = self.rng_seq.next()
-            keys = jax.random.split(key, len(all_collections))
+            key = self.next_key()
+            keys = utils.iter_split(key, len(all_collections))
             rngs = dict(zip(all_collections, keys))
         else:
             raise Exception("Not reachable")
