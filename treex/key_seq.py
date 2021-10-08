@@ -36,7 +36,7 @@ class KeySeq(Module):
         """
 
         self.key = (
-            jax.random.PRNGKey(key)
+            utils.Key(key)
             if isinstance(key, int)
             else key
             if isinstance(key, (jnp.ndarray, np.ndarray))

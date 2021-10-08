@@ -17,13 +17,11 @@ from treex.treex import Treex
 
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
+M = tp.TypeVar("M", bound="Module")
 Filter = tp.Union[
     tp.Type[tp.Type[tp.Any]],
     tp.Callable[[to.FieldInfo], bool],
 ]
-A = tp.TypeVar("A")
-B = tp.TypeVar("B")
-M = tp.TypeVar("M", bound="Module")
 
 
 @dataclass
@@ -109,8 +107,8 @@ class Module(Treex):
         Returns:
             The new module with the fields initialized.
         """
-        if isinstance(key, int):
-            key = jax.random.PRNGKey(key)
+        tree_out = self.copy() if not inplace else self
+        key = utils.Key(key)
 
         def next_key() -> jnp.ndarray:
             nonlocal key
@@ -118,26 +116,22 @@ class Module(Treex):
             next_key, key = utils.iter_split(key)
             return next_key
 
-        tree_out: M = jax.tree_map(
+        tree_out: M = tree_out.map(
             lambda initializer: (
                 initializer(next_key())
                 if isinstance(initializer, types.Initializer)
                 else initializer
             ),
-            self,
             is_leaf=lambda x: isinstance(x, types.Initializer),
+            inplace=True,
         )
-
-        if inplace:
-            # here we update initialized fields by the above tree_map
-            tree_out = to.merge(self, tree_out, inplace=True)
 
         def call_module_init(module: Module):
             if isinstance(module, Module) and not module._initialized:
                 module.rng_init(next_key())
                 module._initialized = True
 
-        return to.apply(call_module_init, tree_out, inplace=inplace)
+        return to.apply(call_module_init, tree_out, inplace=True)
 
     def train(self: M, mode: bool = True, inplace: bool = False) -> M:
         """
@@ -201,7 +195,7 @@ class Module(Treex):
 
     def tabulate(
         self,
-        inputs: tp.Union[tp.Any, types.Inputs, None] = None,
+        inputs: tp.Union[types.InputLike, to.Missing] = to.MISSING,
         depth: int = -1,
         signature: bool = False,
         param_types: bool = True,
@@ -218,11 +212,8 @@ class Module(Treex):
         """
         self = to.copy(self)
 
-        if inputs is not None:
-            if not isinstance(inputs, types.Inputs):
-                inputs = types.Inputs(inputs)
-
-            inputs = tp.cast(types.Inputs, inputs)
+        if inputs is not to.MISSING:
+            inputs = types.Inputs.from_value(inputs)
 
             if not isinstance(self, tp.Callable):
                 raise TypeError(

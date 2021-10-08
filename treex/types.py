@@ -11,6 +11,7 @@ import typing_extensions as tpe
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
 
+InputLike = tp.Union[tp.Any, tp.Tuple[tp.Any, ...], tp.Dict[str, tp.Any], "Inputs"]
 IndexLike = tp.Union[str, int, tp.Sequence[tp.Union[str, int]]]
 
 # -----------------------------------------
@@ -101,6 +102,17 @@ class Inputs:
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
+
+    @classmethod
+    def from_value(cls, value: InputLike) -> "Inputs":
+        if isinstance(value, cls):
+            return value
+        elif isinstance(value, tuple):
+            return cls(*value)
+        elif isinstance(value, dict):
+            return cls(**value)
+        else:
+            return cls(value)
 
 
 @tpe.runtime_checkable

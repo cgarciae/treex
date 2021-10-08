@@ -39,10 +39,10 @@ class TestFlaxModule:
 
         x = np.ones((2, 5, 8), dtype=np.float32)
         training = True
-        rng = jax.random.PRNGKey(42)
+        rng = tx.Key(42)
 
         flax_module = SomeModule()
-        params_key, dropout_key = tx.iter_split(jax.random.PRNGKey(0))
+        params_key, dropout_key = tx.iter_split(tx.Key(0))
         variables = flax_module.init(
             {"params": params_key, "dropout": dropout_key},
             x,
@@ -101,7 +101,7 @@ class TestFlaxModule:
         training = True
 
         flax_module = SomeModule()
-        params_key, dropout_key = tx.iter_split(jax.random.PRNGKey(0))
+        params_key, dropout_key = tx.iter_split(tx.Key(0))
         variables = flax_module.init(
             {"params": params_key, "dropout": dropout_key},
             x,

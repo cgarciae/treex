@@ -51,7 +51,7 @@ class LinearTest(unittest.TestCase):
 
         x = np.random.uniform(size=shape)
 
-        key = jax.random.PRNGKey(42)
+        key = tx.Key(42)
 
         flax_module = linen.Dense(
             features=features,

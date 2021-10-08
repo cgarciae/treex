@@ -15,12 +15,30 @@ from rich.console import Console
 
 from treex import types
 
-key = jax.random.PRNGKey
 _pymap = map
 _pyfilter = filter
 
 LEAF_TYPES = (to.Nothing, types.Initializer, type(None))
 PAD = r"{pad}"
+
+
+# --------------------------------------------------------------------
+# public
+# --------------------------------------------------------------------
+
+
+def iter_split(key: tp.Any, num: int = 2) -> tp.Tuple[tp.Any, ...]:
+    splits = jax.random.split(key, num)
+    return tuple(splits[i] for i in range(num))
+
+
+def Key(seed: tp.Union[int, jnp.ndarray]) -> jnp.ndarray:
+    return jax.random.PRNGKey(seed) if isinstance(seed, int) else seed
+
+
+# --------------------------------------------------------------------
+# private
+# --------------------------------------------------------------------
 
 
 def _get_rich_repr(table):
@@ -417,6 +435,52 @@ def _first_issubclass(cls: type, __class_or_tuple) -> tp.Optional[tp.Type[tp.Any
             return t
 
 
+def _check_rejit(f):
+
+    cache_args = None
+    cache_kwargs = None
+
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        nonlocal cache_args, cache_kwargs
+
+        if cache_args is None or cache_kwargs is None:
+            cache_args = args
+            cache_kwargs = kwargs
+        else:
+            jax.tree_map(lambda *xs: None, args, cache_args)
+            jax.tree_map(lambda *xs: None, kwargs, cache_kwargs)
+
+        return f(*args, **kwargs)
+
+    return wrapper
+
+
+def _unique_name(
+    names: tp.Set[str],
+    name: str,
+):
+
+    if name in names:
+        i = 1
+        while f"{name}_{i}" in names:
+            i += 1
+
+        name = f"{name}_{i}"
+
+    names.add(name)
+    return name
+
+
+def _unique_names(
+    names: tp.Iterable[str],
+) -> tp.Iterable[str]:
+    new_names: tp.Set[str] = set()
+
+    for name in names:
+        yield _unique_name(new_names, name)
+
+
 def _lower_snake_case(s: str) -> str:
     s = re.sub(r"(?<!^)(?=[A-Z])", "_", s).lower()
     parts = s.split("_")
@@ -440,29 +504,3 @@ def _get_name(obj) -> str:
         return _lower_snake_case(obj.__class__.__name__)
     else:
         raise ValueError(f"Could not get name for: {obj}")
-
-
-def _check_rejit(f):
-
-    cache_args = None
-    cache_kwargs = None
-
-    @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        nonlocal cache_args, cache_kwargs
-
-        if cache_args is None or cache_kwargs is None:
-            cache_args = args
-            cache_kwargs = kwargs
-        else:
-            jax.tree_map(lambda *xs: None, args, cache_args)
-            jax.tree_map(lambda *xs: None, kwargs, cache_kwargs)
-
-        return f(*args, **kwargs)
-
-    return wrapper
-
-
-def iter_split(key: tp.Any, num: int = 2) -> tp.Tuple[tp.Any, ...]:
-    splits = jax.random.split(key, num)
-    return tuple(splits[i] for i in range(num))

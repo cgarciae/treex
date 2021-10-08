@@ -17,7 +17,7 @@ class FlaxModule(Module):
 
     # static
     module: to.Hashable[flax.linen.Module]
-    sample_inputs: tp.Optional[types.Inputs]
+    sample_inputs: types.Inputs
     mutable: tp.Tuple[str, ...]
     rngs: tp.Tuple[str, ...]
     init_rngs: tp.Tuple[str, ...]
@@ -32,7 +32,7 @@ class FlaxModule(Module):
     def __init__(
         self,
         module: flax.linen.Module,
-        sample_inputs: tp.Optional[types.Inputs] = None,
+        sample_inputs: types.InputLike = (),
         mutable: tp.Sequence[str] = ("batch_stats", "cache"),
         rngs: tp.Sequence[str] = ("dropout",),
         init_rngs: tp.Sequence[str] = ("params",),
@@ -43,9 +43,7 @@ class FlaxModule(Module):
         self.mutable = tuple(mutable)
         self.rngs = tuple(rngs)
         self.init_rngs = tuple(init_rngs)
-        self.sample_inputs = (
-            sample_inputs if sample_inputs is not None else types.Inputs()
-        )
+        self.sample_inputs = types.Inputs.from_value(sample_inputs)
         self.next_key = KeySeq()
         self.params = None
         self.batch_stats = None

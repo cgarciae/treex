@@ -108,7 +108,7 @@ def main(
 
     n_devices = jax.device_count()
     device_idx = jnp.arange(n_devices)
-    key = jax.random.PRNGKey(42)
+    key = tx.Key(42)
 
     model = tx.Sequential(
         tx.Conv(1, 32, [3, 3], strides=[2, 2]),
