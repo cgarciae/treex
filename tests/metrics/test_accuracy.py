@@ -13,7 +13,7 @@ class TestAccuracy:
     def test_jit(self):
         N = 0
 
-        # @jax.jit
+        @jax.jit
         def f(m, y_true, y_pred):
             nonlocal N
             N += 1
@@ -29,7 +29,7 @@ class TestAccuracy:
         assert metric.compute() == 0.8
 
         metric = f(metric, y_true, y_pred)
-        # assert N == 1
+        assert N == 1
         assert metric.compute() == 0.8
 
     def test_logits_preds(self):

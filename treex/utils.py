@@ -12,6 +12,7 @@ import treeo as to
 import yaml
 from jax._src.numpy.lax_numpy import split
 from rich.console import Console
+from treeo.utils import _get_name, _lower_snake_case, _unique_name, _unique_names
 
 from treex import types
 
@@ -456,51 +457,38 @@ def _check_rejit(f):
     return wrapper
 
 
-def _unique_name(
-    names: tp.Set[str],
-    name: str,
-):
-
-    if name in names:
-        i = 1
-        while f"{name}_{i}" in names:
-            i += 1
-
-        name = f"{name}_{i}"
-
-    names.add(name)
-    return name
+def _flatten_names(inputs: tp.Any) -> tp.List[tp.Tuple[str, tp.Any]]:
+    return [
+        ("/".join(map(str, path)), value)
+        for path, value in _flatten_names_helper((), inputs)
+    ]
 
 
-def _unique_names(
-    names: tp.Iterable[str],
-) -> tp.Iterable[str]:
-    new_names: tp.Set[str] = set()
+def _flatten_names_helper(
+    path: types.PathLike, inputs: tp.Any
+) -> tp.Iterable[tp.Tuple[types.PathLike, tp.Any]]:
 
-    for name in names:
-        yield _unique_name(new_names, name)
-
-
-def _lower_snake_case(s: str) -> str:
-    s = re.sub(r"(?<!^)(?=[A-Z])", "_", s).lower()
-    parts = s.split("_")
-    output_parts = []
-
-    for i in range(len(parts)):
-        if i == 0 or len(parts[i - 1]) > 1:
-            output_parts.append(parts[i])
-        else:
-            output_parts[-1] += parts[i]
-
-    return "_".join(output_parts)
-
-
-def _get_name(obj) -> str:
-    if hasattr(obj, "name") and obj.name:
-        return obj.name
-    elif hasattr(obj, "__name__") and obj.__name__:
-        return obj.__name__
-    elif hasattr(obj, "__class__") and obj.__class__.__name__:
-        return _lower_snake_case(obj.__class__.__name__)
+    if isinstance(inputs, (tp.Tuple, tp.List)):
+        for i, value in enumerate(inputs):
+            yield from _flatten_names_helper(path, value)
+    elif isinstance(inputs, tp.Dict):
+        for name, value in inputs.items():
+            yield from _flatten_names_helper(path + (name,), value)
     else:
-        raise ValueError(f"Could not get name for: {obj}")
+        yield (path, inputs)
+
+
+def _function_argument_names(f) -> tp.Optional[tp.List[str]]:
+    """
+    Returns:
+        A list of keyword argument names or None if variable keyword arguments (`**kwargs`) are present.
+    """
+    kwarg_names = []
+
+    for k, v in inspect.signature(f).parameters.items():
+        if v.kind == inspect.Parameter.VAR_KEYWORD:
+            return None
+
+        kwarg_names.append(k)
+
+    return kwarg_names
