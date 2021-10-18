@@ -64,7 +64,7 @@ to_onehot = jax.nn.one_hot
 #         # device=label_tensor.device,
 #     )
 #     index = jnp.broadcast_to(
-#         label_tensor.astype(jnp.uint64)[:None], tensor_onehot.shape
+#         label_tensor.astype(jnp.uint32)[:None], tensor_onehot.shape
 #     )
 #     return tensor_onehot.scatter_(1, index, 1.0)
 

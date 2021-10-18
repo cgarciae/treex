@@ -203,7 +203,7 @@ class Accuracy(StatScores):
             dtype=dtype,
         )
 
-        self.correct = tensor(0, dtype=jnp.uint64)  # , dist_reduce_fx="sum")
+        self.correct = tensor(0, dtype=jnp.uint32)  # , dist_reduce_fx="sum")
         self.total = tensor(0, dtype=jnp.float32)  # , dist_reduce_fx="sum")
 
         if top_k is not None and (not isinstance(top_k, int) or top_k <= 0):

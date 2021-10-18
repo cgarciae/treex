@@ -59,10 +59,10 @@ def _stat_scores(
     fn = (false_pred * neg_pred).sum(axis=dim)
 
     return (
-        tp.astype(jnp.uint64),
-        fp.astype(jnp.uint64),
-        tn.astype(jnp.uint64),
-        fn.astype(jnp.uint64),
+        tp.astype(jnp.uint32),
+        fp.astype(jnp.uint32),
+        tn.astype(jnp.uint32),
+        fn.astype(jnp.uint32),
     )
 
 

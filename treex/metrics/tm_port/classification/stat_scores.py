@@ -183,7 +183,7 @@ class StatScores(Metric):
                 zeros_shape = [num_classes]
             else:
                 raise ValueError(f'Wrong reduce="{reduce}"')
-            default = lambda: jnp.zeros(zeros_shape, dtype=jnp.uint64)
+            default = lambda: jnp.zeros(zeros_shape, dtype=jnp.uint32)
             reduce_fn = "sum"
 
         for s in ("tp", "fp", "tn", "fn"):

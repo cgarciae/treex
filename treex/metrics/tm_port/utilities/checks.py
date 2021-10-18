@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 import jax
 import jax.numpy as jnp
 import numpy as np
-from numpy import uint64
+from numpy import uint32
 
 Tensor = jnp.ndarray
 
