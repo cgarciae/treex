@@ -37,9 +37,7 @@ class KeySeq(Module):
 
         self.key = (
             utils.Key(key)
-            if isinstance(key, int)
-            else key
-            if isinstance(key, (jnp.ndarray, np.ndarray))
+            if isinstance(key, (int, jnp.ndarray, np.ndarray))
             else types.Initializer(lambda key: key)
         )
 
