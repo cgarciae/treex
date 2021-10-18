@@ -7,7 +7,7 @@ from jax._src.lax.lax import top_k
 Tensor = jnp.ndarray
 tensor = jnp.array
 
-from treex.metrics.utilities.prints import rank_zero_warn
+from treex.metrics.tm_port.utilities.prints import rank_zero_warn
 
 METRIC_EPS = 1e-6
 

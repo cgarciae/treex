@@ -5,16 +5,20 @@ import jax.numpy as jnp
 Tensor = jnp.ndarray
 tensor = jnp.array
 
-from treex.metrics.functional.classification.stat_scores import (
+from treex.metrics.tm_port.functional.classification.stat_scores import (
     _reduce_stat_scores,
     _stat_scores_update,
 )
-from treex.metrics.utilities.checks import (
+from treex.metrics.tm_port.utilities.checks import (
     _check_classification_inputs,
     _input_format_classification,
     _input_squeeze,
 )
-from treex.metrics.utilities.enums import AverageMethod, DataType, MDMCAverageMethod
+from treex.metrics.tm_port.utilities.enums import (
+    AverageMethod,
+    DataType,
+    MDMCAverageMethod,
+)
 
 
 def _check_subset_validity(mode: DataType) -> bool:

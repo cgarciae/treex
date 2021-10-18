@@ -8,8 +8,8 @@ from treex import types
 Tensor = jnp.ndarray
 tensor = jnp.array
 
-from treex.metrics.classification.stat_scores import StatScores
-from treex.metrics.functional.classification.accuracy import (
+from treex.metrics.tm_port.classification.stat_scores import StatScores
+from treex.metrics.tm_port.functional.classification.accuracy import (
     _accuracy_compute,
     _accuracy_update,
     _check_subset_validity,
@@ -17,7 +17,7 @@ from treex.metrics.functional.classification.accuracy import (
     _subset_accuracy_compute,
     _subset_accuracy_update,
 )
-from treex.metrics.utilities.enums import DataType
+from treex.metrics.tm_port.utilities.enums import DataType
 
 
 class Accuracy(StatScores):

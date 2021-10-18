@@ -5,15 +5,15 @@ import jax.numpy as jnp
 import pytest
 
 import treex as tx
-from treex.metrics.classification.accuracy import Accuracy
-from treex.metrics.utilities.enums import DataType
+from treex.metrics.accuracy import Accuracy
+from treex.metrics.utils import DataType
 
 
 class TestAccuracy:
     def test_jit(self):
         N = 0
 
-        @jax.jit
+        # @jax.jit
         def f(m, y_true, y_pred):
             nonlocal N
             N += 1
@@ -21,8 +21,8 @@ class TestAccuracy:
             return m
 
         metric = Accuracy(num_classes=10)
-        y_true = jnp.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-        y_pred = jnp.array([0, 1, 2, 3, 0, 5, 6, 7, 0, 9])
+        y_true = jnp.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])[None, None, None, :]
+        y_pred = jnp.array([0, 1, 2, 3, 0, 5, 6, 7, 0, 9])[None, None, None, :]
 
         metric = f(metric, y_true, y_pred)
         assert N == 1
@@ -54,7 +54,6 @@ class TestAccuracy:
             ]
         )
 
-        metric0 = metric
         metric = f(metric, y_true, y_pred)
         assert N == 1
         assert metric.compute() == 0.8

@@ -7,8 +7,8 @@ from numpy import uint64
 
 Tensor = jnp.ndarray
 
-from treex.metrics.utilities.data import select_topk, to_onehot
-from treex.metrics.utilities.enums import DataType
+from treex.metrics.tm_port.utilities.data import select_topk, to_onehot
+from treex.metrics.tm_port.utilities.enums import DataType
 
 
 def _check_same_shape(preds: Tensor, target: Tensor) -> None:
@@ -415,11 +415,6 @@ def _input_format_classification(
     """
     # Remove excess dimensions
     preds, target = _input_squeeze(preds, target)
-
-    # Convert half precision tensors to full precision, as not all ops are supported
-    # for example, min() is not supported
-    if preds.dtype == jnp.float16:
-        preds = preds.float()
 
     case = _check_classification_inputs(
         preds,

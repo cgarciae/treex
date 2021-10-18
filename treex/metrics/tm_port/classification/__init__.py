@@ -1,4 +1,4 @@
-from treex.metrics.classification.accuracy import Accuracy  # noqa: F401
+from treex.metrics.tm_port.classification.accuracy import Accuracy  # noqa: F401
 
 # from torchmetrics.classification.auc import AUC  # noqa: F401
 # from torchmetrics.classification.auroc import AUROC  # noqa: F401

@@ -4,8 +4,8 @@ import jax.numpy as jnp
 
 Tensor = jnp.ndarray
 
-from treex.metrics.utilities.checks import _input_format_classification
-from treex.metrics.utilities.enums import AverageMethod, MDMCAverageMethod
+from treex.metrics.tm_port.utilities.checks import _input_format_classification
+from treex.metrics.tm_port.utilities.enums import AverageMethod, MDMCAverageMethod
 
 
 def _del_column(data: Tensor, idx: int) -> Tensor:
@@ -374,7 +374,7 @@ def stat_scores(
             If inputs are ``multi-dimensional multi-class`` and ``mdmc_reduce`` is not provided.
 
     Example:
-        >>> from treex.metrics.functional import stat_scores
+        >>> from treex.metrics.tm_port.functional import stat_scores
         >>> preds  = torch.tensor([1, 0, 2, 1])
         >>> target = torch.tensor([1, 1, 2, 0])
         >>> stat_scores(preds, target, reduce='macro', num_classes=3)
