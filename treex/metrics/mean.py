@@ -35,7 +35,7 @@ class Mean(Reduce):
     ```python
     model = elegy.Model(
         module_fn,
-        loss=elegy.losses.MeanSquaredError(),
+        loss=tx.losses.MeanSquaredError(),
         metrics=elegy.metrics.Mean(),
     )
     ```

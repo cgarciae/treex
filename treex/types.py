@@ -15,6 +15,12 @@ InputLike = tp.Union[tp.Any, tp.Tuple[tp.Any, ...], tp.Dict[str, tp.Any], "Input
 IndexLike = tp.Union[str, int, tp.Sequence[tp.Union[str, int]]]
 PathLike = tp.Tuple[IndexLike, ...]
 
+
+# -----------------------------------------
+# Constants
+# -----------------------------------------
+EPSILON = 1e-7
+
 # -----------------------------------------
 # TreeParts
 # -----------------------------------------

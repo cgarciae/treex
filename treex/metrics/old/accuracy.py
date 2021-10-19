@@ -48,7 +48,7 @@ class Accuracy(Mean):
     ```python
     model = elegy.Model(
         module_fn,
-        loss=elegy.losses.CategoricalCrossentropy(),
+        loss=tx.losses.CategoricalCrossentropy(),
         metrics=elegy.metrics.Accuracy(),
         optimizer=optax.adam(1e-3),
     )
