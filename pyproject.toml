@@ -23,7 +23,7 @@ treeo = { path = "../treeo", develop = true }
 matplotlib = { version = "^3.4.3", python = ">=3.7" }
 pytest = "^5.2"
 streambook = "^0.2"
-black = {version = "^21.7b0", allow-prereleases = true, python = ">=3.6.2" }
+black = {version = "^20.8b0", allow-prereleases = true, python = ">=3.6.2" }
 jupyterlab = "^3.1.7"
 hypothesis = "^6.14.8"
 dataget = "^0.4.15"

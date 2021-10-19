@@ -105,7 +105,7 @@ class Loss:
     def __call__(
         self,
         **kwargs,
-    ):
+    ) -> jnp.ndarray:
 
         if self._labels_filter is not None:
             if "y_true" in kwargs and kwargs["y_true"] is not None:

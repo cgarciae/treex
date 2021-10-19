@@ -11,7 +11,7 @@ class Metrics(Metric):
 
     def __init__(
         self,
-        modules: tp.Any,
+        metrics: tp.Any,
         on: tp.Optional[types.IndexLike] = None,
         name: tp.Optional[str] = None,
         dtype: tp.Optional[jnp.dtype] = None,
@@ -26,28 +26,21 @@ class Metrics(Metric):
 
         self.metrics = {
             utils._unique_name(names, get_name(path, metric)): metric
-            for path, metric in utils._flatten_names(modules)
+            for path, metric in utils._flatten_names(metrics)
         }
 
     def update(self, **kwargs) -> None:
         for name, metric in self.metrics.items():
-            update_kwargs = utils._function_argument_names(metric.update)
+            arg_names = utils._function_argument_names(metric.update)
 
-            if update_kwargs is None:
+            if arg_names is None:
                 metric_kwargs = kwargs
-
             else:
-                metric_kwargs = {}
-
-                for arg in update_kwargs:
-                    if arg not in kwargs:
-                        raise ValueError(f"Missing argument {arg} for metric {name}")
-
-                    metric_kwargs[arg] = kwargs[arg]
+                metric_kwargs = {arg: kwargs[arg] for arg in arg_names if arg in kwargs}
 
             metric.update(**metric_kwargs)
 
-    def compute(self) -> tp.Any:
+    def compute(self) -> tp.Dict[str, jnp.ndarray]:
         outputs = {}
         names = set()
 
@@ -62,3 +55,6 @@ class Metrics(Metric):
                 outputs[name] = value
 
         return outputs
+
+    def __call__(self, **kwargs) -> tp.Dict[str, jnp.ndarray]:
+        return super().__call__(**kwargs)

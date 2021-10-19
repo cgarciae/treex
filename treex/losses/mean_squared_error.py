@@ -91,7 +91,7 @@ class MeanSquaredError(Loss):
         reduction: tp.Optional[Reduction] = None,
         weight: tp.Optional[float] = None,
         on: tp.Optional[types.IndexLike] = None,
-        **kwargs
+        name: tp.Optional[str] = None,
     ):
         """
         Initializes `Mean` class.
@@ -110,7 +110,7 @@ class MeanSquaredError(Loss):
                 check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).
         """
 
-        return super().__init__(reduction=reduction, weight=weight, on=on, **kwargs)
+        return super().__init__(reduction=reduction, weight=weight, on=on, name=name)
 
     def call(
         self,
