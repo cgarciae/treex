@@ -40,7 +40,7 @@ class Reduce(Metric):
             Reduction.sum_over_batch_size,
             Reduction.weighted_mean,
         ):
-            self.count = jnp.array(0, dtype=jnp.uint64)
+            self.count = jnp.array(0, dtype=jnp.uint32)
         else:
             self.count = None
 

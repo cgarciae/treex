@@ -7,7 +7,7 @@ from jax._src.lax.lax import top_k
 Tensor = jnp.ndarray
 tensor = jnp.array
 
-from treex.metrics.utilities.prints import rank_zero_warn
+from treex.metrics.tm_port.utilities.prints import rank_zero_warn
 
 METRIC_EPS = 1e-6
 
@@ -64,7 +64,7 @@ to_onehot = jax.nn.one_hot
 #         # device=label_tensor.device,
 #     )
 #     index = jnp.broadcast_to(
-#         label_tensor.astype(jnp.uint64)[:None], tensor_onehot.shape
+#         label_tensor.astype(jnp.uint32)[:None], tensor_onehot.shape
 #     )
 #     return tensor_onehot.scatter_(1, index, 1.0)
 

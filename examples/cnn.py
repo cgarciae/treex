@@ -16,7 +16,6 @@ from treex.utils import _check_rejit
 
 Batch = tp.Mapping[str, np.ndarray]
 Model = tx.Sequential
-Metric = tx.metrics.Accuracy
 np.random.seed(420)
 
 
@@ -31,7 +30,7 @@ def init_step(
 
 
 @jax.jit
-def reset_step(metric: Metric) -> Metric:
+def reset_step(metric: tx.Metric) -> tx.Metric:
     metric.reset()
     return metric
 
@@ -59,10 +58,10 @@ def loss_fn(
 def train_step(
     model: Model,
     optimizer: tx.Optimizer,
-    metric: Metric,
+    metric: tx.Metric,
     x: jnp.ndarray,
     y: jnp.ndarray,
-) -> tp.Tuple[jnp.ndarray, Model, tx.Optimizer, Metric]:
+) -> tp.Tuple[jnp.ndarray, Model, tx.Optimizer, tx.Metric]:
     print("JITTTTING")
     params = model.parameters()
 
@@ -79,8 +78,8 @@ def train_step(
 
 @jax.jit
 def test_step(
-    model: Model, metric: Metric, x: jnp.ndarray, y: jnp.ndarray
-) -> tp.Tuple[jnp.ndarray, Metric]:
+    model: Model, metric: tx.Metric, x: jnp.ndarray, y: jnp.ndarray
+) -> tp.Tuple[jnp.ndarray, tx.Metric]:
 
     loss, (model, y_pred) = loss_fn(model, model, x, y)
 

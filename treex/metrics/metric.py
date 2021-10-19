@@ -80,7 +80,7 @@ class Metric(Treex, metaclass=MetricMeta):
         self.__dict__.update(self._initial_state)
 
     @abstractmethod
-    def update(self, **kwargs):
+    def update(self, **kwargs) -> None:
         ...
 
     @abstractmethod
