@@ -57,12 +57,8 @@ class Losses(Metric):
 
             value = loss(**loss_kwargs)
 
-            self.totals[name] = (self.totals[name] + value).astype(
-                self.totals[name].dtype
-            )
-            self.counts[name] = (self.counts[name] + np.prod(value.shape)).astype(
-                self.counts[name].dtype
-            )
+            self.totals[name] = (self.totals[name] + value).astype(jnp.float32)
+            self.counts[name] = (self.counts[name] + 1).astype(jnp.uint32)
 
     def compute(self) -> tp.Tuple[jnp.ndarray, tp.Dict[str, jnp.ndarray]]:
         losses = {name: self.totals[name] / self.counts[name] for name in self.totals}
@@ -94,13 +90,11 @@ class AuxLosses(Metric):
         logs = self.as_logs(aux_losses)
 
         self.totals = {
-            name: (self.totals[name] + logs[name]).astype(self.totals[name].dtype)
+            name: (self.totals[name] + logs[name]).astype(jnp.float32)
             for name in self.totals
         }
         self.counts = {
-            name: (self.counts[name] + np.prod(logs[name].shape)).astype(
-                self.counts[name].dtype
-            )
+            name: (self.counts[name] + 1).astype(dtype=jnp.uint32)
             for name in self.counts
         }
 

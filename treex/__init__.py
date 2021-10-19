@@ -5,7 +5,7 @@ from treeo import *
 
 from treex.key_seq import *
 from treex.losses import Loss
-from treex.metrics import Metric
+from treex.metrics import LossAndLogs, Metric
 from treex.module import *
 from treex.nn import *
 from treex.optimizer import *

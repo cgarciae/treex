@@ -384,7 +384,7 @@ class Module(Treex):
         """
         return self.filter(types.State, *filters)
 
-    def metrics(self: M, *filters: Filter) -> M:
+    def metric_logs(self: M, *filters: Filter) -> M:
         """
         Returns a copy of the Module with only tx.Metric TreeParts, alias for `filter(tx.Metric)`.
 
@@ -393,7 +393,7 @@ class Module(Treex):
         """
         return self.filter(types.MetricLog, *filters)
 
-    def losses(self: M, *filters: Filter) -> M:
+    def loss_logs(self: M, *filters: Filter) -> M:
         """
         Returns a copy of the Module with only tx.Loss TreeParts, alias for `filter(tx.Loss)`.
 

@@ -18,7 +18,7 @@ class TestLosses:
             m(y_true=y_true, y_pred=y_pred)
             return m
 
-        losses = tx.losses.Losses(
+        losses = tx.metrics.Losses(
             [
                 tx.losses.MeanSquaredError(),
                 tx.losses.MeanSquaredError(),
@@ -58,7 +58,7 @@ class TestLosses:
             m(y_true=y_true, y_pred=y_pred)
             return m
 
-        losses = tx.losses.Losses(
+        losses = tx.metrics.Losses(
             dict(
                 a=tx.losses.MeanSquaredError(),
                 b=tx.losses.MeanSquaredError(),
