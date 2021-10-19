@@ -19,7 +19,7 @@ class LossTest(TestCase):
         mae = MAE()
 
         sample_loss = mae.call(y_true, y_pred)
-        loss = mae(y_true, y_pred)
+        loss = mae(y_true=y_true, y_pred=y_pred)
 
         assert jnp.alltrue(sample_loss == jnp.array([1.0, 1.0, 1.0]))
         assert loss == 1

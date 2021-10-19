@@ -19,19 +19,24 @@ def test_basic():
 
     # Using 'auto'/'sum_over_batch_size' reduction type.
     huber_loss = tx.losses.Huber()
-    assert huber_loss(y_true, y_pred) == 0.155
+    assert huber_loss(y_true=y_true, y_pred=y_pred) == 0.155
 
     # Calling with 'sample_weight'.
-    assert huber_loss(y_true, y_pred, sample_weight=jnp.array([0.8, 0.2])) == 0.08500001
+    assert (
+        huber_loss(y_true=y_true, y_pred=y_pred, sample_weight=jnp.array([0.8, 0.2]))
+        == 0.08500001
+    )
 
     # Using 'sum' reduction type.
     huber_loss = tx.losses.Huber(reduction=tx.losses.Reduction.SUM)
-    assert huber_loss(y_true, y_pred) == 0.31
+    assert huber_loss(y_true=y_true, y_pred=y_pred) == 0.31
 
     # Using 'none' reduction type.
     huber_loss = tx.losses.Huber(reduction=tx.losses.Reduction.NONE)
 
-    assert jnp.equal(huber_loss(y_true, y_pred), jnp.array([0.18, 0.13000001])).all()
+    assert jnp.equal(
+        huber_loss(y_true=y_true, y_pred=y_pred), jnp.array([0.18, 0.13000001])
+    ).all()
 
 
 def test_function():
@@ -76,7 +81,7 @@ def test_compatibility():
     huber_loss_tfk = tfk.losses.Huber(delta=1.0)
 
     assert np.isclose(
-        huber_loss(y_true, y_pred, sample_weight=jnp.array([1, 0])),
+        huber_loss(y_true=y_true, y_pred=y_pred, sample_weight=jnp.array([1, 0])),
         huber_loss_tfk(y_true, y_pred, sample_weight=jnp.array([1, 0])),
         rtol=0.0001,
     )
@@ -85,7 +90,9 @@ def test_compatibility():
     huber_loss = tx.losses.Huber(delta=1.0, reduction=tx.losses.Reduction.SUM)
     huber_loss_tfk = tfk.losses.Huber(delta=1.0, reduction=tfk.losses.Reduction.SUM)
     assert np.isclose(
-        huber_loss(y_true, y_pred), huber_loss_tfk(y_true, y_pred), rtol=0.0001
+        huber_loss(y_true=y_true, y_pred=y_pred),
+        huber_loss_tfk(y_true, y_pred),
+        rtol=0.0001,
     )
 
     # cosine_loss with reduction method: NONE
@@ -93,7 +100,9 @@ def test_compatibility():
     huber_loss_tfk = tfk.losses.Huber(delta=1.0, reduction=tfk.losses.Reduction.NONE)
     assert jnp.all(
         np.isclose(
-            huber_loss(y_true, y_pred), huber_loss_tfk(y_true, y_pred), rtol=0.0001
+            huber_loss(y_true=y_true, y_pred=y_pred),
+            huber_loss_tfk(y_true, y_pred),
+            rtol=0.0001,
         )
     )
 

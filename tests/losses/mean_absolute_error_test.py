@@ -10,7 +10,6 @@ import treex as tx
 # debugpy.wait_for_client()
 
 
-#
 def test_basic():
 
     y_true = jnp.array([[0.0, 1.0], [0.0, 0.0]])
@@ -19,20 +18,22 @@ def test_basic():
     # Using 'auto'/'sum_over_batch_size' reduction type.
     mae = tx.losses.MeanAbsoluteError()
 
-    assert mae(y_true, y_pred) == 0.5
+    assert mae(y_true=y_true, y_pred=y_pred) == 0.5
 
     # Calling with 'sample_weight'.
-    assert mae(y_true, y_pred, sample_weight=jnp.array([0.7, 0.3])) == 0.25
+    assert (
+        mae(y_true=y_true, y_pred=y_pred, sample_weight=jnp.array([0.7, 0.3])) == 0.25
+    )
 
     # Using 'sum' reduction type.
     mae = tx.losses.MeanAbsoluteError(reduction=tx.losses.Reduction.SUM)
 
-    assert mae(y_true, y_pred) == 1.0
+    assert mae(y_true=y_true, y_pred=y_pred) == 1.0
 
     # Using 'none' reduction type.
     mae = tx.losses.MeanAbsoluteError(reduction=tx.losses.Reduction.NONE)
 
-    assert list(mae(y_true, y_pred)) == [0.5, 0.5]
+    assert list(mae(y_true=y_true, y_pred=y_pred)) == [0.5, 0.5]
 
 
 #

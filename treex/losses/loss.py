@@ -104,7 +104,6 @@ class Loss:
 
     def __call__(
         self,
-        *args,
         **kwargs,
     ):
 
@@ -117,26 +116,20 @@ class Loss:
                 for index in self._labels_filter:
                     kwargs["y_pred"] = kwargs["y_pred"][index]
 
-        values = self.call(*args, **kwargs)
+        sample_weight: tp.Optional[jnp.ndarray] = kwargs.pop("sample_weight", None)
 
-        sample_weight: tp.Optional[jnp.ndarray] = kwargs.get("sample_weight", None)
+        values = self.call(**kwargs)
 
-        if isinstance(values, tp.Dict):
-            return {
-                key: reduce_loss(values, sample_weight, self.weight, self._reduction)
-                for key, values in values.items()
-            }
-        else:
-            return reduce_loss(values, sample_weight, self.weight, self._reduction)
+        return reduce_loss(values, sample_weight, self.weight, self._reduction)
 
     @abstractmethod
-    def call(self, *args, **kwargs) -> tp.Any:
+    def call(self, *args, **kwargs) -> jnp.ndarray:
         ...
 
 
-def reduce_loss(values, sample_weight, weight, reduction):
+def reduce_loss(values, sample_weight, weight, reduction) -> jnp.ndarray:
 
-    values: jnp.ndarray = jnp.asarray(values)
+    values = jnp.asarray(values)
 
     if sample_weight is not None:
         values *= sample_weight

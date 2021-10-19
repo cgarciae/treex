@@ -20,21 +20,24 @@ def test_basic():
 
     # Using 'auto'/'sum_over_batch_size' reduction type.
     cosine_loss = tx.losses.CosineSimilarity(axis=1)
-    assert cosine_loss(y_true, y_pred) == -0.49999997
+    assert cosine_loss(y_true=y_true, y_pred=y_pred) == -0.49999997
 
     # Calling with 'sample_weight'.
     assert (
-        cosine_loss(y_true, y_pred, sample_weight=jnp.array([0.8, 0.2])) == -0.099999994
+        cosine_loss(y_true=y_true, y_pred=y_pred, sample_weight=jnp.array([0.8, 0.2]))
+        == -0.099999994
     )
 
     # Using 'sum' reduction type.
     cosine_loss = tx.losses.CosineSimilarity(axis=1, reduction=tx.losses.Reduction.SUM)
-    assert cosine_loss(y_true, y_pred) == -0.99999994
+    assert cosine_loss(y_true=y_true, y_pred=y_pred) == -0.99999994
 
     # Using 'none' reduction type.
     cosine_loss = tx.losses.CosineSimilarity(axis=1, reduction=tx.losses.Reduction.NONE)
 
-    assert jnp.equal(cosine_loss(y_true, y_pred), jnp.array([-0.0, -0.99999994])).all()
+    assert jnp.equal(
+        cosine_loss(y_true=y_true, y_pred=y_pred), jnp.array([-0.0, -0.99999994])
+    ).all()
 
 
 def test_function():
@@ -69,7 +72,7 @@ def test_compatibility():
     cosine_loss_tfk = tfk.losses.CosineSimilarity(axis=1)
 
     assert np.isclose(
-        cosine_loss(y_true, y_pred, sample_weight=jnp.array([1, 0])),
+        cosine_loss(y_true=y_true, y_pred=y_pred, sample_weight=jnp.array([1, 0])),
         cosine_loss_tfk(y_true, y_pred, sample_weight=jnp.array([1, 0])),
         rtol=0.0001,
     )
@@ -80,7 +83,9 @@ def test_compatibility():
         axis=1, reduction=tfk.losses.Reduction.SUM
     )
     assert np.isclose(
-        cosine_loss(y_true, y_pred), cosine_loss_tfk(y_true, y_pred), rtol=0.0001
+        cosine_loss(y_true=y_true, y_pred=y_pred),
+        cosine_loss_tfk(y_true, y_pred),
+        rtol=0.0001,
     )
 
     # cosine_loss with reduction method: NONE
@@ -90,7 +95,9 @@ def test_compatibility():
     )
     assert jnp.all(
         np.isclose(
-            cosine_loss(y_true, y_pred), cosine_loss_tfk(y_true, y_pred), rtol=0.0001
+            cosine_loss(y_true=y_true, y_pred=y_pred),
+            cosine_loss_tfk(y_true, y_pred),
+            rtol=0.0001,
         )
     )
 

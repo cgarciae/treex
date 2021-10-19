@@ -21,20 +21,25 @@ def test_basic():
     # Using 'auto'/'sum_over_batch_size' reduction type.
     msle = tx.losses.MeanSquaredLogarithmicError()
 
-    assert msle(y_true, y_pred) == 0.24022643
+    assert msle(y_true=y_true, y_pred=y_pred) == 0.24022643
 
     # Calling with 'sample_weight'.
-    assert msle(y_true, y_pred, sample_weight=jnp.array([0.7, 0.3])) == 0.12011322
+    assert (
+        msle(y_true=y_true, y_pred=y_pred, sample_weight=jnp.array([0.7, 0.3]))
+        == 0.12011322
+    )
 
     # Using 'sum' reduction type.
     msle = tx.losses.MeanSquaredLogarithmicError(reduction=tx.losses.Reduction.SUM)
 
-    assert msle(y_true, y_pred) == 0.48045287
+    assert msle(y_true=y_true, y_pred=y_pred) == 0.48045287
 
     # Using 'none' reduction type.
     msle = tx.losses.MeanSquaredLogarithmicError(reduction=tx.losses.Reduction.NONE)
 
-    assert jnp.equal(msle(y_true, y_pred), jnp.array([0.24022643, 0.24022643])).all()
+    assert jnp.equal(
+        msle(y_true=y_true, y_pred=y_pred), jnp.array([0.24022643, 0.24022643])
+    ).all()
 
 
 def test_function():
@@ -62,7 +67,7 @@ def test_compatibility():
     msle_elegy = tx.losses.MeanSquaredLogarithmicError()
     msle_tfk = tfk.losses.MeanSquaredLogarithmicError()
     assert np.isclose(
-        msle_elegy(y_true, y_pred, sample_weight=jnp.array([1, 0])),
+        msle_elegy(y_true=y_true, y_pred=y_pred, sample_weight=jnp.array([1, 0])),
         msle_tfk(y_true, y_pred, sample_weight=jnp.array([1, 0])),
         rtol=0.0001,
     )
@@ -74,7 +79,9 @@ def test_compatibility():
     msle_tfk = tfk.losses.MeanSquaredLogarithmicError(
         reduction=tfk.losses.Reduction.SUM
     )
-    assert np.isclose(msle_elegy(y_true, y_pred), msle_tfk(y_true, y_pred), rtol=0.0001)
+    assert np.isclose(
+        msle_elegy(y_true=y_true, y_pred=y_pred), msle_tfk(y_true, y_pred), rtol=0.0001
+    )
 
     # MSLE with reduction method: NONE
     msle_elegy = tx.losses.MeanSquaredLogarithmicError(
@@ -84,7 +91,11 @@ def test_compatibility():
         reduction=tfk.losses.Reduction.NONE
     )
     assert jnp.all(
-        np.isclose(msle_elegy(y_true, y_pred), msle_tfk(y_true, y_pred), rtol=0.0001)
+        np.isclose(
+            msle_elegy(y_true=y_true, y_pred=y_pred),
+            msle_tfk(y_true, y_pred),
+            rtol=0.0001,
+        )
     )
 
 

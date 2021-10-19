@@ -19,20 +19,22 @@ def test_basic():
     # Using 'auto'/'sum_over_batch_size' reduction type.
     mse = tx.losses.MeanSquaredError()
 
-    assert mse(y_true, y_pred) == 0.5
+    assert mse(y_true=y_true, y_pred=y_pred) == 0.5
 
     # Calling with 'sample_weight'.
-    assert mse(y_true, y_pred, sample_weight=jnp.array([0.7, 0.3])) == 0.25
+    assert (
+        mse(y_true=y_true, y_pred=y_pred, sample_weight=jnp.array([0.7, 0.3])) == 0.25
+    )
 
     # Using 'sum' reduction type.
     mse = tx.losses.MeanSquaredError(reduction=tx.losses.Reduction.SUM)
 
-    assert mse(y_true, y_pred) == 1.0
+    assert mse(y_true=y_true, y_pred=y_pred) == 1.0
 
     # Using 'none' reduction type.
     mse = tx.losses.MeanSquaredError(reduction=tx.losses.Reduction.NONE)
 
-    assert list(mse(y_true, y_pred)) == [0.5, 0.5]
+    assert list(mse(y_true=y_true, y_pred=y_pred)) == [0.5, 0.5]
 
 
 #

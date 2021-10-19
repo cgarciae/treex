@@ -17,23 +17,25 @@ class MeanAbsolutePercentageErrorTest(TestCase):
 
         # Using 'auto'/'sum_over_batch_size' reduction type.
         mape = tx.losses.MeanAbsolutePercentageError()
-        result = mape(y_true, y_pred)
+        result = mape(y_true=y_true, y_pred=y_pred)
         assert np.isclose(result, 2.78, rtol=0.01)
 
         # Calling with 'sample_weight'.
         assert np.isclose(
-            mape(y_true, y_pred, sample_weight=jnp.array([0.1, 0.9])), 2.5, rtol=0.01
+            mape(y_true=y_true, y_pred=y_pred, sample_weight=jnp.array([0.1, 0.9])),
+            2.5,
+            rtol=0.01,
         )
 
         # Using 'sum' reduction type.
         mape = tx.losses.MeanAbsolutePercentageError(reduction=tx.losses.Reduction.SUM)
 
-        assert np.isclose(mape(y_true, y_pred), 5.6, rtol=0.01)
+        assert np.isclose(mape(y_true=y_true, y_pred=y_pred), 5.6, rtol=0.01)
 
         # Using 'none' reduction type.
         mape = tx.losses.MeanAbsolutePercentageError(reduction=tx.losses.Reduction.NONE)
 
-        result = mape(y_true, y_pred)
+        result = mape(y_true=y_true, y_pred=y_pred)
         assert jnp.all(np.isclose(result, [0.0, 5.6], rtol=0.01))
 
     #
@@ -46,12 +48,14 @@ class MeanAbsolutePercentageErrorTest(TestCase):
         mape_elegy = tx.losses.MeanAbsolutePercentageError()
         mape_tfk = tfk.losses.MeanAbsolutePercentageError()
         assert np.isclose(
-            mape_elegy(y_true, y_pred), mape_tfk(y_true, y_pred), rtol=0.0001
+            mape_elegy(y_true=y_true, y_pred=y_pred),
+            mape_tfk(y_true, y_pred),
+            rtol=0.0001,
         )
 
         ## MAPE using sample_weight
         assert np.isclose(
-            mape_elegy(y_true, y_pred, sample_weight=jnp.array([1, 0])),
+            mape_elegy(y_true=y_true, y_pred=y_pred, sample_weight=jnp.array([1, 0])),
             mape_tfk(y_true, y_pred, sample_weight=jnp.array([1, 0])),
             rtol=0.0001,
         )
@@ -64,7 +68,9 @@ class MeanAbsolutePercentageErrorTest(TestCase):
             reduction=tfk.losses.Reduction.SUM
         )
         assert np.isclose(
-            mape_elegy(y_true, y_pred), mape_tfk(y_true, y_pred), rtol=0.0001
+            mape_elegy(y_true=y_true, y_pred=y_pred),
+            mape_tfk(y_true, y_pred),
+            rtol=0.0001,
         )
 
         ## MAPE with reduction method: NONE
@@ -76,7 +82,9 @@ class MeanAbsolutePercentageErrorTest(TestCase):
         )
         assert jnp.all(
             np.isclose(
-                mape_elegy(y_true, y_pred), mape_tfk(y_true, y_pred), rtol=0.0001
+                mape_elegy(y_true=y_true, y_pred=y_pred),
+                mape_tfk(y_true, y_pred),
+                rtol=0.0001,
             )
         )
 
