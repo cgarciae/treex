@@ -34,7 +34,7 @@ def _mean_absolute_error(y_pred: jnp.ndarray, y_true: jnp.ndarray):
     Arguments:
         y_pred: The predicted values. shape = `[batch_size, d0, .. dN]`.
         y_true: Ground truth values. shape = `[batch_size, d0, .. dN]`.
-        
+
     Returns:
         Mean absolute error values. shape = `[batch_size, d0, .. dN-1]`.
     """
@@ -64,7 +64,7 @@ class MeanAbsolutError(Mean):
                 check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).
 
             kwargs: Additional keyword arguments passed to Module.
-            """
+        """
         super().__init__(on=on, name=name, dtype=dtype)
 
     def update(
