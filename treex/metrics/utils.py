@@ -140,7 +140,7 @@ def _stat_scores(
         preds:
             An ``(N, C)`` or ``(N, C, X)`` tensor of predictions (0 or 1)
         target:
-            An ``(N, C)`` or ``(N, C, X)`` tensor of true labels (0 or 1)
+            An ``(N, C)`` or ``(N, C, X)`` tensor of true target (0 or 1)
         reduce:
             One of ``'MICRO'``, ``'macro'``, ``'samples'``
 
@@ -245,8 +245,8 @@ def _input_format_classification(
         target.
 
     Args:
-        preds: jnp.ndarray with predictions (labels or probabilities)
-        target: jnp.ndarray with ground truth labels, always integers (labels)
+        preds: jnp.ndarray with predictions (target or probabilities)
+        target: jnp.ndarray with ground truth target, always integers (target)
         threshold:
             Threshold value for transforming probability/logit predictions to binary
             (0 or 1) predictions, in the case of binary or multi-label inputs.
@@ -294,7 +294,7 @@ def _input_format_classification(
 
     if case == DataType.MULTICLASS or multiclass:
         if _is_floating_point(preds):
-            num_classes = preds.shape[1]
+            num_classes = preds.shape[-1]
             preds = select_topk(preds, top_k or 1)
         else:
             if num_classes is None:
@@ -341,7 +341,7 @@ def _check_classification_inputs(
     This ensures that preds and target take one of the shape/type combinations that are
     specified in ``_input_format_classification`` docstring. It also checks the cases of
     over-rides with ``multiclass`` by checking (for multi-class and multi-dim multi-class
-    cases) that there are only up to 2 distinct labels.
+    cases) that there are only up to 2 distinct target.
 
     In case where preds are floats (probabilities), it is checked whether they are in [0,1] interval.
 
@@ -360,8 +360,8 @@ def _check_classification_inputs(
     greater than 1, except perhaps the first one (``N``).
 
     Args:
-        preds: jnp.ndarray with predictions (labels or probabilities)
-        target: jnp.ndarray with ground truth labels, always integers (labels)
+        preds: jnp.ndarray with predictions (target or probabilities)
+        target: jnp.ndarray with ground truth target, always integers (target)
         threshold:
             Threshold value for transforming probability/logit predictions to binary
             (0,1) predictions, in the case of binary or multi-label inputs.

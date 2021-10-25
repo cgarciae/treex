@@ -35,7 +35,7 @@ class Mean(Reduce):
     ```python
     model = elegy.Model(
         module_fn,
-        loss=elegy.losses.MeanSquaredError(),
+        loss=tx.losses.MeanSquaredError(),
         metrics=elegy.metrics.Mean(),
     )
     ```
@@ -50,11 +50,11 @@ class Mean(Reduce):
         """Creates a `Mean` instance.
         Arguments:
             on: A string or integer, or iterable of string or integers, that
-                indicate how to index/filter the `y_true` and `y_pred`
+                indicate how to index/filter the `target` and `preds`
                 arguments before passing them to `call`. For example if `on = "a"` then
-                `y_true = y_true["a"]`. If `on` is an iterable
+                `target = target["a"]`. If `on` is an iterable
                 the structures will be indexed iteratively, for example if `on = ["a", 0, "b"]`
-                then `y_true = y_true["a"][0]["b"]`, same for `y_pred`. For more information
+                then `target = target["a"][0]["b"]`, same for `preds`. For more information
                 check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).
             kwargs: Additional keyword arguments passed to Module.
         """

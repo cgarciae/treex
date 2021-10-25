@@ -189,19 +189,19 @@ class StatScores(Metric):
         for s in ("tp", "fp", "tn", "fn"):
             setattr(self, s, default())  # , dist_reduce_fx=reduce_fn)
 
-    def update(self, y_pred: Tensor, y_true: Tensor) -> None:  # type: ignore
+    def update(self, preds: Tensor, target: Tensor) -> None:  # type: ignore
         """Update state with predictions and targets. See
         :ref:`references/modules:input types` for more information on input
         types.
 
         Args:
-            preds: Predictions from model (probabilities, logits or labels)
+            preds: Predictions from model (probabilities, logits or target)
             target: Ground truth values
         """
 
         tp, fp, tn, fn = _stat_scores_update(
-            y_pred,
-            y_true,
+            preds,
+            target,
             reduce=self.reduce,
             mdmc_reduce=self.mdmc_reduce,
             threshold=self.threshold,

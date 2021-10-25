@@ -23,16 +23,16 @@ def loss_fn(
     params: Model, model: Model, x: jnp.ndarray, y: jnp.ndarray
 ) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, jnp.ndarray]]:
     model = model.merge(params)
-    y_pred = model(x)
+    preds = model(x)
 
     loss = jnp.mean(
         optax.softmax_cross_entropy(
-            y_pred,
+            preds,
             jax.nn.one_hot(y, 10),
         )
     )
 
-    acc_batch = y_pred.argmax(axis=1) == y
+    acc_batch = preds.argmax(axis=1) == y
 
     acc_batch = jax.lax.all_gather(acc_batch, axis_name="device")
 
@@ -232,15 +232,15 @@ def main(
     idxs = np.random.choice(len(X_test), 10)
     x_sample = X_test[idxs]
 
-    y_pred = predict(model, x_sample)
+    preds = predict(model, x_sample)
 
     plt.figure()
     for i in range(5):
         ax: plt.Axes = plt.subplot(2, 5, i + 1)
-        ax.set_title(f"{y_pred[i]}")
+        ax.set_title(f"{preds[i]}")
         plt.imshow(x_sample[i], cmap="gray")
         ax: plt.Axes = plt.subplot(2, 5, 5 + i + 1)
-        ax.set_title(f"{y_pred[5 + i]}")
+        ax.set_title(f"{preds[5 + i]}")
         plt.imshow(x_sample[5 + i], cmap="gray")
 
     plt.show()

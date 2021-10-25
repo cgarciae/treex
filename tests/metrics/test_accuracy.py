@@ -14,21 +14,21 @@ class TestAccuracy:
         N = 0
 
         @jax.jit
-        def f(m, y_true, y_pred):
+        def f(m, target, preds):
             nonlocal N
             N += 1
-            m(y_true=y_true, y_pred=y_pred)
+            m(target=target, preds=preds)
             return m
 
         metric = Accuracy(num_classes=10)
-        y_true = jnp.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])[None, None, None, :]
-        y_pred = jnp.array([0, 1, 2, 3, 0, 5, 6, 7, 0, 9])[None, None, None, :]
+        target = jnp.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])[None, None, None, :]
+        preds = jnp.array([0, 1, 2, 3, 0, 5, 6, 7, 0, 9])[None, None, None, :]
 
-        metric = f(metric, y_true, y_pred)
+        metric = f(metric, target, preds)
         assert N == 1
         assert metric.compute() == 0.8
 
-        metric = f(metric, y_true, y_pred)
+        metric = f(metric, target, preds)
         assert N == 1
         assert metric.compute() == 0.8
 
@@ -36,15 +36,15 @@ class TestAccuracy:
         N = 0
 
         @jax.jit
-        def f(m, y_true, y_pred):
+        def f(m, target, preds):
             nonlocal N
             N += 1
-            m(y_true=y_true, y_pred=y_pred)
+            m(target=target, preds=preds)
             return m
 
         metric = Accuracy()
-        y_true = jnp.array([0, 0, 1, 1, 1])
-        y_pred = jnp.array(
+        target = jnp.array([0, 0, 1, 1, 1])
+        preds = jnp.array(
             [
                 [10.0, 0.0, 0.0],
                 [10.0, 0.0, 0.0],
@@ -54,10 +54,10 @@ class TestAccuracy:
             ]
         )
 
-        metric = f(metric, y_true, y_pred)
+        metric = f(metric, target, preds)
         assert N == 1
         assert metric.compute() == 0.8
 
-        metric = f(metric, y_true, y_pred)
+        metric = f(metric, target, preds)
         # assert N == 1
         assert metric.compute() == 0.8
