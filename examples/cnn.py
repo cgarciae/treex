@@ -42,9 +42,9 @@ def loss_fn(
     y: jnp.ndarray,
 ) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, tx.LossAndLogs, Logs]]:
     model = model.merge(params)
-    y_pred = model(x)
+    preds = model(x)
     loss, losses_logs, metrics_logs = loss_logs.batch_loss_epoch_logs(
-        y_true=y, y_pred=y_pred
+        target=y, preds=preds
     )
     logs = {**losses_logs, **metrics_logs}
 
@@ -192,15 +192,15 @@ def main(
     idxs = np.random.choice(len(X_test), 10)
     x_sample = X_test[idxs]
 
-    y_pred = predict(model, x_sample)
+    preds = predict(model, x_sample)
 
     plt.figure()
     for i in range(5):
         ax: plt.Axes = plt.subplot(2, 5, i + 1)
-        ax.set_title(f"{y_pred[i]}")
+        ax.set_title(f"{preds[i]}")
         plt.imshow(x_sample[i], cmap="gray")
         ax: plt.Axes = plt.subplot(2, 5, 5 + i + 1)
-        ax.set_title(f"{y_pred[5 + i]}")
+        ax.set_title(f"{preds[5 + i]}")
         plt.imshow(x_sample[5 + i], cmap="gray")
 
     plt.show()

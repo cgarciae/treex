@@ -57,8 +57,8 @@ class Loss:
 
     ```python
     class MeanSquaredError(Loss):
-        def call(self, y_true, y_pred):
-            return jnp.mean(jnp.square(y_pred - y_true), axis=-1)
+        def call(self, target, preds):
+            return jnp.mean(jnp.square(preds - target), axis=-1)
     ```
 
     Please see the [Modules, Losses, and Metrics Guide]
@@ -66,13 +66,10 @@ class Loss:
     details on this.
     """
 
-    # Methods used for auto docs
-    __all__ = ["__init__", "call"]
-
     def __init__(
         self,
         reduction: tp.Optional[Reduction] = None,
-        weight: tp.Optional[float] = None,
+        weight: tp.Optional[types.ScalarLike] = None,
         on: tp.Optional[types.IndexLike] = None,
         name: tp.Optional[str] = None,
     ):
@@ -85,17 +82,21 @@ class Loss:
                 this defaults to `SUM_OVER_BATCH_SIZE`.
             weight: Optional weight contribution for the total loss. Defaults to `1`.
             on: A string or integer, or iterable of string or integers, that
-                indicate how to index/filter the `y_true` and `y_pred`
+                indicate how to index/filter the `target` and `preds`
                 arguments before passing them to `call`. For example if `on = "a"` then
-                `y_true = y_true["a"]`. If `on` is an iterable
+                `target = target["a"]`. If `on` is an iterable
                 the structures will be indexed iteratively, for example if `on = ["a", 0, "b"]`
-                then `y_true = y_true["a"][0]["b"]`, same for `y_pred`. For more information
+                then `target = target["a"][0]["b"]`, same for `preds`. For more information
                 check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).
             name: Optional name for the instance, if not provided lower snake_case version
                 of the name of the class is used instead.
         """
         self.name = name if name is not None else utils._get_name(self)
-        self.weight = weight if weight is not None else 1.0
+        self.weight = (
+            jnp.asarray(weight, dtype=jnp.float32)
+            if weight is not None
+            else jnp.array(1.0, dtype=jnp.float32)
+        )
         self._reduction = (
             reduction if reduction is not None else Reduction.SUM_OVER_BATCH_SIZE
         )
@@ -108,13 +109,13 @@ class Loss:
     ) -> jnp.ndarray:
 
         if self._labels_filter is not None:
-            if "y_true" in kwargs and kwargs["y_true"] is not None:
+            if "target" in kwargs and kwargs["target"] is not None:
                 for index in self._labels_filter:
-                    kwargs["y_true"] = kwargs["y_true"][index]
+                    kwargs["target"] = kwargs["target"][index]
 
-            if "y_pred" in kwargs and kwargs["y_pred"] is not None:
+            if "preds" in kwargs and kwargs["preds"] is not None:
                 for index in self._labels_filter:
-                    kwargs["y_pred"] = kwargs["y_pred"][index]
+                    kwargs["preds"] = kwargs["preds"][index]
 
         sample_weight: tp.Optional[jnp.ndarray] = kwargs.pop("sample_weight", None)
 

@@ -14,7 +14,7 @@ B = tp.TypeVar("B")
 InputLike = tp.Union[tp.Any, tp.Tuple[tp.Any, ...], tp.Dict[str, tp.Any], "Inputs"]
 IndexLike = tp.Union[str, int, tp.Sequence[tp.Union[str, int]]]
 PathLike = tp.Tuple[IndexLike, ...]
-
+ScalarLike = tp.Union[float, np.ndarray, jnp.ndarray]
 
 # -----------------------------------------
 # Constants

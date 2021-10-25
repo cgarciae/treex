@@ -35,8 +35,8 @@ class Accuracy(StatScores):
     top-K highest probability or logit score items are considered to find the correct label.
 
     For multi-label and multi-dimensional multi-class inputs, this metric computes the "global"
-    accuracy by default, which counts all labels or sub-samples separately. This can be
-    changed to subset accuracy (which requires all labels or sub-samples in the sample to
+    accuracy by default, which counts all target or sub-samples separately. This can be
+    changed to subset accuracy (which requires all target or sub-samples in the sample to
     be correctly predicted) by setting ``subset_accuracy=True``.
 
     Accepts all input types listed in :ref:`references/modules:input types`.
@@ -106,9 +106,9 @@ class Accuracy(StatScores):
             Whether to compute subset accuracy for multi-label and multi-dimensional
             multi-class inputs (has no effect for other input types).
 
-            - For multi-label inputs, if the parameter is set to ``True``, then all labels for
+            - For multi-label inputs, if the parameter is set to ``True``, then all target for
               each sample must be correctly predicted for the sample to count as correct. If it
-              is set to ``False``, then all labels are counted separately - this is equivalent to
+              is set to ``False``, then all target are counted separately - this is equivalent to
               flattening inputs beforehand (i.e. ``preds = preds.flatten()`` and same for ``target``).
 
             - For multi-dimensional multi-class inputs, if the parameter is set to ``True``, then all
@@ -218,19 +218,19 @@ class Accuracy(StatScores):
         self.mode = None
         self.multiclass = multiclass
 
-    def update(self, y_pred: Tensor, y_true: Tensor) -> None:  # type: ignore
+    def update(self, preds: Tensor, target: Tensor) -> None:  # type: ignore
         """Update state with predictions and targets. See
         :ref:`references/modules:input types` for more information on input
         types.
 
         Args:
-            preds: Predictions from model (logits, probabilities, or labels)
-            target: Ground truth labels
+            preds: Predictions from model (logits, probabilities, or target)
+            target: Ground truth target
         """
 
         mode = _mode(
-            y_pred,
-            y_true,
+            preds,
+            target,
             self.threshold,
             self.top_k,
             self.num_classes,
@@ -249,7 +249,7 @@ class Accuracy(StatScores):
 
         if self.subset_accuracy:
             correct, total = _subset_accuracy_update(
-                y_pred, y_true, threshold=self.threshold, top_k=self.top_k
+                preds, target, threshold=self.threshold, top_k=self.top_k
             )
             self.correct += correct
             self.total += total
@@ -257,8 +257,8 @@ class Accuracy(StatScores):
             if self.mode is None:
                 raise RuntimeError("You have to have determined mode.")
             tp, fp, tn, fn = _accuracy_update(
-                y_pred,
-                y_true,
+                preds,
+                target,
                 reduce=self.reduce,
                 mdmc_reduce=self.mdmc_reduce,
                 threshold=self.threshold,

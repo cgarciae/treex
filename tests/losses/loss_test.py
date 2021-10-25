@@ -10,38 +10,38 @@ import treex as tx
 class LossTest(TestCase):
     def test_basic(self):
         class MAE(tx.Loss):
-            def call(self, y_true, y_pred):
-                return jnp.abs(y_true - y_pred)
+            def call(self, target, preds):
+                return jnp.abs(target - preds)
 
-        y_true = jnp.array([1.0, 2.0, 3.0])
-        y_pred = jnp.array([2.0, 3.0, 4.0])
+        target = jnp.array([1.0, 2.0, 3.0])
+        preds = jnp.array([2.0, 3.0, 4.0])
 
         mae = MAE()
 
-        sample_loss = mae.call(y_true, y_pred)
-        loss = mae(y_true=y_true, y_pred=y_pred)
+        sample_loss = mae.call(target, preds)
+        loss = mae(target=target, preds=preds)
 
         assert jnp.alltrue(sample_loss == jnp.array([1.0, 1.0, 1.0]))
         assert loss == 1
 
     def test_slice(self):
         class MAE(tx.Loss):
-            def call(self, y_true, y_pred):
-                return jnp.abs(y_true - y_pred)
+            def call(self, target, preds):
+                return jnp.abs(target - preds)
 
-        y_true = dict(a=jnp.array([1.0, 2.0, 3.0]))
-        y_pred = dict(a=jnp.array([2.0, 3.0, 4.0]))
+        target = dict(a=jnp.array([1.0, 2.0, 3.0]))
+        preds = dict(a=jnp.array([2.0, 3.0, 4.0]))
 
         mae = MAE(on="a")
 
         # raises because it doesn't use kwargs
         with pytest.raises(BaseException):
-            sample_loss = mae(y_true, y_pred)
+            sample_loss = mae(target, preds)
 
         # raises because it doesn't use __call__ which filters
         with pytest.raises(BaseException):
-            sample_loss = mae.call(y_true=y_true, y_pred=y_pred)
+            sample_loss = mae.call(target=target, preds=preds)
 
-        loss = mae(y_true=y_true, y_pred=y_pred)
+        loss = mae(target=target, preds=preds)
 
         assert loss == 1

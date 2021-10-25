@@ -12,4 +12,14 @@ from treex.optimizer import *
 from treex.types import *
 from treex.utils import *
 
-from . import key_seq, losses, metrics, module, nn, optimizer, types, utils
+from . import (
+    key_seq,
+    losses,
+    metrics,
+    module,
+    nn,
+    optimizer,
+    regularizers,
+    types,
+    utils,
+)

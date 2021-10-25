@@ -12,28 +12,26 @@ import treex as tx
 
 def test_basic():
 
-    y_true = jnp.array([[0.0, 1.0], [0.0, 0.0]])
-    y_pred = jnp.array([[1.0, 1.0], [1.0, 0.0]])
+    target = jnp.array([[0.0, 1.0], [0.0, 0.0]])
+    preds = jnp.array([[1.0, 1.0], [1.0, 0.0]])
 
     # Using 'auto'/'sum_over_batch_size' reduction type.
     mae = tx.losses.MeanAbsoluteError()
 
-    assert mae(y_true=y_true, y_pred=y_pred) == 0.5
+    assert mae(target=target, preds=preds) == 0.5
 
     # Calling with 'sample_weight'.
-    assert (
-        mae(y_true=y_true, y_pred=y_pred, sample_weight=jnp.array([0.7, 0.3])) == 0.25
-    )
+    assert mae(target=target, preds=preds, sample_weight=jnp.array([0.7, 0.3])) == 0.25
 
     # Using 'sum' reduction type.
     mae = tx.losses.MeanAbsoluteError(reduction=tx.losses.Reduction.SUM)
 
-    assert mae(y_true=y_true, y_pred=y_pred) == 1.0
+    assert mae(target=target, preds=preds) == 1.0
 
     # Using 'none' reduction type.
     mae = tx.losses.MeanAbsoluteError(reduction=tx.losses.Reduction.NONE)
 
-    assert list(mae(y_true=y_true, y_pred=y_pred)) == [0.5, 0.5]
+    assert list(mae(target=target, preds=preds)) == [0.5, 0.5]
 
 
 #
@@ -41,14 +39,14 @@ def test_function():
 
     rng = jax.random.PRNGKey(42)
 
-    y_true = jax.random.randint(rng, shape=(2, 3), minval=0, maxval=2)
-    y_pred = jax.random.uniform(rng, shape=(2, 3))
+    target = jax.random.randint(rng, shape=(2, 3), minval=0, maxval=2)
+    preds = jax.random.uniform(rng, shape=(2, 3))
 
-    loss = tx.losses.mean_absolute_error(y_true, y_pred)
+    loss = tx.losses.mean_absolute_error(target, preds)
 
     assert loss.shape == (2,)
 
-    assert jnp.array_equal(loss, jnp.mean(jnp.abs(y_true - y_pred), axis=-1))
+    assert jnp.array_equal(loss, jnp.mean(jnp.abs(target - preds), axis=-1))
 
 
 if __name__ == "__main__":

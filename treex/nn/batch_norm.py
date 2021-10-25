@@ -149,7 +149,7 @@ class BatchNorm(Module):
         self.var = variables["batch_stats"]["var"]
 
     def __call__(
-        self, x: np.ndarray, use_running_average: tp.Optional[bool] = None
+        self, x: jnp.ndarray, use_running_average: tp.Optional[bool] = None
     ) -> jnp.ndarray:
         """Normalizes the input using batch statistics.
 

@@ -24,19 +24,19 @@ class TestLossAndLogs:
         def f(
             module: MyModule,
             metrics: tx.metrics.LossAndLogs,
-            y_true,
-            y_pred,
+            target,
+            preds,
             y_true_metrics,
             y_pred_metrics,
         ):
             nonlocal N
             N += 1
             metrics(
-                y_true=y_true,
-                y_pred=y_pred,
+                target=target,
+                preds=preds,
                 metrics_kwargs=dict(
-                    y_true=y_true_metrics,
-                    y_pred=y_pred_metrics,
+                    target=y_true_metrics,
+                    preds=y_pred_metrics,
                 ),
                 aux_losses=module.loss_logs(),
                 aux_metrics=module.metric_logs(),
@@ -57,12 +57,12 @@ class TestLossAndLogs:
             aux_losses=tx.metrics.AuxLosses(module.loss_logs()),
             aux_metrics=tx.metrics.AuxMetrics(module.metric_logs()),
         )
-        y_true = jnp.array([0.0, 0.0, 0.0, 0.0])[None, None, None, :]
-        y_pred = jnp.array([1.0, 1.0, 1.0, 1.0])[None, None, None, :]
+        target = jnp.array([0.0, 0.0, 0.0, 0.0])[None, None, None, :]
+        preds = jnp.array([1.0, 1.0, 1.0, 1.0])[None, None, None, :]
         y_true_metrics = jnp.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])[None, None, None, :]
         y_pred_metrics = jnp.array([0, 1, 2, 3, 0, 5, 6, 7, 0, 9])[None, None, None, :]
 
-        metrics = f(module, metrics, y_true, y_pred, y_true_metrics, y_pred_metrics)
+        metrics = f(module, metrics, target, preds, y_true_metrics, y_pred_metrics)
         assert N == 1
         assert metrics.compute() == (
             3.0,
@@ -82,7 +82,7 @@ class TestLossAndLogs:
         module.aux_loss = jnp.array(3.0, jnp.float32)
         module.aux_metric = jnp.array(4.0, jnp.float32)
 
-        metrics = f(module, metrics, y_true, y_pred, y_true_metrics, y_pred_metrics)
+        metrics = f(module, metrics, target, preds, y_true_metrics, y_pred_metrics)
         assert N == 1
         assert metrics.compute() == (
             4.0,
@@ -116,19 +116,19 @@ class TestLossAndLogs:
         def f(
             module: MyModule,
             metrics: tx.metrics.LossAndLogs,
-            y_true,
-            y_pred,
+            target,
+            preds,
             y_true_metrics,
             y_pred_metrics,
         ):
             nonlocal N
             N += 1
             loss, losses_logs, metrics_logs = metrics.batch_loss_epoch_logs(
-                y_true=y_true,
-                y_pred=y_pred,
+                target=target,
+                preds=preds,
                 metrics_kwargs=dict(
-                    y_true=y_true_metrics,
-                    y_pred=y_pred_metrics,
+                    target=y_true_metrics,
+                    preds=y_pred_metrics,
                 ),
                 aux_losses=module.loss_logs(),
                 aux_metrics=module.metric_logs(),
@@ -150,13 +150,13 @@ class TestLossAndLogs:
             aux_losses=tx.metrics.AuxLosses(module.loss_logs()),
             aux_metrics=tx.metrics.AuxMetrics(module.metric_logs()),
         )
-        y_true = jnp.array([0.0, 0.0, 0.0, 0.0])[None, None, None, :]
-        y_pred = jnp.array([1.0, 1.0, 1.0, 1.0])[None, None, None, :]
+        target = jnp.array([0.0, 0.0, 0.0, 0.0])[None, None, None, :]
+        preds = jnp.array([1.0, 1.0, 1.0, 1.0])[None, None, None, :]
         y_true_metrics = jnp.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])[None, None, None, :]
         y_pred_metrics = jnp.array([0, 1, 2, 3, 0, 5, 6, 7, 0, 9])[None, None, None, :]
 
         loss, logs, metrics = f(
-            module, metrics, y_true, y_pred, y_true_metrics, y_pred_metrics
+            module, metrics, target, preds, y_true_metrics, y_pred_metrics
         )
         assert N == 1
         assert (loss, logs) == (
@@ -176,7 +176,7 @@ class TestLossAndLogs:
         module.aux_metric = jnp.array(4.0, jnp.float32)
 
         loss, logs, metrics = f(
-            module, metrics, y_true, y_pred, y_true_metrics, y_pred_metrics
+            module, metrics, target, preds, y_true_metrics, y_pred_metrics
         )
         assert N == 1
         assert (loss, logs) == (

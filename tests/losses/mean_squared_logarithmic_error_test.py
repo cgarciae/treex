@@ -15,30 +15,30 @@ from treex import types, utils
 
 def test_basic():
 
-    y_true = jnp.array([[0.0, 1.0], [0.0, 0.0]])
-    y_pred = jnp.array([[1.0, 1.0], [1.0, 0.0]])
+    target = jnp.array([[0.0, 1.0], [0.0, 0.0]])
+    preds = jnp.array([[1.0, 1.0], [1.0, 0.0]])
 
     # Using 'auto'/'sum_over_batch_size' reduction type.
     msle = tx.losses.MeanSquaredLogarithmicError()
 
-    assert msle(y_true=y_true, y_pred=y_pred) == 0.24022643
+    assert msle(target=target, preds=preds) == 0.24022643
 
     # Calling with 'sample_weight'.
     assert (
-        msle(y_true=y_true, y_pred=y_pred, sample_weight=jnp.array([0.7, 0.3]))
+        msle(target=target, preds=preds, sample_weight=jnp.array([0.7, 0.3]))
         == 0.12011322
     )
 
     # Using 'sum' reduction type.
     msle = tx.losses.MeanSquaredLogarithmicError(reduction=tx.losses.Reduction.SUM)
 
-    assert msle(y_true=y_true, y_pred=y_pred) == 0.48045287
+    assert msle(target=target, preds=preds) == 0.48045287
 
     # Using 'none' reduction type.
     msle = tx.losses.MeanSquaredLogarithmicError(reduction=tx.losses.Reduction.NONE)
 
     assert jnp.equal(
-        msle(y_true=y_true, y_pred=y_pred), jnp.array([0.24022643, 0.24022643])
+        msle(target=target, preds=preds), jnp.array([0.24022643, 0.24022643])
     ).all()
 
 
@@ -46,29 +46,29 @@ def test_function():
 
     rng = jax.random.PRNGKey(42)
 
-    y_true = jax.random.randint(rng, shape=(2, 3), minval=0, maxval=2)
-    y_pred = jax.random.uniform(rng, shape=(2, 3))
+    target = jax.random.randint(rng, shape=(2, 3), minval=0, maxval=2)
+    preds = jax.random.uniform(rng, shape=(2, 3))
 
-    loss = tx.losses.mean_squared_logarithmic_error(y_true, y_pred)
+    loss = tx.losses.mean_squared_logarithmic_error(target, preds)
 
     assert loss.shape == (2,)
 
-    first_log = jnp.log(jnp.maximum(y_true, types.EPSILON) + 1.0)
-    second_log = jnp.log(jnp.maximum(y_pred, types.EPSILON) + 1.0)
+    first_log = jnp.log(jnp.maximum(target, types.EPSILON) + 1.0)
+    second_log = jnp.log(jnp.maximum(preds, types.EPSILON) + 1.0)
     assert jnp.array_equal(loss, jnp.mean(jnp.square(first_log - second_log), axis=-1))
 
 
 def test_compatibility():
-    # Input:  true (y_true) and predicted (y_pred) tensors
-    y_true = jnp.array([[0.0, 1.0], [0.0, 0.0]])
-    y_pred = jnp.array([[0.6, 0.4], [0.4, 0.6]])
+    # Input:  true (target) and predicted (preds) tensors
+    target = jnp.array([[0.0, 1.0], [0.0, 0.0]])
+    preds = jnp.array([[0.6, 0.4], [0.4, 0.6]])
 
     # MSLE using sample_weight
     msle_elegy = tx.losses.MeanSquaredLogarithmicError()
     msle_tfk = tfk.losses.MeanSquaredLogarithmicError()
     assert np.isclose(
-        msle_elegy(y_true=y_true, y_pred=y_pred, sample_weight=jnp.array([1, 0])),
-        msle_tfk(y_true, y_pred, sample_weight=jnp.array([1, 0])),
+        msle_elegy(target=target, preds=preds, sample_weight=jnp.array([1, 0])),
+        msle_tfk(target, preds, sample_weight=jnp.array([1, 0])),
         rtol=0.0001,
     )
 
@@ -80,7 +80,7 @@ def test_compatibility():
         reduction=tfk.losses.Reduction.SUM
     )
     assert np.isclose(
-        msle_elegy(y_true=y_true, y_pred=y_pred), msle_tfk(y_true, y_pred), rtol=0.0001
+        msle_elegy(target=target, preds=preds), msle_tfk(target, preds), rtol=0.0001
     )
 
     # MSLE with reduction method: NONE
@@ -92,8 +92,8 @@ def test_compatibility():
     )
     assert jnp.all(
         np.isclose(
-            msle_elegy(y_true=y_true, y_pred=y_pred),
-            msle_tfk(y_true, y_pred),
+            msle_elegy(target=target, preds=preds),
+            msle_tfk(target, preds),
             rtol=0.0001,
         )
     )

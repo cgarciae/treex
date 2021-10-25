@@ -8,60 +8,60 @@ from treex.losses.loss import Loss, Reduction
 
 
 def binary_crossentropy(
-    y_true: jnp.ndarray,
-    y_pred: jnp.ndarray,
+    target: jnp.ndarray,
+    preds: jnp.ndarray,
     from_logits: bool = False,
     label_smoothing: float = 0,
 ) -> jnp.ndarray:
-    assert abs(y_pred.ndim - y_true.ndim) <= 1
+    assert abs(preds.ndim - target.ndim) <= 1
 
-    y_true, y_pred = utils._maybe_expand_dims(y_true, y_pred)
+    target, preds = utils._maybe_expand_dims(target, preds)
 
     if label_smoothing:
-        y_true = y_true * (1.0 - label_smoothing) + 0.5 * label_smoothing
+        target = target * (1.0 - label_smoothing) + 0.5 * label_smoothing
 
     if from_logits:
-        return -jnp.mean(y_true * y_pred - jnp.logaddexp(0.0, y_pred), axis=-1)
+        return -jnp.mean(target * preds - jnp.logaddexp(0.0, preds), axis=-1)
 
-    y_pred = jnp.clip(y_pred, types.EPSILON, 1.0 - types.EPSILON)
+    preds = jnp.clip(preds, types.EPSILON, 1.0 - types.EPSILON)
     return -jnp.mean(
-        y_true * jnp.log(y_pred) + (1 - y_true) * jnp.log(1 - y_pred), axis=-1
+        target * jnp.log(preds) + (1 - target) * jnp.log(1 - preds), axis=-1
     )
 
 
 class BinaryCrossentropy(Loss):
     """
-    Computes the cross-entropy loss between true labels and predicted labels.
+    Computes the cross-entropy loss between true target and predicted target.
     Use this cross-entropy loss when there are only two label classes (assumed to
     be 0 and 1). For each example, there should be a single floating-point value
     per prediction.
     In the snippet below, each of the four examples has only a single
-    floating-pointing value, and both `y_pred` and `y_true` have the shape
+    floating-pointing value, and both `preds` and `target` have the shape
     `[batch_size]`.
 
     Usage:
     ```python
-    y_true = jnp.array([[0., 1.], [0., 0.]])
-    y_pred = jnp.array[[0.6, 0.4], [0.4, 0.6]])
+    target = jnp.array([[0., 1.], [0., 0.]])
+    preds = jnp.array[[0.6, 0.4], [0.4, 0.6]])
 
     # Using 'auto'/'sum_over_batch_size' reduction type.
     bce = tx.losses.BinaryCrossentropy()
-    result = bce(y_true, y_pred)
+    result = bce(target, preds)
     assert np.isclose(result, 0.815, rtol=0.01)
 
     # Calling with 'sample_weight'.
     bce = tx.losses.BinaryCrossentropy()
-    result = bce(y_true, y_pred, sample_weight=jnp.array([1, 0]))
+    result = bce(target, preds, sample_weight=jnp.array([1, 0]))
     assert np.isclose(result, 0.458, rtol=0.01)
 
     # Using 'sum' reduction type.
     bce = tx.losses.BinaryCrossentropy(reduction=tx.losses.Reduction.SUM)
-    result = bce(y_true, y_pred)
+    result = bce(target, preds)
     assert np.isclose(result, 1.630, rtol=0.01)
 
     # Using 'none' reduction type.
     bce = tx.losses.BinaryCrossentropy(reduction=tx.losses.Reduction.NONE)
-    result = bce(y_true, y_pred)
+    result = bce(target, preds)
     assert jnp.all(np.isclose(result, [0.916, 0.713], rtol=0.01))
     ```
 
@@ -90,8 +90,8 @@ class BinaryCrossentropy(Loss):
         Initializes `CategoricalCrossentropy` instance.
 
         Arguments:
-            from_logits: Whether `y_pred` is expected to be a logits tensor. By
-                default, we assume that `y_pred` encodes a probability distribution.
+            from_logits: Whether `preds` is expected to be a logits tensor. By
+                default, we assume that `preds` encodes a probability distribution.
                 **Note - Using from_logits=True is more numerically stable.**
             label_smoothing: Float in [0, 1]. When > 0, label values are smoothed,
                 meaning the confidence on label values are relaxed. e.g.
@@ -106,11 +106,11 @@ class BinaryCrossentropy(Loss):
                 will raise an error.
             weight: Optional weight contribution for the total loss. Defaults to `1`.
             on: A string or integer, or iterable of string or integers, that
-                indicate how to index/filter the `y_true` and `y_pred`
+                indicate how to index/filter the `target` and `preds`
                 arguments before passing them to `call`. For example if `on = "a"` then
-                `y_true = y_true["a"]`. If `on` is an iterable
+                `target = target["a"]`. If `on` is an iterable
                 the structures will be indexed iteratively, for example if `on = ["a", 0, "b"]`
-                then `y_true = y_true["a"][0]["b"]`, same for `y_pred`. For more information
+                then `target = target["a"][0]["b"]`, same for `preds`. For more information
                 check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).
         """
         super().__init__(reduction=reduction, weight=weight, on=on, **kwargs)
@@ -119,23 +119,23 @@ class BinaryCrossentropy(Loss):
 
     def call(
         self,
-        y_true: jnp.ndarray,
-        y_pred: jnp.ndarray,
+        target: jnp.ndarray,
+        preds: jnp.ndarray,
         sample_weight: tp.Optional[jnp.ndarray] = None,
     ) -> jnp.ndarray:
         """
         Invokes the `BinaryCrossentropy` instance.
 
         Arguments:
-            y_true: Ground truth values.
-            y_pred: The predicted values.
+            target: Ground truth values.
+            preds: The predicted values.
             sample_weight: Acts as a
                 coefficient for the loss. If a scalar is provided, then the loss is
                 simply scaled by the given value. If `sample_weight` is a tensor of size
                 `[batch_size]`, then the total loss for each sample of the batch is
                 rescaled by the corresponding element in the `sample_weight` vector. If
                 the shape of `sample_weight` is `[batch_size, d0, .. dN-1]` (or can be
-                broadcasted to this shape), then each loss element of `y_pred` is scaled
+                broadcasted to this shape), then each loss element of `preds` is scaled
                 by the corresponding value of `sample_weight`. (Note on`dN-1`: all loss
                 functions reduce by 1 dimension, usually axis=-1.)
         Returns:
@@ -143,8 +143,8 @@ class BinaryCrossentropy(Loss):
         """
 
         return binary_crossentropy(
-            y_true,
-            y_pred,
+            target,
+            preds,
             from_logits=self._from_logits,
             label_smoothing=self._label_smoothing,
         )

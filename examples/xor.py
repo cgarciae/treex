@@ -45,8 +45,8 @@ optimizer = optimizer.init(model.filter(tx.Parameter))
 
 @jax.value_and_grad
 def loss_fn(model, x, y):
-    y_pred = model(x)
-    loss = optax.sigmoid_binary_cross_entropy(y_pred, y).mean()
+    preds = model(x)
+    loss = optax.sigmoid_binary_cross_entropy(preds, y).mean()
     return loss
 
 
@@ -67,10 +67,10 @@ for step in range(1000):
 
 model = model.eval()
 
-y_pred = model(x)
-y_pred = (y_pred > 0).astype(np.int32)
+preds = model(x)
+preds = (preds > 0).astype(np.int32)
 
-print(y_pred)
+print(preds)
 
-plt.scatter(x[:, 0], x[:, 1], c=y_pred.reshape(-1), label="data")
+plt.scatter(x[:, 0], x[:, 1], c=preds.reshape(-1), label="data")
 plt.show()

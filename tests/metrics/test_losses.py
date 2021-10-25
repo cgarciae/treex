@@ -12,10 +12,10 @@ class TestLosses:
         N = 0
 
         @jax.jit
-        def f(m, y_true, y_pred):
+        def f(m, target, preds):
             nonlocal N
             N += 1
-            m(y_true=y_true, y_pred=y_pred)
+            m(target=target, preds=preds)
             return m
 
         losses = tx.metrics.Losses(
@@ -24,10 +24,10 @@ class TestLosses:
                 tx.losses.MeanSquaredError(),
             ]
         )
-        y_true = jnp.array([0.0, 0.0, 0.0, 0.0])[None, None, None, :]
-        y_pred = jnp.array([1.0, 1.0, 1.0, 1.0])[None, None, None, :]
+        target = jnp.array([0.0, 0.0, 0.0, 0.0])[None, None, None, :]
+        preds = jnp.array([1.0, 1.0, 1.0, 1.0])[None, None, None, :]
 
-        losses = f(losses, y_true, y_pred)
+        losses = f(losses, target, preds)
         assert N == 1
         assert losses.compute() == (
             2.0,
@@ -37,7 +37,7 @@ class TestLosses:
             },
         )
 
-        losses = f(losses, y_true, y_pred)
+        losses = f(losses, target, preds)
         assert N == 1
         assert losses.compute() == (
             2.0,
@@ -52,10 +52,10 @@ class TestLosses:
         N = 0
 
         @jax.jit
-        def f(m, y_true, y_pred):
+        def f(m, target, preds):
             nonlocal N
             N += 1
-            m(y_true=y_true, y_pred=y_pred)
+            m(target=target, preds=preds)
             return m
 
         losses = tx.metrics.Losses(
@@ -64,10 +64,10 @@ class TestLosses:
                 b=tx.losses.MeanSquaredError(),
             )
         )
-        y_true = jnp.array([0.0, 0.0, 0.0, 0.0])[None, None, None, :]
-        y_pred = jnp.array([1.0, 1.0, 1.0, 1.0])[None, None, None, :]
+        target = jnp.array([0.0, 0.0, 0.0, 0.0])[None, None, None, :]
+        preds = jnp.array([1.0, 1.0, 1.0, 1.0])[None, None, None, :]
 
-        losses = f(losses, y_true, y_pred)
+        losses = f(losses, target, preds)
         assert N == 1
         assert losses.compute() == (
             2.0,
@@ -77,7 +77,7 @@ class TestLosses:
             },
         )
 
-        losses = f(losses, y_true, y_pred)
+        losses = f(losses, target, preds)
         assert N == 1
         assert losses.compute() == (
             2.0,

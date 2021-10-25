@@ -228,7 +228,7 @@ def _check_classification_inputs(
     This ensures that preds and target take one of the shape/type combinations that are
     specified in ``_input_format_classification`` docstring. It also checks the cases of
     over-rides with ``multiclass`` by checking (for multi-class and multi-dim multi-class
-    cases) that there are only up to 2 distinct labels.
+    cases) that there are only up to 2 distinct target.
 
     In case where preds are floats (probabilities), it is checked whether they are in [0,1] interval.
 
@@ -247,8 +247,8 @@ def _check_classification_inputs(
     greater than 1, except perhaps the first one (``N``).
 
     Args:
-        preds: Tensor with predictions (labels or probabilities)
-        target: Tensor with ground truth labels, always integers (labels)
+        preds: Tensor with predictions (target or probabilities)
+        target: Tensor with ground truth target, always integers (target)
         threshold:
             Threshold value for transforming probability/logit predictions to binary
             (0,1) predictions, in the case of binary or multi-label inputs.
@@ -386,8 +386,8 @@ def _input_format_classification(
         target.
 
     Args:
-        preds: Tensor with predictions (labels or probabilities)
-        target: Tensor with ground truth labels, always integers (labels)
+        preds: Tensor with predictions (target or probabilities)
+        target: Tensor with ground truth target, always integers (target)
         threshold:
             Threshold value for transforming probability/logit predictions to binary
             (0 or 1) predictions, in the case of binary or multi-label inputs.
@@ -478,8 +478,8 @@ def _input_format_classification_one_hot(
 
     Args:
         num_classes: number of classes
-        preds: either tensor with labels, tensor with probabilities/logits or multilabel tensor
-        target: tensor with ground true labels
+        preds: either tensor with target, tensor with probabilities/logits or multilabel tensor
+        target: tensor with ground true target
         threshold: float used for thresholding multilabel input
         multilabel: boolean flag indicating if input is multilabel
 
@@ -489,8 +489,8 @@ def _input_format_classification_one_hot(
             or one additional dimension for ``preds``.
 
     Returns:
-        preds: one hot tensor of shape [num_classes, -1] with predicted labels
-        target: one hot tensors of shape [num_classes, -1] with true labels
+        preds: one hot tensor of shape [num_classes, -1] with predicted target
+        target: one hot tensors of shape [num_classes, -1] with true target
     """
     if preds.ndim not in (target.ndim, target.ndim + 1):
         raise ValueError(
@@ -532,7 +532,7 @@ def _check_retrieval_functional_inputs(
 
     Args:
         preds: either tensor with scores/logits
-        target: tensor with ground true labels
+        target: tensor with ground true target
         allow_non_binary_target: whether to allow target to contain non-binary values
 
     Raises:
@@ -568,7 +568,7 @@ def _check_retrieval_inputs(
     Args:
         indexes: tensor with queries indexes
         preds: tensor with scores/logits
-        target: tensor with ground true labels
+        target: tensor with ground true target
 
     Raises:
         ValueError:
@@ -607,7 +607,7 @@ def _check_retrieval_target_and_prediction_types(
 
     Args:
         preds: either tensor with scores/logits
-        target: tensor with ground true labels
+        target: tensor with ground true target
         allow_non_binary_target: whether to allow target to contain non-binary values
 
     Raises:
