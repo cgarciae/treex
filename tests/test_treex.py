@@ -622,3 +622,39 @@ class TestTreex:
 
         assert module.a == 1
         assert module2.a == 2
+
+    def test_dataclass(self):
+        @dataclass
+        class M(tx.Module):
+            pass
+
+        module = M()
+
+        assert module._initialized is False
+
+
+class TestCompact:
+    def test_shape_inference(self):
+        @dataclass
+        class LazyLinear(tx.Module):
+            features: int
+            w: tp.Optional[jnp.ndarray] = tx.Parameter.node(None)
+            b: tp.Optional[jnp.ndarray] = tx.Parameter.node(None)
+
+            def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
+                if not self.initialized:
+                    self.w = jax.random.uniform(
+                        tx.next_key(), shape=[x.shape[-1], self.features]
+                    )
+                    self.b = jnp.zeros([self.features])
+
+                assert self.w is not None and self.b is not None
+
+                return jnp.dot(x, self.w) + self.b
+
+        x = jnp.ones((5, 2))
+        module = LazyLinear(1).init(42, x)
+
+        y = module(x)
+
+        assert y.shape == (5, 1)

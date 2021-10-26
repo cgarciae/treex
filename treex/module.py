@@ -96,7 +96,7 @@ class ModuleMeta(to.TreeMeta):
         return obj
 
 
-class Module(Treex, Filters):
+class Module(Treex, Filters, metaclass=ModuleMeta):
     # use to.field to copy class vars to instance
     _training: bool = to.static(True)
     _initialized: bool = to.static(False)

@@ -16,8 +16,8 @@ flax = "^0.3.4"
 PyYAML = "^5.4.1"
 rich = "^10.7.0"
 optax = "^0.0.9"
-treeo = "^0.0.5"
-# treeo = { path = "../treeo", develop = true }
+# treeo = "^0.0.5"
+treeo = { path = "../treeo", develop = true }
 
 [tool.poetry.dev-dependencies]
 matplotlib = { version = "^3.4.3", python = ">=3.7" }
