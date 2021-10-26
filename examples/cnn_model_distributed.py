@@ -45,13 +45,13 @@ class Model(tx.Module):
 
     @partial(
         jax.pmap,
-        in_axes=(None, None, 0),
+        in_axes=(None, None, None, 0),
         out_axes=0,
         static_broadcasted_argnums=(1,),
         axis_name="device",
     )
-    def init_step(self: M, seed: int, device_idx: jnp.ndarray) -> M:
-        self.module = self.module.init(seed)
+    def init_step(self: M, seed: int, inputs: tp.Any, device_idx: jnp.ndarray) -> M:
+        self.module = self.module.init(seed, inputs=inputs)
         self.optimizer = self.optimizer.init(self.module.parameters())
 
         # assign unique rng keys
@@ -150,30 +150,31 @@ def main(
     n_devices = jax.device_count()
     device_idx = jnp.arange(n_devices)
 
+    # load data
+    X_train, y_train, X_test, y_test = dataget.image.mnist().get()
+    X_train = X_train[..., None]
+    X_test = X_test[..., None]
+
+    # define model
     model = Model(
         module=tx.Sequential(
-            tx.Conv(1, 32, [3, 3], strides=[2, 2]),
+            tx.Conv(32, [3, 3], strides=[2, 2]),
             tx.BatchNorm(32),
             tx.Dropout(0.05),
             jax.nn.relu,
-            tx.Conv(32, 64, [3, 3], strides=[2, 2]),
+            tx.Conv(64, [3, 3], strides=[2, 2]),
             tx.BatchNorm(64),
             tx.Dropout(0.1),
             jax.nn.relu,
-            tx.Conv(64, 128, [3, 3], strides=[2, 2]),
+            tx.Conv(128, [3, 3], strides=[2, 2]),
             partial(jnp.mean, axis=[1, 2]),
-            tx.Linear(128, 10),
+            tx.Linear(10),
         ),
         optimizer=optax.adamw(1e-3),
         metric=tx.metrics.Accuracy(),
     )
 
-    model: Model = model.init_step(42, device_idx)
-
-    # load data
-    X_train, y_train, X_test, y_test = dataget.image.mnist().get()
-    X_train = X_train[..., None]
-    X_test = X_test[..., None]
+    model: Model = model.init_step(42, X_train[:batch_size], device_idx)
 
     print(model.module.tabulate(signature=True))
 

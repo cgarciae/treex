@@ -25,7 +25,6 @@ class Linear(Module):
     bias: tp.Optional[jnp.ndarray] = types.Parameter.node()
 
     # static
-    features_in: int
     features_out: int
     use_bias: bool
     dtype: tp.Any
@@ -42,6 +41,7 @@ class Linear(Module):
     def __init__(
         self,
         features_out: int,
+        *,
         use_bias: bool = True,
         dtype: tp.Any = jnp.float32,
         precision: tp.Any = None,

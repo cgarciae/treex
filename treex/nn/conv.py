@@ -48,6 +48,7 @@ class Conv(Module):
         self,
         features_out: int,
         kernel_size: tp.Union[int, tp.Iterable[int]],
+        *,
         strides: tp.Optional[tp.Iterable[int]] = None,
         padding: tp.Union[str, tp.Iterable[tp.Tuple[int, int]]] = "SAME",
         input_dilation: tp.Optional[tp.Iterable[int]] = None,

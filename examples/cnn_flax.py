@@ -97,8 +97,7 @@ def main(
 
     model = tx.FlaxModule(
         CNN(),
-        sample_inputs=tx.Inputs(X_train[:32], training=True),
-    ).init(42)
+    ).init(42, inputs=tx.Inputs(X_train[:32], training=False))
 
     print(model.tabulate())
 
