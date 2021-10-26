@@ -164,8 +164,9 @@ class TestTreex:
         assert not isinstance(mlp_next.linear2.n, tx.Nothing)
 
     def test_update_initializers(self):
-        m = tx.Linear(2, 3)
-        m2 = m.init(42)
+        x = np.random.uniform(size=(5, 2))
+        m = tx.Linear(3)
+        m2 = m.init(42, x)
 
         m = m.merge(m2)
 
@@ -419,7 +420,7 @@ class TestTreex:
 
             def __init__(self):
 
-                self.a = {"mlps": [tx.MLP([256, 1024, 512]), tx.MLP([256, 1024, 512])]}
+                self.a = {"mlps": [tx.MLP([2, 3]), tx.MLP([2, 3])]}
                 self.b = [
                     jnp.zeros((512, 256)),
                     jnp.zeros((512, 128)),
@@ -432,19 +433,20 @@ class TestTreex:
 
                 return dict(y1=y1, y2=y2)
 
-        mlp = MyModule().init(42)
+        x = np.random.uniform(size=(5, 1))
+        mlp = MyModule().init(42, x)
         mlp = jax.tree_map(
             lambda x: jnp.asarray(x) if not isinstance(x, tx.Initializer) else x, mlp
         )
         # mlp = mlp.filter(tx.Parameter)
 
-        x = np.random.uniform(size=(10, 256))
+        x = np.random.uniform(size=(5, 1))
 
         rep = mlp.tabulate(inputs=tx.Inputs(x))
 
         print(rep)
 
-        assert "(\x1b[32m10, 256\x1b[0m)" in rep
+        assert "(\x1b[32m5, 1\x1b[0m)" in rep
         assert "y1:" in rep
         assert "y2:" in rep
 
@@ -455,10 +457,15 @@ class TestTreex:
 
             def __init__(self):
 
-                self.a = tx.Linear(3, 4)
-                self.b = tx.Linear(3, 4)
+                self.a = tx.Linear(4)
+                self.b = tx.Linear(4)
 
-        mod = Mod().init(42)
+            def __call__(self, x):
+                x = self.a(x)
+                return x
+
+        x = np.random.uniform(size=(5, 4))
+        mod = Mod().init(42, x)
 
         assert len(jax.tree_leaves(mod)) == 2
 

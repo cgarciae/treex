@@ -3,6 +3,7 @@ import typing as tp
 import jax
 import jax.numpy as jnp
 import numpy as np
+import treeo as to
 from flax.linen import linear as flax_module
 
 from treex import types
@@ -52,25 +53,19 @@ class MLP(Module):
             bias_init: initializer function for the bias.
         """
 
-        if len(features) < 2:
-            raise ValueError("features must have at least 2 elements")
+        if len(features) == 0:
+            raise ValueError("features must have at least 1 element")
 
         self.features = features
         self.activation = activation
-        self.layers = [
-            Linear(
-                features_in=features_in,
-                features_out=features_out,
-                use_bias=use_bias,
-                dtype=dtype,
-                precision=precision,
-                kernel_init=kernel_init,
-                bias_init=bias_init,
-            )
-            for features_in, features_out in zip(features[:-1], features[1:])
-        ]
+        self.use_bias = use_bias
+        self.dtype = dtype
+        self.precision = precision
+        self.kernel_init = kernel_init
+        self.bias_init = bias_init
 
-    def __call__(self, x: np.ndarray) -> jnp.ndarray:
+    @to.compact
+    def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
         """
         Applies the MLP to the input.
 
@@ -80,7 +75,19 @@ class MLP(Module):
         Returns:
             The output of the MLP.
         """
-        for layer in self.layers[:-1]:
-            x = self.activation(layer(x))
+        last_layer_idx = len(self.features) - 1
 
-        return self.layers[-1](x)
+        for i, features_out in enumerate(self.features):
+            x = Linear(
+                features_out=features_out,
+                use_bias=self.use_bias,
+                dtype=self.dtype,
+                precision=self.precision,
+                kernel_init=self.kernel_init,
+                bias_init=self.bias_init,
+            )(x)
+
+            if i < last_layer_idx:
+                x = self.activation(x)
+
+        return x

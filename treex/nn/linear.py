@@ -87,7 +87,7 @@ class Linear(Module):
             bias_init=self.bias_init,
         )
 
-    def __call__(self, x: np.ndarray) -> jnp.ndarray:
+    def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
         """Applies a linear transformation to the inputs along the last dimension.
 
         Arguments:
