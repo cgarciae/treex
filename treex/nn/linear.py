@@ -6,7 +6,7 @@ import numpy as np
 from flax.linen import linear as flax_module
 
 from treex import types
-from treex.module import Module
+from treex.module import Module, next_key
 
 
 class Linear(Module):
@@ -41,7 +41,6 @@ class Linear(Module):
 
     def __init__(
         self,
-        features_in: int,
         features_out: int,
         use_bias: bool = True,
         dtype: tp.Any = jnp.float32,
@@ -67,7 +66,6 @@ class Linear(Module):
             bias_init: initializer function for the bias.
         """
 
-        self.features_in = features_in
         self.features_out = features_out
         self.use_bias = use_bias
         self.dtype = dtype
@@ -89,20 +87,6 @@ class Linear(Module):
             bias_init=self.bias_init,
         )
 
-    def rng_init(self, key: jnp.ndarray):
-        batch_size = 10  # random
-        x = jax.random.uniform(key, (batch_size, self.features_in))
-
-        variables = self.module.init({"params": key}, x)
-
-        # Extract collections
-        params = variables["params"].unfreeze()
-
-        self.kernel = params["kernel"]
-
-        if self.use_bias:
-            self.bias = params["bias"]
-
     def __call__(self, x: np.ndarray) -> jnp.ndarray:
         """Applies a linear transformation to the inputs along the last dimension.
 
@@ -112,7 +96,16 @@ class Linear(Module):
         Returns:
             The transformed input.
         """
-        assert self.initialized, "Module is not initialized."
+        if not self.initialized:
+            variables = self.module.init({"params": next_key()}, x)
+
+            # Extract collections
+            params = variables["params"].unfreeze()
+
+            self.kernel = params["kernel"]
+
+            if self.use_bias:
+                self.bias = params["bias"]
 
         assert self.kernel is not None
         params = {"kernel": self.kernel}

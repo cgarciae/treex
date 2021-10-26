@@ -174,7 +174,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
 
             def call_rng_init(module: Module):
                 if isinstance(module, Module) and not module._initialized:
-                    module.rng_init(next_key())
+                    module.rng_init()
 
             module = to.apply(call_rng_init, module, inplace=True)
 
@@ -193,7 +193,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
 
         return module
 
-    def rng_init(self, key: jnp.ndarray) -> None:
+    def rng_init(self) -> None:
         pass
 
     def tabulate(

@@ -272,7 +272,7 @@ class TestTreex:
         n = 0
 
         class A(tx.Module):
-            def rng_init(self, key):
+            def rng_init(self):
                 nonlocal n
                 n = n + 1
 
@@ -285,7 +285,7 @@ class TestTreex:
 
     def test_initialized(self):
         class A(tx.Module):
-            def rng_init(self, key):
+            def rng_init(self):
                 self.x = 420
 
         module = A()
@@ -298,7 +298,7 @@ class TestTreex:
 
     def test_initialized_inplace(self):
         class A(tx.Module):
-            def rng_init(self, key):
+            def rng_init(self):
                 self.x = 420
 
         module = A()
