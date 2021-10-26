@@ -91,7 +91,7 @@ class ModuleMeta(to.TreeMeta):
                 )
 
             if not obj.initialized:
-                obj.init(key=next_key(), inplace=True)
+                obj.init(key=next_key(), inplace=True, _set_initialize=False)
 
         return obj
 
@@ -139,6 +139,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
         call_method: str = "__call__",
         *,
         inplace: bool = False,
+        _set_initialize: bool = True,
     ) -> M:
         """
         Method version of `tx.init`, it applies `self` as first argument.
@@ -182,11 +183,13 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
                 method = getattr(module, call_method)
                 method(*inputs.args, **inputs.kwargs)
 
-        def set_initialized(module: Module):
-            if isinstance(module, Module) and not module._initialized:
-                module._initialized = True
+        if _set_initialize:
 
-        module = to.apply(set_initialized, module, inplace=True)
+            def set_initialized(module: Module):
+                if isinstance(module, Module) and not module._initialized:
+                    module._initialized = True
+
+            module = to.apply(set_initialized, module, inplace=True)
 
         return module
 
@@ -345,7 +348,7 @@ def next_key() -> jnp.ndarray:
     """
     if _INIT_CONTEXT.key is None:
         raise RuntimeError(
-            "RNG key not set, you are either calling an uninitialized module or forgot to call `rng_key` context manager."
+            "RNG key not set, you are either calling an uninitialized Module outside `.init` or forgot to call `rng_key` context manager."
         )
 
     key, _INIT_CONTEXT.key = utils.iter_split(_INIT_CONTEXT.key)

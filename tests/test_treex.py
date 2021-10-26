@@ -633,24 +633,26 @@ class TestTreex:
         assert module._initialized is False
 
 
+@dataclass
+class LazyLinear(tx.Module):
+    features: int
+    w: tp.Optional[jnp.ndarray] = tx.Parameter.node(None)
+    b: tp.Optional[jnp.ndarray] = tx.Parameter.node(None)
+
+    def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
+        if not self.initialized:
+            self.w = jax.random.uniform(
+                tx.next_key(), shape=[x.shape[-1], self.features]
+            )
+            self.b = jnp.zeros([self.features])
+
+        assert self.w is not None and self.b is not None
+
+        return jnp.dot(x, self.w) + self.b
+
+
 class TestCompact:
     def test_shape_inference(self):
-        @dataclass
-        class LazyLinear(tx.Module):
-            features: int
-            w: tp.Optional[jnp.ndarray] = tx.Parameter.node(None)
-            b: tp.Optional[jnp.ndarray] = tx.Parameter.node(None)
-
-            def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
-                if not self.initialized:
-                    self.w = jax.random.uniform(
-                        tx.next_key(), shape=[x.shape[-1], self.features]
-                    )
-                    self.b = jnp.zeros([self.features])
-
-                assert self.w is not None and self.b is not None
-
-                return jnp.dot(x, self.w) + self.b
 
         x = jnp.ones((5, 2))
         module = LazyLinear(1).init(42, x)
@@ -658,3 +660,33 @@ class TestCompact:
         y = module(x)
 
         assert y.shape == (5, 1)
+
+    def test_init_error(self):
+
+        x = jnp.ones((5, 2))
+        module = LazyLinear(1)
+
+        with pytest.raises(RuntimeError):
+            y = module(x)
+
+    def test_compact(self):
+        @dataclass
+        class MLP(tx.Module):
+            dmid: int
+            dout: int
+
+            @tx.compact
+            def __call__(self, x):
+                x = LazyLinear(self.dmid)(x)
+                x = jax.nn.relu(x)
+                x = LazyLinear(self.dout)(x)
+                return x
+
+        x = jnp.ones((5, 2))
+        mlp = MLP(3, 4).init(42, x)
+
+        y = mlp(x)
+
+        assert y.shape == (5, 4)
+        assert "lazy_linear" in vars(mlp)
+        assert "lazy_linear2" in vars(mlp)
