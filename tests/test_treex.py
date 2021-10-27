@@ -651,7 +651,7 @@ class LazyLinear(tx.Module):
     b: tp.Optional[jnp.ndarray] = tx.Parameter.node(None)
 
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
-        if not self.initialized:
+        if self.initializing():
             self.w = jax.random.uniform(
                 tx.next_key(), shape=[x.shape[-1], self.features]
             )

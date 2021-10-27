@@ -11,7 +11,6 @@ import numpy as np
 import treeo as to
 from rich.table import Table
 from rich.text import Text
-from treeo import tree as tree_module
 
 from treex import contexts, types, utils
 from treex.treex import Filters, Treex
@@ -63,7 +62,7 @@ class ModuleMeta(to.TreeMeta):
         if not hasattr(obj, "name"):
             obj.name = utils._lower_snake_case(obj.__class__.__name__)
 
-        if tree_module._COMPACT_CONTEXT.in_compact:
+        if to.in_compact():
             if _INIT_CONTEXT.key is None:
                 raise RuntimeError(
                     f"Trying to construct new module {obj} with a compact context outside of `init` or an `rng_key` context."
@@ -87,6 +86,17 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
             if name is not None
             else utils._lower_snake_case(self.__class__.__name__)
         )
+
+    def initializing(self) -> bool:
+        if not self.initialized:
+            if not _INIT_CONTEXT.initializing:
+                raise RuntimeError(
+                    f"Trying run {self.__class__.__name__} for the first time outside of `init`"
+                )
+
+            return True
+
+        return False
 
     @property
     def initialized(self) -> bool:

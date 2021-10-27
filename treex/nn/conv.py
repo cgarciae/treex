@@ -137,7 +137,7 @@ class Conv(Module):
         Returns:
             The convolved data.
         """
-        if not self.initialized:
+        if self.initializing():
             variables = self.module.init({"params": next_key()}, x)
 
             # Extract collections

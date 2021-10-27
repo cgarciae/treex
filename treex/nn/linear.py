@@ -97,7 +97,7 @@ class Linear(Module):
         Returns:
             The transformed input.
         """
-        if not self.initialized:
+        if self.initializing():
             variables = self.module.init({"params": next_key()}, x)
 
             # Extract collections

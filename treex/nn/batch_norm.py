@@ -135,7 +135,7 @@ class BatchNorm(Module):
         Returns:
             Normalized inputs (the same shape as inputs).
         """
-        if not self.initialized:
+        if self.initializing():
             variables = self.module.init(
                 next_key(),
                 x,
