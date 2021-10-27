@@ -13,7 +13,7 @@ from rich.table import Table
 from rich.text import Text
 from treeo import tree as tree_module
 
-from treex import types, utils
+from treex import contexts, types, utils
 from treex.treex import Filters, Treex
 
 A = tp.TypeVar("A")
@@ -23,29 +23,6 @@ Filter = tp.Union[
     tp.Type[tp.Type[tp.Any]],
     tp.Callable[[to.FieldInfo], bool],
 ]
-
-
-@dataclass
-class _Context(threading.local):
-    call_info: tp.Optional[tp.Dict["Module", tp.Tuple[types.Inputs, tp.Any]]] = None
-
-    def __enter__(self):
-        global _CONTEXT
-        self._old_context = _CONTEXT
-        _CONTEXT = self
-
-    def __exit__(self, *args):
-        global _CONTEXT
-        _CONTEXT = self._old_context
-
-    @contextmanager
-    def update(self, **kwargs):
-        fields = vars(self).copy()
-        fields.pop("_old_context", None)
-        fields.update(kwargs)
-
-        with _Context(**fields):
-            yield
 
 
 @dataclass
@@ -72,7 +49,6 @@ class _InitContext(threading.local):
             yield
 
 
-_CONTEXT = _Context()
 _INIT_CONTEXT = _InitContext()
 
 # -----------------------------------------
@@ -83,6 +59,9 @@ class ModuleMeta(to.TreeMeta):
         # reset context during construction
         with _InitContext():
             obj = super().construct(obj, *args, **kwargs)
+
+        if not hasattr(obj, "name"):
+            obj.name = utils._lower_snake_case(obj.__class__.__name__)
 
         if tree_module._COMPACT_CONTEXT.in_compact:
             if _INIT_CONTEXT.key is None:
@@ -101,6 +80,13 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
     _training: bool = to.static(True)
     _initialized: bool = to.static(False)
     _frozen: bool = to.static(False)
+
+    def __init__(self, name: tp.Optional[str] = None):
+        self.name = (
+            name
+            if name is not None
+            else utils._lower_snake_case(self.__class__.__name__)
+        )
 
     @property
     def initialized(self) -> bool:
@@ -122,9 +108,12 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
             def new_call(self: Module, *args, **kwargs):
                 outputs = orig_call(self, *args, **kwargs)
 
-                if _CONTEXT.call_info is not None and self not in _CONTEXT.call_info:
+                if (
+                    contexts._CONTEXT.call_info is not None
+                    and self not in contexts._CONTEXT.call_info
+                ):
                     inputs = types.Inputs(*args, **kwargs)
-                    _CONTEXT.call_info[self] = (inputs, outputs)
+                    contexts._CONTEXT.call_info[self] = (inputs, outputs)
 
                 return outputs
 
@@ -223,7 +212,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
                     "`inputs` can only be specified if the module is a callable."
                 )
 
-            with _Context(call_info={}):
+            with contexts._Context(call_info={}):
 
                 # call using self to preserve references
                 def eval_call(args, kwargs):
@@ -235,7 +224,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
                     inputs.args,
                     inputs.kwargs,
                 )
-                call_info = _CONTEXT.call_info
+                call_info = contexts._CONTEXT.call_info
 
         else:
             call_info = None
