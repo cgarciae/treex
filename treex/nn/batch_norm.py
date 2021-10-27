@@ -49,6 +49,7 @@ class BatchNorm(Module):
 
     def __init__(
         self,
+        *,
         axis: int = -1,
         momentum: tp.Union[float, jnp.ndarray] = 0.99,
         epsilon: float = 1e-5,
