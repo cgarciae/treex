@@ -701,3 +701,49 @@ class TestCompact:
         assert y.shape == (5, 4)
         assert "lazy_linear" in vars(mlp)
         assert "lazy_linear2" in vars(mlp)
+
+    def test_compact_module(self):
+        @tx.compact_module
+        def MLP(x, dmid: int, dout: int) -> jnp.ndarray:
+            x = LazyLinear(dmid)(x)
+            x = jax.nn.relu(x)
+            x = LazyLinear(dout)(x)
+            return x
+
+        x = jnp.ones((5, 2))
+        mlp = MLP().init(42, (x, 3, 4))
+
+        y = mlp(x, 3, 4)
+
+        assert y.shape == (5, 4)
+        assert "lazy_linear" in vars(mlp)
+        assert "lazy_linear2" in vars(mlp)
+
+    def test_nested_compact_module(self):
+        @dataclass(repr=False)
+        class MLP(tx.Module):
+            dmid: int
+            dout: int
+
+            @tx.compact
+            def __call__(self, x):
+                @tx.compact_module
+                def Block(x, dmid: int, dout: int) -> jnp.ndarray:
+                    x = LazyLinear(dmid)(x)
+                    x = jax.nn.relu(x)
+                    x = LazyLinear(dout)(x)
+                    return x
+
+                x = Block()(x, self.dmid, self.dout)
+                x = Block()(x, self.dmid, self.dout)
+                return x
+
+        x = jnp.ones((5, 2))
+        mlp = MLP(3, 4).init(42, x)
+
+        y = mlp(x)
+        y = mlp(x)
+
+        assert y.shape == (5, 4)
+        assert "block" in vars(mlp)
+        assert "block2" in vars(mlp)

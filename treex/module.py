@@ -338,6 +338,33 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
         return utils._get_rich_repr(table)
 
 
+# -----------------------------------------------------------------------
+# API
+# -----------------------------------------------------------------------
+
+
+def compact_module(f) -> type:
+    """
+    A decorator that enable the definition of functional Modules
+    """
+    name = utils._get_name(f)
+
+    @functools.wraps(f)
+    @to.compact
+    def __call__(self, *args, **kwargs):
+        return f(*args, **kwargs)
+
+    module_class = type(
+        name,
+        (Module,),
+        dict(
+            __call__=__call__,
+        ),
+    )
+
+    return module_class
+
+
 def next_key() -> jnp.ndarray:
     """
     Returns the next key.
