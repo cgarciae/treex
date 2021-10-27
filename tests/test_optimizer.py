@@ -13,7 +13,8 @@ class TestOptreex:
         optax_optim = optax.adam(0.1)
         optimizer = tx.Optimizer(optax_optim)
 
-        linear = tx.Linear(2, 3).init(42)
+        x = jnp.ones((2, 4))
+        linear = tx.Linear(3).init(42, x)
         optimizer = optimizer.init(linear)
         opt_state = optax_optim.init(linear)
 
@@ -46,7 +47,8 @@ class TestOptreex:
         optax_optim = optax.adam(0.1)
         optimizer = tx.Optimizer(optax_optim)
 
-        linear = tx.Linear(2, 3).init(42)
+        x = jnp.ones((2, 4))
+        linear = tx.Linear(3).init(42, x)
         optimizer = optimizer.init(linear)
         opt_state = optax_optim.init(linear)
 

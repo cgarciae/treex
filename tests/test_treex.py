@@ -355,12 +355,16 @@ class TestTreex:
             linear1: tx.Linear
             linear2: tx.Linear
 
-            def __init__(self, din, dmid, dout, name="mlp"):
+            def __init__(self, dmid, dout, name="mlp"):
 
-                self.linear1 = tx.Linear(din, dmid)
-                self.linear2 = tx.Linear(dmid, dout)
+                self.linear1 = tx.Linear(dmid)
+                self.linear2 = tx.Linear(dout)
 
-        mlp = MLP(2, 3, 5).init(42)
+            def __call__(self, x):
+                return self.linear2(self.linear1(x))
+
+        x = np.random.uniform(size=(2, 3))
+        mlp = MLP(2, 3, 5).init(42, x)
 
     def test_repr(self):
         class MyModule(tx.Module):
