@@ -97,6 +97,8 @@ class Model(tx.Module):
             self.loss_fn, has_aux=True
         )(params, self.module, x, y)
 
+        grads = jax.lax.pmean(grads, axis_name="device")
+
         assert isinstance(self.module, Module)
 
         params = self.optimizer.update(grads, params)
@@ -104,8 +106,7 @@ class Model(tx.Module):
 
         # sync batch statistics
         self.module = self.module.map(
-            partial(jax.lax.pmean, axis_name="device"),
-            tx.BatchStat,
+            partial(jax.lax.pmean, axis_name="device"), tx.BatchStat
         )
 
         # update metric
@@ -159,11 +160,11 @@ def main(
     model = Model(
         module=tx.Sequential(
             tx.Conv(32, [3, 3], strides=[2, 2]),
-            tx.BatchNorm(32),
+            tx.BatchNorm(),
             tx.Dropout(0.05),
             jax.nn.relu,
             tx.Conv(64, [3, 3], strides=[2, 2]),
-            tx.BatchNorm(64),
+            tx.BatchNorm(),
             tx.Dropout(0.1),
             jax.nn.relu,
             tx.Conv(128, [3, 3], strides=[2, 2]),
