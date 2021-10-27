@@ -53,6 +53,7 @@ class Linear(Module):
             [flax_module.PRNGKey, flax_module.Shape, flax_module.Dtype],
             flax_module.Array,
         ] = flax_module.zeros,
+        name: tp.Optional[str] = None,
     ):
         """
         Arguments:
@@ -65,7 +66,7 @@ class Linear(Module):
             kernel_init: initializer function for the weight matrix.
             bias_init: initializer function for the bias.
         """
-
+        super().__init__(name=name)
         self.features_out = features_out
         self.use_bias = use_bias
         self.dtype = dtype
