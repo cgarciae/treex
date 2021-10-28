@@ -10,11 +10,11 @@ def _mean_absolute_error(y_pred: jnp.ndarray, y_true: jnp.ndarray) -> jnp.ndarra
     """Calculates values required to update/compute Mean Absolute Error. Cast y_pred to have the same type as y_true.
 
     Args:
-        y_pred: Predicted tensor 
-        y_true: Ground truth tensor 
+        y_pred: Predicted tensor
+        y_true: Ground truth tensor
 
     Returns:
-        jnp.ndarray values needed to update Mean Absolute Error 
+        jnp.ndarray values needed to update Mean Absolute Error
     """
 
     y_true = y_true.astype(y_pred.dtype)
@@ -26,7 +26,7 @@ class MeanAbsolutError(Mean):
         self,
         on: tp.Optional[types.IndexLike] = None,
         name: tp.Optional[str] = None,
-        dtype: tp.Optional[jnp.dtype] = None
+        dtype: tp.Optional[jnp.dtype] = None,
     ):
         """
         `Computes Mean Absolute Error`_ (MAE):
@@ -34,7 +34,7 @@ class MeanAbsolutError(Mean):
         Where :math:`y` is a tensor of target values, and :math:`\hat{y}` is a tensor of predictions.
 
         Args:
-            on: 
+            on:
                 A string or integer, or iterable of string or integers, that
                 indicate how to index/filter the `y_true` and `y_pred`
                 arguments before passing them to `call`. For example if `on = "a"` then
@@ -44,14 +44,14 @@ class MeanAbsolutError(Mean):
                 check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).
             name:
                 Module name
-            dtype: 
+            dtype:
                 Metrics states initialization dtype
-                
-        
+
+
         Example:
         >>> import jax.numpy as jnp
         >>> from treex.metrics.mean_absolute_error import MeanAbsolutError
-        
+
         >>> y_true = jnp.array([3.0, -0.5, 2.0, 7.0])
         >>> y_pred = jnp.array([3.0, -0.5, 2.0, 7.0])
 
@@ -70,9 +70,9 @@ class MeanAbsolutError(Mean):
         Accumulates metric statistics. `y_true` and `y_pred` should have the same shape.
 
         Arguments:
-            y_true: 
+            y_true:
                 Ground truth values. shape = `[batch_size, d0, .. dN]`.
-            y_pred: 
+            y_pred:
                 The predicted values. shape = `[batch_size, d0, .. dN]`
         Returns:
             Array with the cumulative mean absolute error.
