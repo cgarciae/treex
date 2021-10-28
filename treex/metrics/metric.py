@@ -45,11 +45,11 @@ class Metric(Treex, metaclass=MetricMeta):
         """
         Arguments:
             on: A string or integer, or iterable of string or integers, that
-                indicate how to index/filter the `y_true` and `y_pred`
+                indicate how to index/filter the `target` and `preds`
                 arguments before passing them to `call`. For example if `on = "a"` then
-                `y_true = y_true["a"]`. If `on` is an iterable
+                `target = target["a"]`. If `on` is an iterable
                 the structures will be indexed iteratively, for example if `on = ["a", 0, "b"]`
-                then `y_true = y_true["a"][0]["b"]`, same for `y_pred`. For more information
+                then `target = target["a"][0]["b"]`, same for `preds`. For more information
                 check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).
         """
 
@@ -59,13 +59,13 @@ class Metric(Treex, metaclass=MetricMeta):
 
     def __call__(self, **kwargs) -> tp.Any:
         if self._labels_filter is not None:
-            if "y_true" in kwargs and kwargs["y_true"] is not None:
+            if "target" in kwargs and kwargs["target"] is not None:
                 for index in self._labels_filter:
-                    kwargs["y_true"] = kwargs["y_true"][index]
+                    kwargs["target"] = kwargs["target"][index]
 
-            if "y_pred" in kwargs and kwargs["y_pred"] is not None:
+            if "preds" in kwargs and kwargs["preds"] is not None:
                 for index in self._labels_filter:
-                    kwargs["y_pred"] = kwargs["y_pred"][index]
+                    kwargs["preds"] = kwargs["preds"][index]
 
         # update cumulative state
         self.update(**kwargs)

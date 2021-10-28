@@ -291,15 +291,15 @@ def accuracy(
     top-K highest probability or logits items are considered to find the correct label.
 
     For multi-label and multi-dimensional multi-class inputs, this metric computes the "global"
-    accuracy by default, which counts all labels or sub-samples separately. This can be
-    changed to subset accuracy (which requires all labels or sub-samples in the sample to
+    accuracy by default, which counts all target or sub-samples separately. This can be
+    changed to subset accuracy (which requires all target or sub-samples in the sample to
     be correctly predicted) by setting ``subset_accuracy=True``.
 
     Accepts all input types listed in :ref:`references/modules:input types`.
 
     Args:
-        preds: Predictions from model (probabilities, logits or labels)
-        target: Ground truth labels
+        preds: Predictions from model (probabilities, logits or target)
+        target: Ground truth target
         average:
             Defines the reduction that is applied. Should be one of the following:
 
@@ -361,9 +361,9 @@ def accuracy(
             Whether to compute subset accuracy for multi-label and multi-dimensional
             multi-class inputs (has no effect for other input types).
 
-            - For multi-label inputs, if the parameter is set to ``True``, then all labels for
+            - For multi-label inputs, if the parameter is set to ``True``, then all target for
               each sample must be correctly predicted for the sample to count as correct. If it
-              is set to ``False``, then all labels are counted separately - this is equivalent to
+              is set to ``False``, then all target are counted separately - this is equivalent to
               flattening inputs beforehand (i.e. ``preds = preds.flatten()`` and same for ``target``).
 
             - For multi-dimensional multi-class inputs, if the parameter is set to ``True``, then all

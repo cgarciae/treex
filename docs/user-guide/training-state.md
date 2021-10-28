@@ -12,7 +12,7 @@ for step in range(1000):
 model = model.eval()
 
 # make predictions
-y_pred = model(X_test)
+preds = model(X_test)
 ```
 
 To switch between modes, use the `.train()` and `.eval()` methods, they return a new Module whose `training` state and the state of all of its submodules (recursively) are set to the desired value.

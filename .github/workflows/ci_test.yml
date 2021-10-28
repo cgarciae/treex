@@ -41,7 +41,7 @@ jobs:
           poetry install
 
       - name: Run Tests
-        run: pytest #--cov=elegy --cov-report=term-missing --cov-report=xml
+        run: pytest #--cov=treex --cov-report=term-missing --cov-report=xml
 
       - name: Upload coverage
         uses: codecov/codecov-action@v1

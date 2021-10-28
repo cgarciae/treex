@@ -14,6 +14,12 @@ B = tp.TypeVar("B")
 InputLike = tp.Union[tp.Any, tp.Tuple[tp.Any, ...], tp.Dict[str, tp.Any], "Inputs"]
 IndexLike = tp.Union[str, int, tp.Sequence[tp.Union[str, int]]]
 PathLike = tp.Tuple[IndexLike, ...]
+ScalarLike = tp.Union[float, np.ndarray, jnp.ndarray]
+
+# -----------------------------------------
+# Constants
+# -----------------------------------------
+EPSILON = 1e-7
 
 # -----------------------------------------
 # TreeParts
@@ -68,10 +74,18 @@ class MetricLog(Log):
     pass
 
 
+@jax.tree_util.register_pytree_node_class
 @dataclass
-class Named(to.Tree, tp.Generic[A]):
-    value: A = to.node()
-    name: str = to.static(opaque=True)
+class Named(tp.Generic[A]):
+    name: str
+    value: A
+
+    def tree_flatten(self):
+        return (self.value,), self.name
+
+    @classmethod
+    def tree_unflatten(cls, name, children):
+        return cls(name, children[0])
 
 
 class Initializer(to.Tree):

@@ -32,8 +32,8 @@ y = 1.4 * x ** 2 - 0.3 + np.random.normal(scale=0.1, size=(100, 1))
 @jax.jit
 @jax.grad
 def loss_fn(model, x, y):
-    y_pred = model(x)
-    return jnp.mean((y_pred - y) ** 2)
+    preds = model(x)
+    return jnp.mean((preds - y) ** 2)
 
 
 # in reality use optax
@@ -47,8 +47,8 @@ for step in range(10_000):
     model = jax.tree_map(sdg, model, grads)
 
 model = model.eval()
-y_pred = model(x)
+preds = model(x)
 
 plt.plot(x, y, "o")
-plt.plot(x, y_pred, "x")
+plt.plot(x, preds, "x")
 plt.show()

@@ -116,7 +116,7 @@ def to_categorical(x: Tensor, argmax_dim: int = 1) -> Tensor:
         argmax_dim: dimension to apply
 
     Return:
-        A tensor with categorical labels [N, d2, ...]
+        A tensor with categorical target [N, d2, ...]
 
     Example:
         >>> x = torch.tensor([[0.2, 0.5], [0.9, 0.1]])
@@ -135,7 +135,7 @@ def get_num_classes(
 
     Args:
         preds: predicted values
-        target: true labels
+        target: true target
         num_classes: number of classes if known
 
     Return:

@@ -73,16 +73,16 @@ class Model(tx.Module):
         y: jnp.ndarray,
     ) -> tp.Tuple[jnp.ndarray, tp.Tuple[Module, jnp.ndarray]]:
         module = module.merge(params)
-        y_pred = module(x)
+        preds = module(x)
 
         loss = jnp.mean(
             optax.softmax_cross_entropy(
-                y_pred,
+                preds,
                 jax.nn.one_hot(y, 10),
             )
         )
 
-        return loss, (module, y_pred)
+        return loss, (module, preds)
 
     @partial(jax.pmap, axis_name="device")
     def train_step(
@@ -93,7 +93,7 @@ class Model(tx.Module):
         print("JITTTTING")
         params = self.module.parameters()
 
-        (loss, (self.module, y_pred)), grads = jax.value_and_grad(
+        (loss, (self.module, preds)), grads = jax.value_and_grad(
             self.loss_fn, has_aux=True
         )(params, self.module, x, y)
 
@@ -109,9 +109,9 @@ class Model(tx.Module):
         )
 
         # update metric
-        y, y_pred = jax.lax.all_gather((y, y_pred), axis_name="device")
-        y, y_pred = y.reshape(-1), y_pred.reshape(-1, y_pred.shape[-1])
-        self.metric.update(y_true=y, y_pred=y_pred)
+        y, preds = jax.lax.all_gather((y, preds), axis_name="device")
+        y, preds = y.reshape(-1), preds.reshape(-1, preds.shape[-1])
+        self.metric.update(target=y, preds=preds)
 
         return loss, self
 
@@ -122,11 +122,11 @@ class Model(tx.Module):
         y: jnp.ndarray,
     ) -> tp.Tuple[jnp.ndarray, M]:
 
-        loss, (self.module, y_pred) = self.loss_fn(self.module, self.module, x, y)
+        loss, (self.module, preds) = self.loss_fn(self.module, self.module, x, y)
 
-        y, y_pred = jax.lax.all_gather((y, y_pred), axis_name="device")
-        y, y_pred = y.reshape(-1), y_pred.reshape(-1, y_pred.shape[-1])
-        _batch_metric = self.metric(y_true=y, y_pred=y_pred)
+        y, preds = jax.lax.all_gather((y, preds), axis_name="device")
+        y, preds = y.reshape(-1), preds.reshape(-1, preds.shape[-1])
+        _batch_metric = self.metric(target=y, preds=preds)
 
         return loss, self
 
@@ -268,15 +268,15 @@ def main(
     idxs = np.random.choice(len(X_test), 10)
     x_sample = X_test[idxs]
 
-    y_pred = model.predict(x_sample)
+    preds = model.predict(x_sample)
 
     plt.figure()
     for i in range(5):
         ax: plt.Axes = plt.subplot(2, 5, i + 1)
-        ax.set_title(f"{y_pred[i]}")
+        ax.set_title(f"{preds[i]}")
         plt.imshow(x_sample[i], cmap="gray")
         ax: plt.Axes = plt.subplot(2, 5, 5 + i + 1)
-        ax.set_title(f"{y_pred[5 + i]}")
+        ax.set_title(f"{preds[5 + i]}")
         plt.imshow(x_sample[5 + i], cmap="gray")
 
     plt.show()

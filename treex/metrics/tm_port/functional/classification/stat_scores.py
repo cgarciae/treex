@@ -24,7 +24,7 @@ def _stat_scores(
         preds:
             An ``(N, C)`` or ``(N, C, X)`` tensor of predictions (0 or 1)
         target:
-            An ``(N, C)`` or ``(N, C, X)`` tensor of true labels (0 or 1)
+            An ``(N, C)`` or ``(N, C, X)`` tensor of true target (0 or 1)
         reduce:
             One of ``'micro'``, ``'macro'``, ``'samples'``
 
@@ -271,7 +271,7 @@ def stat_scores(
     multi-dimensional multi-class case. Accepts all inputs listed in :ref:`references/modules:input types`.
 
     Args:
-        preds: Predictions from model (probabilities, logits or labels)
+        preds: Predictions from model (probabilities, logits or target)
         target: Ground truth values
         threshold:
             Threshold for transforming probability or logit predictions to binary (0,1) predictions, in the case

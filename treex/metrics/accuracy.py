@@ -25,8 +25,8 @@ class Accuracy(Metric):
     top-K highest probability or logit score items are considered to find the correct label.
 
     For multi-label and multi-dimensional multi-class inputs, this metric computes the "glob"
-    accuracy by default, which counts all labels or sub-samples separately. This can be
-    changed to subset accuracy (which requires all labels or sub-samples in the sample to
+    accuracy by default, which counts all target or sub-samples separately. This can be
+    changed to subset accuracy (which requires all target or sub-samples in the sample to
     be correctly predicted) by setting ``subset_accuracy=True``.
 
     Accepts all input types listed in :ref:`references/modules:input types`.
@@ -96,9 +96,9 @@ class Accuracy(Metric):
             Whether to compute subset accuracy for multi-label and multi-dimensional
             multi-class inputs (has no effect for other input types).
 
-            - For multi-label inputs, if the parameter is set to ``True``, then all labels for
+            - For multi-label inputs, if the parameter is set to ``True``, then all target for
               each sample must be correctly predicted for the sample to count as correct. If it
-              is set to ``False``, then all labels are counted separately - this is equivalent to
+              is set to ``False``, then all target are counted separately - this is equivalent to
               flattening inputs beforehand (i.e. ``preds = preds.flatten()`` and same for ``target``).
 
             - For multi-dimensional multi-class inputs, if the parameter is set to ``True``, then all
@@ -245,19 +245,19 @@ class Accuracy(Metric):
         self.tn = initial_value
         self.fn = initial_value
 
-    def update(self, y_pred: jnp.ndarray, y_true: jnp.ndarray) -> None:  # type: ignore
+    def update(self, preds: jnp.ndarray, target: jnp.ndarray) -> None:  # type: ignore
         """Update state with predictions and targets. See
         :ref:`references/modules:input types` for more information on input
         types.
 
         Args:
-            preds: Predictions from model (logits, probabilities, or labels)
-            target: Ground truth labels
+            preds: Predictions from model (logits, probabilities, or target)
+            target: Ground truth target
         """
 
         tp, fp, tn, fn = metric_utils._stat_scores_update(
-            y_pred,
-            y_true,
+            preds,
+            target,
             intended_mode=self.mode,
             average_method=self.average,
             mdmc_average_method=self.mdmc_average,

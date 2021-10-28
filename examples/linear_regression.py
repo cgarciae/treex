@@ -30,8 +30,8 @@ class Linear(tx.Module):
 def loss_fn(params, model, x, y):
     model = model.merge(params)
 
-    y_pred = model(x)
-    loss = jnp.mean((y_pred - y) ** 2)
+    preds = model(x)
+    loss = jnp.mean((preds - y) ** 2)
 
     return loss, model
 
@@ -59,9 +59,9 @@ for step in range(1000):
 model = model.eval()
 
 X_test = np.linspace(x.min(), x.max(), 100)[:, None]
-y_pred = model(X_test)
+preds = model(X_test)
 
 plt.scatter(x, y, c="k", label="data")
-plt.plot(X_test, y_pred, c="b", linewidth=2, label="prediction")
+plt.plot(X_test, preds, c="b", linewidth=2, label="prediction")
 plt.legend()
 plt.show()

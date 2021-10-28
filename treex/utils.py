@@ -492,3 +492,17 @@ def _function_argument_names(f) -> tp.Optional[tp.List[str]]:
         kwarg_names.append(k)
 
     return kwarg_names
+
+
+def _maybe_expand_dims(
+    a: jnp.ndarray, b: jnp.ndarray
+) -> tp.Tuple[jnp.ndarray, jnp.ndarray]:
+    assert np.prod(a.shape) == np.prod(b.shape)
+
+    if a.ndim < b.ndim:
+        a = a[..., None]
+
+    if b.ndim < a.ndim:
+        b = b[..., None]
+
+    return a, b

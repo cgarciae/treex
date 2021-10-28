@@ -13,7 +13,7 @@ from rich.table import Table
 from rich.text import Text
 
 from treex import types, utils
-from treex.treex import Treex
+from treex.treex import Filters, Treex
 
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
@@ -54,7 +54,7 @@ _CONTEXT = _Context()
 # -----------------------------------------
 
 
-class Module(Treex):
+class Module(Treex, Filters):
     # use to.field to copy class vars to instance
     _training: bool = to.static(True)
     _initialized: bool = to.static(False)
@@ -132,63 +132,6 @@ class Module(Treex):
                 module._initialized = True
 
         return to.apply(call_module_init, tree_out, inplace=True)
-
-    def train(self: M, mode: bool = True, inplace: bool = False) -> M:
-        """
-        Creates a new module with the same structure, but with `Module.training` set to the given value.
-
-        Arguments:
-            mode: The new training mode.
-            inplace: Whether to update the module inplace.
-        Returns:
-            The new module in with the training mode is set to the given value,
-            if `inplace` is `True` then `self` is returned.
-        """
-
-        def set_training(module: Module):
-            if isinstance(module, Module):
-                module._training = mode
-
-        return to.apply(set_training, self, inplace=inplace)
-
-    def eval(self: M, inplace: bool = False) -> M:
-        """
-        Creates a new module with the training mode set to False, equivalent to calling `train(False)`.
-
-        Returns:
-            The new module with the training mode set to False.
-        """
-        return self.train(False, inplace=inplace)
-
-    def freeze(self: M, mode: bool = True, inplace: bool = False) -> M:
-        """
-        Creates a new module with the same structure, but with `Module.frozen` set
-        to the given value.
-
-        Arguments:
-            mode: The new `frozen` mode.
-            inplace: Whether to update the module inplace.
-        Returns:
-            The new module in with the `frozen` mode is set to the given value,
-            if `inplace` is `True` then `self` is returned.
-        """
-
-        def set_frozen(module: Module):
-            if isinstance(module, Module):
-                module._frozen = mode
-
-        return to.apply(set_frozen, self, inplace=inplace)
-
-    def unfreeze(self: M, inplace: bool = False) -> M:
-        """
-        Creates a new module with `.frozen` set to False, equivalent to calling `freeze(False)`.
-
-        Arguments:
-            inplace: Whether to update the module inplace.
-        Returns:
-            The new module with `.frozen` set to False, if `inplace` is `True` then `self` is returned.
-        """
-        return self.freeze(False, inplace=inplace)
 
     def rng_init(self, key: jnp.ndarray) -> None:
         pass
@@ -334,79 +277,3 @@ class Module(Treex):
         )
 
         return utils._get_rich_repr(table)
-
-    # --------------------------------------
-    # filter shortcuts
-    # --------------------------------------
-
-    def parameters(self: M, *filters: Filter) -> M:
-        """
-        Returns a copy of the Module with only tx.Parameter TreeParts, alias for `filter(tx.Parameter)`.
-
-        Arguments:
-            filters: additional filters passed to `filter`.
-        """
-        return self.filter(types.Parameter, *filters)
-
-    def batch_stats(self: M, *filters: Filter) -> M:
-        """
-        Returns a copy of the Module with only tx.BatchStat TreeParts, alias for `filter(tx.BatchStat)`.
-
-        Arguments:
-            filters: additional filters passed to `filter`.
-        """
-        return self.filter(types.BatchStat, *filters)
-
-    def rngs(self: M, *filters: Filter) -> M:
-        """
-        Returns a copy of the Module with only tx.Rng TreeParts, alias for `filter(tx.Rng)`.
-
-        Arguments:
-            filters: additional filters passed to `filter`.
-        """
-        return self.filter(types.Rng, *filters)
-
-    def model_states(self: M, *filters: Filter) -> M:
-        """
-        Returns a copy of the Module with only tx.ModelState TreeParts, alias for `filter(tx.ModelState)`.
-
-        Arguments:
-            filters: additional filters passed to `filter`.
-        """
-        return self.filter(types.ModelState, *filters)
-
-    def states(self: M, *filters: Filter) -> M:
-        """
-        Returns a copy of the Module with only tx.State TreeParts, alias for `filter(tx.State)`.
-
-        Arguments:
-            filters: additional filters passed to `filter`.
-        """
-        return self.filter(types.State, *filters)
-
-    def metrics(self: M, *filters: Filter) -> M:
-        """
-        Returns a copy of the Module with only tx.Metric TreeParts, alias for `filter(tx.Metric)`.
-
-        Arguments:
-            filters: additional filters passed to `filter`.
-        """
-        return self.filter(types.MetricLog, *filters)
-
-    def losses(self: M, *filters: Filter) -> M:
-        """
-        Returns a copy of the Module with only tx.Loss TreeParts, alias for `filter(tx.Loss)`.
-
-        Arguments:
-            filters: additional filters passed to `filter`.
-        """
-        return self.filter(types.LossLog, *filters)
-
-    def logs(self: M, *filters: Filter) -> M:
-        """
-        Returns a copy of the Module with only tx.Log TreeParts, alias for `filter(tx.Log)`.
-
-        Arguments:
-            filters: additional filters passed to `filter`.
-        """
-        return self.filter(types.Log, *filters)

@@ -60,8 +60,8 @@ A standard solution to this problem is: **always output the Module to merge its 
 def loss_fn(params, model, x, y):
     model = model.update(params)
 
-    y_pred = model(x)
-    loss = jnp.mean((y_pred - y) ** 2)
+    preds = model(x)
+    loss = jnp.mean((preds - y) ** 2)
 
     return loss, model
 
