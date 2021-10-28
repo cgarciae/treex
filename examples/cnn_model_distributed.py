@@ -1,7 +1,6 @@
 import typing as tp
 from functools import partial
 
-import dataget
 import einops
 import jax
 import jax.numpy as jnp
@@ -10,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import optax
 import typer
+from datasets.load import load_dataset
 from numpy.core.fromnumeric import reshape
 from tqdm import tqdm
 
@@ -152,9 +152,12 @@ def main(
     device_idx = jnp.arange(n_devices)
 
     # load data
-    X_train, y_train, X_test, y_test = dataget.image.mnist().get()
-    X_train = X_train[..., None]
-    X_test = X_test[..., None]
+    dataset = load_dataset("mnist")
+    dataset.set_format("np")
+    X_train = dataset["train"]["image"][..., None]
+    y_train = dataset["train"]["label"]
+    X_test = dataset["test"]["image"][..., None]
+    y_test = dataset["test"]["label"]
 
     # define model
     model = Model(
