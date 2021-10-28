@@ -119,7 +119,7 @@ def main(
 
     optimizer = tx.Optimizer(optax.adamw(1e-3))
     loss_logs = tx.LossAndLogs(
-        losses=tx.losses.SparseCategoricalCrossentropy(from_logits=True),
+        losses=tx.losses.Crossentropy(),
         metrics=tx.metrics.Accuracy(),
     )
 

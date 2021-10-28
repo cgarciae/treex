@@ -121,11 +121,11 @@ def main(
     # define model
     model = tx.Sequential(
         tx.Conv(32, [3, 3], strides=[2, 2]),
-        tx.BatchNorm(32),
+        tx.BatchNorm(),
         tx.Dropout(0.05),
         jax.nn.relu,
         tx.Conv(64, [3, 3], strides=[2, 2]),
-        tx.BatchNorm(64),
+        tx.BatchNorm(),
         tx.Dropout(0.1),
         jax.nn.relu,
         tx.Conv(128, [3, 3], strides=[2, 2]),

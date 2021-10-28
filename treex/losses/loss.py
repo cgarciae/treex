@@ -128,11 +128,17 @@ class Loss:
         ...
 
 
-def reduce_loss(values, sample_weight, weight, reduction) -> jnp.ndarray:
+def reduce_loss(
+    values: jnp.ndarray, sample_weight: tp.Optional[jnp.ndarray], weight, reduction
+) -> jnp.ndarray:
 
     values = jnp.asarray(values)
 
     if sample_weight is not None:
+        # expand `sample_weight` dimensions until it has the same rank as `values`
+        while sample_weight.ndim < values.ndim:
+            sample_weight = sample_weight[..., jnp.newaxis]
+
         values *= sample_weight
 
     if reduction == Reduction.NONE:
