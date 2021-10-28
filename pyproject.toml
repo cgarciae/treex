@@ -14,9 +14,9 @@ flax = "^0.3.4"
 PyYAML = "^5.4.1"
 rich = "^10.7.0"
 optax = "^0.0.9"
-# treeo = "^0.0.5"
-treeo = { path = "../treeo", develop = true }
 einops = "^0.3.2"
+treeo = "^0.0.6"
+# treeo = { path = "../treeo", develop = true }
 
 [tool.poetry.dev-dependencies]
 jax = "^0.2.24"
