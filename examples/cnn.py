@@ -102,7 +102,7 @@ def main(
     X_train = X_train[..., None]
     X_test = X_test[..., None]
 
-    # define model
+    # define sequential model
     model: Model = tx.Sequential(
         tx.Conv(32, [3, 3], strides=[2, 2]),
         tx.BatchNorm(),
