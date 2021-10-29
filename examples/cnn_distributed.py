@@ -1,7 +1,6 @@
 import typing as tp
 from functools import partial
 
-import dataget
 import einops
 import jax
 import jax.numpy as jnp
@@ -10,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import optax
 import typer
+from datasets.load import load_dataset
 from tqdm import tqdm
 
 import treex as tx
@@ -71,15 +71,18 @@ def test_step(
     return loss, acc_batch
 
 
-@partial(jax.pmap, in_axes=(None, None, None, 0), out_axes=(0, 0), axis_name="device")
+@partial(
+    jax.pmap, in_axes=(None, None, None, None, 0), out_axes=(0, 0), axis_name="device"
+)
 def init_step(
     model: Model,
     optimizer: tx.Optimizer,
     key: jnp.ndarray,
+    inputs: tp.Any,
     device_idx: jnp.ndarray,
 ) -> tp.Tuple[Model, tx.Optimizer]:
 
-    model = model.init(key)
+    model = model.init(key, inputs=inputs)
     optimizer = optimizer.init(model.filter(tx.Parameter))
 
     # assign unique rng keys
@@ -110,27 +113,36 @@ def main(
     device_idx = jnp.arange(n_devices)
     key = tx.Key(42)
 
+    # load data
+    dataset = load_dataset("mnist")
+    dataset.set_format("np")
+    X_train = dataset["train"]["image"]
+    y_train = dataset["train"]["label"]
+    X_test = dataset["test"]["image"]
+    y_test = dataset["test"]["label"]
+
+    X_train = X_train[..., None]
+    X_test = X_test[..., None]
+
+    # define model
     model = tx.Sequential(
-        tx.Conv(1, 32, [3, 3], strides=[2, 2]),
-        tx.BatchNorm(32),
+        tx.Conv(32, [3, 3], strides=[2, 2]),
+        tx.BatchNorm(),
         tx.Dropout(0.05),
         jax.nn.relu,
-        tx.Conv(32, 64, [3, 3], strides=[2, 2]),
-        tx.BatchNorm(64),
+        tx.Conv(64, [3, 3], strides=[2, 2]),
+        tx.BatchNorm(),
         tx.Dropout(0.1),
         jax.nn.relu,
-        tx.Conv(64, 128, [3, 3], strides=[2, 2]),
+        tx.Conv(128, [3, 3], strides=[2, 2]),
         partial(jnp.mean, axis=[1, 2]),
-        tx.Linear(128, 10),
+        tx.Linear(10),
     )
     optimizer = tx.Optimizer(optax.adamw(1e-3))
 
-    model, optimizer = init_step(model, optimizer, key, device_idx)
-
-    # load data
-    X_train, y_train, X_test, y_test = dataget.image.mnist().get()
-    X_train = X_train[..., None]
-    X_test = X_test[..., None]
+    model, optimizer = init_step(
+        model, optimizer, key, X_train[:batch_size], device_idx
+    )
 
     print(model.tabulate(signature=True))
 

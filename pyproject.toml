@@ -10,31 +10,31 @@ homepage = "https://cgarciae.github.io/treex"
 
 [tool.poetry.dependencies]
 python = "^3.7"
-jax = "0.2.21"
-jaxlib = "^0.1.71"
 flax = "^0.3.4"
 PyYAML = "^5.4.1"
 rich = "^10.7.0"
 optax = "^0.0.9"
-treeo = "^0.0.5"
+einops = "^0.3.2"
+treeo = "^0.0.6"
 # treeo = { path = "../treeo", develop = true }
 
 [tool.poetry.dev-dependencies]
+jax = "^0.2.24"
+jaxlib = "^0.1.73"
 matplotlib = { version = "^3.4.3", python = ">=3.7" }
 pytest = "^5.2"
 streambook = "^0.2"
 black = {version = "^20.8b0", allow-prereleases = true, python = ">=3.6.2" }
 jupyterlab = "^3.1.7"
 hypothesis = "^6.14.8"
-dataget = "^0.4.15"
 pre-commit = "^2.14.0"
 isort = "^5.9.3"
 mkdocs = "^1.2.2"
 mkdocstrings = "^0.15.2"
 mkdocs-jupyter = { version = "^0.17.3", python = ">=3.7" }
 mkdocs-material = "^7.2.5"
-einops = "^0.3.2"
 tensorflow-cpu = "^2.6.0"
+datasets = "^1.14.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

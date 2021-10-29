@@ -58,7 +58,7 @@ class Dropout(Module):
         )
 
     def __call__(
-        self, x: np.ndarray, deterministic: tp.Optional[bool] = None, rng=None
+        self, x: jnp.ndarray, deterministic: tp.Optional[bool] = None, rng=None
     ) -> jnp.ndarray:
         """Applies a random dropout mask to the input.
 

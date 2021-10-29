@@ -12,7 +12,7 @@ import treeo as to
 from rich.table import Table
 from rich.text import Text
 
-from treex import types, utils
+from treex import contexts, types, utils
 from treex.treex import Filters, Treex
 
 A = tp.TypeVar("A")
@@ -25,17 +25,18 @@ Filter = tp.Union[
 
 
 @dataclass
-class _Context(threading.local):
-    call_info: tp.Optional[tp.Dict["Module", tp.Tuple[types.Inputs, tp.Any]]] = None
+class _InitContext(threading.local):
+    key: tp.Optional[jnp.ndarray] = None
+    initializing: bool = False
 
     def __enter__(self):
-        global _CONTEXT
-        self._old_context = _CONTEXT
-        _CONTEXT = self
+        global _INIT_CONTEXT
+        self._old_context = _INIT_CONTEXT
+        _INIT_CONTEXT = self
 
     def __exit__(self, *args):
-        global _CONTEXT
-        _CONTEXT = self._old_context
+        global _INIT_CONTEXT
+        _INIT_CONTEXT = self._old_context
 
     @contextmanager
     def update(self, **kwargs):
@@ -43,22 +44,59 @@ class _Context(threading.local):
         fields.pop("_old_context", None)
         fields.update(kwargs)
 
-        with _Context(**fields):
+        with _InitContext(**fields):
             yield
 
 
-_CONTEXT = _Context()
+_INIT_CONTEXT = _InitContext()
 
 # -----------------------------------------
 # Module
 # -----------------------------------------
+class ModuleMeta(to.TreeMeta):
+    def construct(cls, obj: M, *args, **kwargs) -> M:
+        # reset context during construction
+        with _InitContext():
+            obj = super().construct(obj, *args, **kwargs)
+
+        if not hasattr(obj, "name"):
+            obj.name = utils._lower_snake_case(obj.__class__.__name__)
+
+        if to.in_compact():
+            if _INIT_CONTEXT.key is None:
+                raise RuntimeError(
+                    f"Trying to construct new module {obj} with a compact context outside of `init` or an `rng_key` context."
+                )
+
+            if not obj.initialized:
+                obj.init(key=next_key(), inplace=True, _set_initialize=False)
+
+        return obj
 
 
-class Module(Treex, Filters):
+class Module(Treex, Filters, metaclass=ModuleMeta):
     # use to.field to copy class vars to instance
     _training: bool = to.static(True)
     _initialized: bool = to.static(False)
     _frozen: bool = to.static(False)
+
+    def __init__(self, name: tp.Optional[str] = None):
+        self.name = (
+            name
+            if name is not None
+            else utils._lower_snake_case(self.__class__.__name__)
+        )
+
+    def initializing(self) -> bool:
+        if not self.initialized:
+            if not _INIT_CONTEXT.initializing:
+                raise RuntimeError(
+                    f"Trying run {self.__class__.__name__} for the first time outside of `init`"
+                )
+
+            return True
+
+        return False
 
     @property
     def initialized(self) -> bool:
@@ -80,9 +118,12 @@ class Module(Treex, Filters):
             def new_call(self: Module, *args, **kwargs):
                 outputs = orig_call(self, *args, **kwargs)
 
-                if _CONTEXT.call_info is not None and self not in _CONTEXT.call_info:
+                if (
+                    contexts._CONTEXT.call_info is not None
+                    and self not in contexts._CONTEXT.call_info
+                ):
                     inputs = types.Inputs(*args, **kwargs)
-                    _CONTEXT.call_info[self] = (inputs, outputs)
+                    contexts._CONTEXT.call_info[self] = (inputs, outputs)
 
                 return outputs
 
@@ -90,7 +131,15 @@ class Module(Treex, Filters):
 
         return super().__init_subclass__()
 
-    def init(self: M, key: tp.Union[int, jnp.ndarray], inplace: bool = False) -> M:
+    def init(
+        self: M,
+        key: tp.Union[int, jnp.ndarray],
+        inputs: types.InputLike = to.MISSING,
+        call_method: str = "__call__",
+        *,
+        inplace: bool = False,
+        _set_initialize: bool = True,
+    ) -> M:
         """
         Method version of `tx.init`, it applies `self` as first argument.
 
@@ -107,33 +156,43 @@ class Module(Treex, Filters):
         Returns:
             The new module with the fields initialized.
         """
-        tree_out = self.copy() if not inplace else self
+        module = self.copy() if not inplace else self
         key = utils.Key(key)
 
-        def next_key() -> jnp.ndarray:
-            nonlocal key
-            assert isinstance(key, (np.ndarray, jnp.ndarray))
-            next_key, key = utils.iter_split(key)
-            return next_key
+        with _INIT_CONTEXT.update(key=key, initializing=True):
 
-        tree_out: M = tree_out.map(
-            lambda initializer: (
-                initializer(next_key())
-                if isinstance(initializer, types.Initializer)
-                else initializer
-            ),
-            is_leaf=lambda x: isinstance(x, types.Initializer),
-            inplace=True,
-        )
+            module: M = module.map(
+                lambda initializer: (
+                    initializer(next_key())
+                    if isinstance(initializer, types.Initializer)
+                    else initializer
+                ),
+                is_leaf=lambda x: isinstance(x, types.Initializer),
+                inplace=True,
+            )
 
-        def call_module_init(module: Module):
-            if isinstance(module, Module) and not module._initialized:
-                module.rng_init(next_key())
-                module._initialized = True
+            def call_rng_init(module: Module):
+                if isinstance(module, Module) and not module._initialized:
+                    module.rng_init()
 
-        return to.apply(call_module_init, tree_out, inplace=True)
+            module = to.apply(call_rng_init, module, inplace=True)
 
-    def rng_init(self, key: jnp.ndarray) -> None:
+            if inputs is not to.MISSING:
+                inputs = types.Inputs.from_value(inputs)
+                method = getattr(module, call_method)
+                method(*inputs.args, **inputs.kwargs)
+
+        if _set_initialize:
+
+            def set_initialized(module: Module):
+                if isinstance(module, Module) and not module._initialized:
+                    module._initialized = True
+
+            module = to.apply(set_initialized, module, inplace=True)
+
+        return module
+
+    def rng_init(self) -> None:
         pass
 
     def tabulate(
@@ -163,7 +222,7 @@ class Module(Treex, Filters):
                     "`inputs` can only be specified if the module is a callable."
                 )
 
-            with _Context(call_info={}):
+            with contexts._Context(call_info={}):
 
                 # call using self to preserve references
                 def eval_call(args, kwargs):
@@ -175,7 +234,7 @@ class Module(Treex, Filters):
                     inputs.args,
                     inputs.kwargs,
                 )
-                call_info = _CONTEXT.call_info
+                call_info = contexts._CONTEXT.call_info
 
         else:
             call_info = None
@@ -277,3 +336,54 @@ class Module(Treex, Filters):
         )
 
         return utils._get_rich_repr(table)
+
+
+# -----------------------------------------------------------------------
+# API
+# -----------------------------------------------------------------------
+
+
+def compact_module(f) -> type:
+    """
+    A decorator that enable the definition of functional Modules
+    """
+    name = utils._get_name(f)
+
+    @functools.wraps(f)
+    @to.compact
+    def __call__(self, *args, **kwargs):
+        return f(*args, **kwargs)
+
+    module_class = type(
+        name,
+        (Module,),
+        dict(
+            __call__=__call__,
+        ),
+    )
+
+    return module_class
+
+
+def next_key() -> jnp.ndarray:
+    """
+    Returns the next key.
+
+    Returns:
+        The next key.
+    """
+    if _INIT_CONTEXT.key is None:
+        raise RuntimeError(
+            "RNG key not set, you are either calling an uninitialized Module outside `.init` or forgot to call `rng_key` context manager."
+        )
+
+    key, _INIT_CONTEXT.key = utils.iter_split(_INIT_CONTEXT.key)
+    return key
+
+
+@contextmanager
+def rng_key(key: types.KeyLike):
+    key = utils.Key(key)
+
+    with _INIT_CONTEXT.update(key=key):
+        yield

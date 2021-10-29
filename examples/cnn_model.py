@@ -1,13 +1,13 @@
 import typing as tp
 from functools import partial
 
-import dataget
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import optax
 import typer
+from datasets.load import load_dataset
 from tqdm import tqdm
 
 import treex as tx
@@ -42,8 +42,8 @@ class Model(tx.Module):
         return self.module(*args, **kwargs)
 
     @partial(jax.jit, static_argnums=(1,))
-    def init_step(self: M, seed: int) -> M:
-        self.module = self.module.init(seed)
+    def init_step(self: M, seed: int, inputs: tp.Any) -> M:
+        self.module = self.module.init(seed, inputs=inputs)
         self.optimizer = self.optimizer.init(self.module.parameters())
 
         return self
@@ -113,31 +113,35 @@ def main(
     steps_per_epoch: int = -1,
 ):
 
+    # load data
+    dataset = load_dataset("mnist")
+    dataset.set_format("np")
+    X_train = dataset["train"]["image"][..., None]
+    y_train = dataset["train"]["label"]
+    X_test = dataset["test"]["image"][..., None]
+    y_test = dataset["test"]["label"]
+
+    # define model
     model = Model(
         module=tx.Sequential(
-            tx.Conv(1, 32, [3, 3], strides=[2, 2]),
-            tx.BatchNorm(32),
+            tx.Conv(32, [3, 3], strides=[2, 2]),
+            tx.BatchNorm(),
             tx.Dropout(0.05),
             jax.nn.relu,
-            tx.Conv(32, 64, [3, 3], strides=[2, 2]),
-            tx.BatchNorm(64),
+            tx.Conv(64, [3, 3], strides=[2, 2]),
+            tx.BatchNorm(),
             tx.Dropout(0.1),
             jax.nn.relu,
-            tx.Conv(64, 128, [3, 3], strides=[2, 2]),
+            tx.Conv(128, [3, 3], strides=[2, 2]),
             partial(jnp.mean, axis=[1, 2]),
-            tx.Linear(128, 10),
+            tx.Linear(10),
         ),
         optimizer=optax.adamw(1e-3),
-        losses=tx.losses.SparseCategoricalCrossentropy(from_logits=True),
+        losses=tx.losses.Crossentropy(),
         metrics=tx.metrics.Accuracy(),
     )
 
-    model: Model = model.init_step(seed=42)
-
-    # load data
-    X_train, y_train, X_test, y_test = dataget.image.mnist().get()
-    X_train = X_train[..., None]
-    X_test = X_test[..., None]
+    model: Model = model.init_step(seed=42, inputs=X_train[:batch_size])
 
     print(model.module.tabulate(X_train[:batch_size], signature=True))
 

@@ -1,13 +1,13 @@
 import typing as tp
 from functools import partial
 
-import dataget
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import optax
 import typer
+from datasets.load import load_dataset
 from flax import linen
 from tqdm import tqdm
 
@@ -91,14 +91,19 @@ def main(
     steps_per_epoch: int = -1,
 ):
     # load data
-    X_train, y_train, X_test, y_test = dataget.image.mnist().get()
+    dataset = load_dataset("mnist")
+    dataset.set_format("np")
+    X_train = dataset["train"]["image"]
+    y_train = dataset["train"]["label"]
+    X_test = dataset["test"]["image"]
+    y_test = dataset["test"]["label"]
+
     X_train = X_train[..., None]
     X_test = X_test[..., None]
 
     model = tx.FlaxModule(
         CNN(),
-        sample_inputs=tx.Inputs(X_train[:32], training=True),
-    ).init(42)
+    ).init(42, inputs=tx.Inputs(X_train[:32], training=False))
 
     print(model.tabulate())
 

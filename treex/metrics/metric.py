@@ -18,11 +18,15 @@ class MetricMeta(to.TreeMeta):
         metric = tp.cast(Metric, metric)
 
         # save initial state
-        metric._initial_state = {
-            field: getattr(metric, field)
-            for field, metadata in metric.field_metadata.items()
-            if metadata.node and field != "_initial_state"
-        }
+        metric._initial_state = to.copy(
+            {
+                field: getattr(metric, field)
+                for field, metadata in metric.field_metadata.items()
+                if metadata.node
+                and issubclass(metadata.kind, types.MetricState)
+                and field != "_initial_state"
+            }
+        )
 
         return metric
 
@@ -77,7 +81,11 @@ class Metric(Treex, metaclass=MetricMeta):
         return module.compute()
 
     def reset(self):
-        self.__dict__.update(self._initial_state)
+        def do_reset(metric):
+            if isinstance(metric, Metric):
+                metric.__dict__.update(to.copy(metric._initial_state))
+
+        self.apply(do_reset, inplace=True)
 
     @abstractmethod
     def update(self, **kwargs) -> None:

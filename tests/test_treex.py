@@ -164,8 +164,9 @@ class TestTreex:
         assert not isinstance(mlp_next.linear2.n, tx.Nothing)
 
     def test_update_initializers(self):
-        m = tx.Linear(2, 3)
-        m2 = m.init(42)
+        x = np.random.uniform(size=(5, 2))
+        m = tx.Linear(3)
+        m2 = m.init(42, x)
 
         m = m.merge(m2)
 
@@ -272,7 +273,7 @@ class TestTreex:
         n = 0
 
         class A(tx.Module):
-            def rng_init(self, key):
+            def rng_init(self):
                 nonlocal n
                 n = n + 1
 
@@ -285,7 +286,7 @@ class TestTreex:
 
     def test_initialized(self):
         class A(tx.Module):
-            def rng_init(self, key):
+            def rng_init(self):
                 self.x = 420
 
         module = A()
@@ -298,7 +299,7 @@ class TestTreex:
 
     def test_initialized_inplace(self):
         class A(tx.Module):
-            def rng_init(self, key):
+            def rng_init(self):
                 self.x = 420
 
         module = A()
@@ -354,12 +355,16 @@ class TestTreex:
             linear1: tx.Linear
             linear2: tx.Linear
 
-            def __init__(self, din, dmid, dout, name="mlp"):
+            def __init__(self, dmid, dout, name="mlp"):
 
-                self.linear1 = tx.Linear(din, dmid)
-                self.linear2 = tx.Linear(dmid, dout)
+                self.linear1 = tx.Linear(dmid)
+                self.linear2 = tx.Linear(dout)
 
-        mlp = MLP(2, 3, 5).init(42)
+            def __call__(self, x):
+                return self.linear2(self.linear1(x))
+
+        x = np.random.uniform(size=(2, 3))
+        mlp = MLP(2, 3, 5).init(42, x)
 
     def test_repr(self):
         class MyModule(tx.Module):
@@ -419,7 +424,7 @@ class TestTreex:
 
             def __init__(self):
 
-                self.a = {"mlps": [tx.MLP([256, 1024, 512]), tx.MLP([256, 1024, 512])]}
+                self.a = {"mlps": [tx.MLP([2, 3]), tx.MLP([2, 3])]}
                 self.b = [
                     jnp.zeros((512, 256)),
                     jnp.zeros((512, 128)),
@@ -432,19 +437,20 @@ class TestTreex:
 
                 return dict(y1=y1, y2=y2)
 
-        mlp = MyModule().init(42)
+        x = np.random.uniform(size=(5, 1))
+        mlp = MyModule().init(42, x)
         mlp = jax.tree_map(
             lambda x: jnp.asarray(x) if not isinstance(x, tx.Initializer) else x, mlp
         )
         # mlp = mlp.filter(tx.Parameter)
 
-        x = np.random.uniform(size=(10, 256))
+        x = np.random.uniform(size=(5, 1))
 
         rep = mlp.tabulate(inputs=tx.Inputs(x))
 
         print(rep)
 
-        assert "(\x1b[32m10, 256\x1b[0m)" in rep
+        assert "(\x1b[32m5, 1\x1b[0m)" in rep
         assert "y1:" in rep
         assert "y2:" in rep
 
@@ -455,10 +461,15 @@ class TestTreex:
 
             def __init__(self):
 
-                self.a = tx.Linear(3, 4)
-                self.b = tx.Linear(3, 4)
+                self.a = tx.Linear(4)
+                self.b = tx.Linear(4)
 
-        mod = Mod().init(42)
+            def __call__(self, x):
+                x = self.a(x)
+                return x
+
+        x = np.random.uniform(size=(5, 4))
+        mod = Mod().init(42, x)
 
         assert len(jax.tree_leaves(mod)) == 2
 
@@ -622,3 +633,117 @@ class TestTreex:
 
         assert module.a == 1
         assert module2.a == 2
+
+    def test_dataclass(self):
+        @dataclass
+        class M(tx.Module):
+            pass
+
+        module = M()
+
+        assert module._initialized is False
+
+
+@dataclass
+class LazyLinear(tx.Module):
+    features: int
+    w: tp.Optional[jnp.ndarray] = tx.Parameter.node(None)
+    b: tp.Optional[jnp.ndarray] = tx.Parameter.node(None)
+
+    def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
+        if self.initializing():
+            self.w = jax.random.uniform(
+                tx.next_key(), shape=[x.shape[-1], self.features]
+            )
+            self.b = jnp.zeros([self.features])
+
+        assert self.w is not None and self.b is not None
+
+        return jnp.dot(x, self.w) + self.b
+
+
+class TestCompact:
+    def test_shape_inference(self):
+
+        x = jnp.ones((5, 2))
+        module = LazyLinear(1).init(42, x)
+
+        y = module(x)
+
+        assert y.shape == (5, 1)
+
+    def test_init_error(self):
+
+        x = jnp.ones((5, 2))
+        module = LazyLinear(1)
+
+        with pytest.raises(RuntimeError):
+            y = module(x)
+
+    def test_compact(self):
+        @dataclass
+        class MLP(tx.Module):
+            dmid: int
+            dout: int
+
+            @tx.compact
+            def __call__(self, x):
+                x = LazyLinear(self.dmid)(x)
+                x = jax.nn.relu(x)
+                x = LazyLinear(self.dout)(x)
+                return x
+
+        x = jnp.ones((5, 2))
+        mlp = MLP(3, 4).init(42, x)
+
+        y = mlp(x)
+
+        assert y.shape == (5, 4)
+        assert "lazy_linear" in vars(mlp)
+        assert "lazy_linear2" in vars(mlp)
+
+    def test_compact_module(self):
+        @tx.compact_module
+        def MLP(x, dmid: int, dout: int) -> jnp.ndarray:
+            x = LazyLinear(dmid)(x)
+            x = jax.nn.relu(x)
+            x = LazyLinear(dout)(x)
+            return x
+
+        x = jnp.ones((5, 2))
+        mlp = MLP().init(42, (x, 3, 4))
+
+        y = mlp(x, 3, 4)
+
+        assert y.shape == (5, 4)
+        assert "lazy_linear" in vars(mlp)
+        assert "lazy_linear2" in vars(mlp)
+
+    def test_nested_compact_module(self):
+        @dataclass(repr=False)
+        class MLP(tx.Module):
+            dmid: int
+            dout: int
+
+            @tx.compact
+            def __call__(self, x):
+                @tx.compact_module
+                def Block(x, dmid: int, dout: int) -> jnp.ndarray:
+                    x = LazyLinear(dmid)(x)
+                    x = jax.nn.relu(x)
+                    x = LazyLinear(dout)(x)
+                    return x
+
+                x = Block()(x, self.dmid, self.dout)
+                x = Block()(x, self.dmid, self.dout)
+                return x
+
+        x = jnp.ones((5, 2))
+        mlp = MLP(3, 4).init(42, x)
+
+        y = mlp(x)
+        y = mlp(x)
+
+        assert y.shape == (5, 4)
+        assert "block" in vars(mlp)
+        assert "block2" in vars(mlp)

@@ -1,13 +1,13 @@
 import typing as tp
 from functools import partial
 
-import dataget
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 import optax
 import typer
+from datasets.load import load_dataset
 
 import treex as tx
 
@@ -32,14 +32,13 @@ class Encoder(tx.Module):
 
     def __init__(
         self,
-        image_shape: tp.Sequence[int],
         hidden_size: int,
         latent_size: int,
     ):
 
-        self.linear1 = tx.Linear(np.prod(image_shape), hidden_size)
-        self.linear_mean = tx.Linear(hidden_size, latent_size)
-        self.linear_std = tx.Linear(hidden_size, latent_size)
+        self.linear1 = tx.Linear(hidden_size)
+        self.linear_mean = tx.Linear(latent_size)
+        self.linear_std = tx.Linear(latent_size)
         self.next_key = tx.KeySeq()
         self.kl_loss = jnp.array(0.0)
 
@@ -68,13 +67,12 @@ class Decoder(tx.Module):
 
     def __init__(
         self,
-        latent_size: int,
         hidden_size: int,
         image_shape: tp.Sequence[int],
     ):
 
-        self.linear1 = tx.Linear(latent_size, hidden_size)
-        self.linear2 = tx.Linear(hidden_size, np.prod(image_shape))
+        self.linear1 = tx.Linear(hidden_size)
+        self.linear2 = tx.Linear(np.prod(image_shape))
         self.output_shape = image_shape
 
     def __call__(self, z: np.ndarray) -> np.ndarray:
@@ -98,8 +96,8 @@ class VAE(tx.Module):
         latent_size: int,
     ):
 
-        self.encoder = Encoder(image_shape, hidden_size, latent_size)
-        self.decoder = Decoder(latent_size, hidden_size, image_shape)
+        self.encoder = Encoder(hidden_size, latent_size)
+        self.decoder = Decoder(hidden_size, image_shape)
 
     def __call__(self, x):
         return self.decoder(self.encoder(x))
@@ -149,19 +147,23 @@ def main(
 ):
     image_shape = (28, 28)
 
+    # load data
+    dataset = load_dataset("mnist")
+    dataset.set_format("np")
+    X_train = dataset["train"]["image"]
+    X_test = dataset["test"]["image"]
+
+    X_train = (X_train > 0).astype(jnp.float32)
+    X_test = (X_test > 0).astype(jnp.float32)
+
     model = VAE(
         image_shape=image_shape,
         hidden_size=hidden_size,
         latent_size=latent_size,
-    ).init(42)
+    ).init(42, X_train[:4])
 
     optimizer = tx.Optimizer(optax.adam(1e-3))
     optimizer = optimizer.init(model.filter(tx.Parameter))
-
-    # load data
-    X_train, _1, X_test, _2 = dataget.image.mnist().get()
-    X_train = (X_train > 0).astype(jnp.float32)
-    X_test = (X_test > 0).astype(jnp.float32)
 
     print(model.tabulate(X_train[:batch_size]))
 
