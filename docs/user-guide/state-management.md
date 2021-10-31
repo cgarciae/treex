@@ -29,10 +29,7 @@ class Dropout(tx.Module):
         key, self.key = jax.random.split(self.key)
         ...
 ```
-Finally `
-
-
-Optimizer` also performs inplace updates inside the `update` method, here is a sketch of how it works:
+Finally `Optimizer` also performs inplace updates inside the `update` method, here is a sketch of how it works:
 
 ```python
 class Optimizer(tx.Module):
@@ -46,14 +43,16 @@ class Optimizer(tx.Module):
         )
         ...
 ```
+As you the the `opt_state` contains the Optax's optimizer state and is update inplace on every call to `update`.
+
 ## What is the catch?
 <!-- TODO: Add a list of rules to follow around jitted functions -->
 State management is one of the most challenging things in JAX because of its functional nature, however here it seems effortless. What is the catch? As always there are trade-offs to consider: 
 
-* The Pytree approach requires the user to be aware that if a Module is stateful it should propagate its state as output to jitted functions, on the other hand implementation and usage if very simple.
+* The Pytree approach requires the user to be aware that if a Module is stateful it should propagate its state by having mutated object be outputs of jitted functions, on the other hand implementation and usage if very simple.
 * Frameworks like Flax and Haiku are more explicit as to when state is updated but introduce a lot of complexity to do so.
 
-A standard solution to this problem is: **always output the Module to merge its state**. For example, a typical loss function that contains a stateful model would look like this:
+A standard solution to this problem is: **always output the Module to update its state**. For example, a typical loss function that contains a stateful model would look like this:
 
 ```python
 @partial(jax.value_and_grad, has_aux=True)
