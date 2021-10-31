@@ -28,15 +28,20 @@ nav:
     Extensions: api/Extensions.md
     FieldInfo: api/FieldInfo.md
     FieldMetadata: api/FieldMetadata.md
+    Filters: api/Filters.md
+    Flatten: api/Flatten.md
     FlaxModule: api/FlaxModule.md
     Hashable: api/Hashable.md
     Initializer: api/Initializer.md
     Inputs: api/Inputs.md
+    Key: api/Key.md
     KeySeq: api/KeySeq.md
     KindMixin: api/KindMixin.md
     Lambda: api/Lambda.md
     Linear: api/Linear.md
     Log: api/Log.md
+    Loss: api/Loss.md
+    LossAndLogs: api/LossAndLogs.md
     LossLog: api/LossLog.md
     MLP: api/MLP.md
     Map: api/Map.md
@@ -47,6 +52,7 @@ nav:
     Missing: api/Missing.md
     ModelState: api/ModelState.md
     Module: api/Module.md
+    ModuleMeta: api/ModuleMeta.md
     Named: api/Named.md
     Nothing: api/Nothing.md
     Opaque: api/Opaque.md
@@ -66,12 +72,15 @@ nav:
     add_field_info: api/add_field_info.md
     apply: api/apply.md
     compact: api/compact.md
+    compact_module: api/compact_module.md
     field: api/field.md
     filter: api/filter.md
     iter_split: api/iter_split.md
     map: api/map.md
     merge: api/merge.md
+    next_key: api/next_key.md
     node: api/node.md
+    rng_key: api/rng_key.md
     sequence: api/sequence.md
     static: api/static.md
     to_dict: api/to_dict.md
