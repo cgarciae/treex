@@ -2,13 +2,12 @@
 
 _A Pytree Module system for Deep Learning in JAX_
 
-* **Intuitive**: Modules are Python objects that respect Object-Oriented semantics and should make PyTorch / Keras users feel at home.
-* **Pytree-based**:  Modules are PyTrees that hold their own parameters and can be used with vanilla `jit`, `grad`, `vmap`, the `tree_*` family, etc.
-* **Succint**: Treex Module's leverage shape inference and a hooks mechanism (`@compact`) to reduce boilerplate.
+* 💡 **Intuitive**: Modules contain their own parameters and respect Object Oriented semantics like in PyTorch and Keras.
+* 🌳 **Pytree-based**:  Modules are Pytrees whos leaves are its parameters, meaning they are fully compatible with `jit`, `grad`, `vmap`, etc.
 
-Treex is implemented on top of [Treeo](https://github.com/cgarciae/treeo), Treex reexports all of Treeo's public API for convenience.
+Treex is implemented on top of [Treeo](https://github.com/cgarciae/treeo) and reexports all of its API for convenience.
 
-[Documentation](https://cgarciae.github.io/treex) | [User Guide](https://cgarciae.github.io/treex/user-guide/intro)
+[Getting Started](#getting-started) | [User Guide](https://cgarciae.github.io/treex/user-guide/intro) | [Examples](#examples) |  [Documentation](https://cgarciae.github.io/treex)
 
 ## What is included?
 * A base `Module` class.
@@ -17,6 +16,9 @@ Treex is implemented on top of [Treeo](https://github.com/cgarciae/treeo), Treex
 * A `metrics` module with common metrics.
 * An `Optimizer` class that can wrap any optax optimizer.
 ## Why Treex?
+<details>
+<summary>Show</summary><br>
+
 Despite all JAX benefits, current Module systems are not intuitive to new users and add additional complexity not present in frameworks like PyTorch or Keras. Treex takes inspiration from S4TF and delivers an intuitive experience using JAX Pytree infrastructure.
 
 <details>
@@ -31,23 +33,13 @@ Currently we have many alternatives like Flax, Haiku, Objax, that have one or mo
 * Other Pytree-based approaches like Parallax and Equinox do not have a total state management solution to handle complex states as encountered in Flax. Treex has the Filter and Update API, which is very expressive and can effectively handle systems with a complex state.
 
 </details>
+</details>
 
 ## Installation
 Install using pip:
 ```bash
 pip install treex
 ```
-
-## Status
-Treex is in an early stage, things might brake between versions but we will respect semanting versioning. Since Treex layers are numerically equivalent to Flax, it borrows some maturity and yields more confidence over its results. Feedback is much appreciated.
-
-**Roadmap**:
-
-- Wrap all Flax Linen Modules
-- Implement more layers, losses, and metrics.
-- Create applications and pretrained Modules.
-
-Contributions are welcomed!
 
 
 ## Getting Started
@@ -80,7 +72,7 @@ def loss_fn(model: tx.MLP, x, y):
     # forward is a simple call
     preds = model(x)
     # MSE
-    return jnp.mean((preds - y) ** 2)
+    return ((preds - y) ** 2).mean()
 
 
 
@@ -98,7 +90,10 @@ for step in range(500):
 model = model.eval()
 preds = model(x)
 ```
-#### Creating Custom Modules
+#### Custom Modules
+<details>
+<summary>Show</summary><br>
+
 Modules are Treeo `Tree`s, which are Pytrees. When creating core layers you often mark fields that will contain state that JAX should be aware as `nodes` by assigning class variables to the output of functions like `tx.Parameter.node()`:
 
 ```python
@@ -115,7 +110,7 @@ class Linear(tx.Module):
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
         # init will call forward, we can know if we are inside it
         if self.initializing():
-            # `next_key` only available on init
+            # `next_key` only available during `init`
             key = tx.next_key() 
             # leverage shape inference
             self.w = jax.random.uniform(
@@ -129,15 +124,19 @@ class Linear(tx.Module):
 model = Linear(10).init(key=42, inputs=x)
 ```
 Node field types (e.g. `tx.Parameter`) are called Kinds and Treex exports a whole family of Kinds which serve for differente purposes such as holding non-differentiable state (`tx.BatchStats`), metric's state (`tx.MetricState`), logging, etc. Checkout the [kinds](https://cgarciae.github.io/treex/user-guide/kinds) section for more information.
+</details>
 
 #### Composite Modules
+<details>
+<summary>Show</summary><br>
+
 Composite Modules usually hold and call other Modules within them, while they would be instantiate inside `__init__` and used later in `__call__` like in Pytorch / Keras, in Treex you usually leverage the `@tx.compact` decorator over the `__call__` method to define the submodules inline.
 ```python
 class MLP(tx.Module):
     def __init__(self, features: Sequence[int]):
         self.features = features
 
-    # compact lets you define submodules on the fly (like in Flax)
+    # compact lets you define submodules on the fly
     @tx.compact
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
         for units in self.features[:-1]:
@@ -150,44 +149,28 @@ model = MLP([32, 10]).init(key=42, inputs=x)
 ```
 Under the hood all calls to submodule constructors (e.g. `Linear(...)`) inside `compact` are assigned to fields in the parent Module (`MLP`) so they are part of the same Pytree, their field names are available under the `._subtrees` attribute. `compact` must always define submodules in the same order.
 
+</details>
+
+## Status
+Treex is in an early stage, things might brake between versions but we will respect semanting versioning. Since Treex layers are numerically equivalent to Flax, it borrows some maturity and yields more confidence over its results. Feedback is much appreciated.
+
+**Roadmap**:
+
+- Wrap all Flax Linen Modules
+- Implement more layers, losses, and metrics.
+- Create applications and pretrained Modules.
+
+Contributions are welcomed!
+
+## Sponsors 💚
+* [Quansight](https://www.quansight.com) - paid development time
+
 ## Examples
-Checkout the [examples](examples) directory for more detailed examples. Here are a few additional toy examples:
-
-#### A Stateful Module
-Here is an example of creating a stateful module of a `RollingMean` metric and using them with `jax.jit`. For a real use cases use the metrics inside `treex.metrics`.
-
-```python
-class RollingMean(tx.Module):
-    count: jnp.ndarray = tx.State.node()
-    total: jnp.ndarray = tx.State.node()
-
-    def __init__(self):
-        self.count = jnp.array(0, dtype=jnp.int32)
-        self.total = jnp.array(0.0, dtype=jnp.float32)
-
-    def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
-        self.count += np.prod(x.shape)
-        self.total += x.sum()
-
-        return self.total / self.count
-
-@jax.jit
-def update(x: jnp.ndarray, metric: RollingMean) -> Tuple[jnp.ndarray, RollingMean]:
-    mean = metric(x)
-    return mean, metric # return mean value and updated metric
+Checkout the [/examples](examples) directory for more detailed examples. Here are a few additional toy examples:
 
 
-metric = RollingMean()
-
-for i in range(10):
-    x = np.random.uniform(-1, 1, size=(100, 1))
-    mean, metric = update(x, metric)
-
-print(mean)
-```
-
-#### Linear Regression from Scratch
-This is a realistic example of how Treex is used.
+#### Linear Regression
+This is a simple but realistic example of how Treex is used.
 
 ```python
 from functools import partial
@@ -203,7 +186,7 @@ x = np.random.uniform(size=(500, 1))
 y = 1.4 * x - 0.3 + np.random.normal(scale=0.1, size=(500, 1))
 
 
-# try to only differentiate w.r.t. parameters
+# differentiate only w.r.t. parameters
 def loss_fn(params, model, x, y):
     # merge params into model
     model = model.merge(params)
@@ -252,4 +235,37 @@ plt.scatter(x, y, c="k", label="data")
 plt.plot(X_test, preds, c="b", linewidth=2, label="prediction")
 plt.legend()
 plt.show()
+```
+
+#### A Stateful Module
+Here is an example of creating a stateful module of a `RollingMean` metric and using them with `jax.jit`. For a real use cases use the metrics inside `treex.metrics`.
+
+```python
+class RollingMean(tx.Module):
+    count: jnp.ndarray = tx.State.node()
+    total: jnp.ndarray = tx.State.node()
+
+    def __init__(self):
+        self.count = jnp.array(0, dtype=jnp.int32)
+        self.total = jnp.array(0.0, dtype=jnp.float32)
+
+    def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
+        self.count += np.prod(x.shape)
+        self.total += x.sum()
+
+        return self.total / self.count
+
+@jax.jit
+def update(x: jnp.ndarray, metric: RollingMean) -> Tuple[jnp.ndarray, RollingMean]:
+    mean = metric(x)
+    return mean, metric # return mean value and updated metric
+
+
+metric = RollingMean()
+
+for i in range(10):
+    x = np.random.uniform(-1, 1, size=(100, 1))
+    mean, metric = update(x, metric)
+
+print(mean)
 ```
