@@ -99,7 +99,6 @@ class Lambda(Module):
         """
 
         self.f = f
-        self.f = f
 
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
         """

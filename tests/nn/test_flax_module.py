@@ -19,10 +19,10 @@ class TestFlaxModule:
 
         x = np.ones((2, 5, 8), dtype=np.float32)
         flax_module = SomeModule()
-        treex_module = tx.FlaxModule(
-            flax_module,
-            sample_inputs=tx.Inputs(x, training=True),
-        ).init(42)
+        treex_module = tx.FlaxModule(flax_module).init(
+            42,
+            inputs=tx.Inputs(x, training=False),
+        )
 
         y = treex_module(x, training=True)
 
@@ -50,11 +50,10 @@ class TestFlaxModule:
             rng,
         )
 
-        treex_module = tx.FlaxModule(
-            SomeModule(),
-            sample_inputs=tx.Inputs(x, training=True),
-            variables=variables,
-        ).init(42)
+        treex_module = tx.FlaxModule(SomeModule(), variables=variables,).init(
+            42,
+            inputs=tx.Inputs(x, training=False, rng=rng),
+        )
 
         y_treex = treex_module(x, training, rng)
         y_treex = treex_module(x, training, rng)
@@ -110,10 +109,17 @@ class TestFlaxModule:
 
         treex_module = tx.FlaxModule(
             flax_module,
-            sample_inputs=tx.Inputs(x, training=True),
             variables=variables,
-        ).init(42)
+        ).init(42, inputs=tx.Inputs(x, training=False))
         flax_key = treex_module.next_key.key
+
+        assert all(
+            np.allclose(a, b)
+            for a, b in zip(
+                jax.tree_leaves(variables["batch_stats"]),
+                jax.tree_leaves(treex_module.filter(tx.BatchStat)),
+            )
+        )
 
         # step 1
         next_key, flax_key = tx.iter_split(flax_key)

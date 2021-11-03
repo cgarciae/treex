@@ -7,7 +7,7 @@ import treeo as to
 from flax.linen import normalization as flax_module
 
 from treex import types, utils
-from treex.module import Module
+from treex.module import Module, next_key
 
 
 class BatchNorm(Module):
@@ -31,7 +31,6 @@ class BatchNorm(Module):
     momentum: jnp.ndarray = to.node()
 
     # props
-    features_in: int
     axis: int
     epsilon: float
     dtype: flax_module.Dtype
@@ -50,7 +49,7 @@ class BatchNorm(Module):
 
     def __init__(
         self,
-        features_in: int,
+        *,
         axis: int = -1,
         momentum: tp.Union[float, jnp.ndarray] = 0.99,
         epsilon: float = 1e-5,
@@ -91,7 +90,6 @@ class BatchNorm(Module):
                 for more details.
         """
 
-        self.features_in = features_in
         self.axis = axis
         self.momentum = jnp.asarray(momentum)
         self.epsilon = epsilon
@@ -124,30 +122,6 @@ class BatchNorm(Module):
             axis_index_groups=self.axis_index_groups,
         )
 
-    def rng_init(self, key: jnp.ndarray):
-
-        batch_size = 10  # random
-
-        shape = [batch_size] * (abs(self.module.axis) + 1)  # overcompensate
-        shape[self.module.axis] = self.features_in
-
-        x = jax.random.uniform(key, shape=shape)
-
-        variables = self.module.init(key, x, use_running_average=True).unfreeze()
-
-        # Extract collections
-        if "params" in variables:
-            params = variables["params"]
-
-            if self.use_bias:
-                self.bias = params["bias"]
-
-            if self.use_scale:
-                self.scale = params["scale"]
-
-        self.mean = variables["batch_stats"]["mean"]
-        self.var = variables["batch_stats"]["var"]
-
     def __call__(
         self, x: jnp.ndarray, use_running_average: tp.Optional[bool] = None
     ) -> jnp.ndarray:
@@ -161,7 +135,25 @@ class BatchNorm(Module):
         Returns:
             Normalized inputs (the same shape as inputs).
         """
-        assert self.initialized, "Module not initialized"
+        if self.initializing():
+            variables = self.module.init(
+                next_key(),
+                x,
+                use_running_average=True,
+            ).unfreeze()
+
+            # Extract collections
+            if "params" in variables:
+                params = variables["params"]
+
+                if self.use_bias:
+                    self.bias = params["bias"]
+
+                if self.use_scale:
+                    self.scale = params["scale"]
+
+            self.mean = variables["batch_stats"]["mean"]
+            self.var = variables["batch_stats"]["var"]
 
         params = {}
 
@@ -183,7 +175,7 @@ class BatchNorm(Module):
         training = (
             not use_running_average
             if use_running_average is not None
-            else self.training and not self.frozen
+            else self.training and not self.frozen and self.initialized
         )
 
         # call apply

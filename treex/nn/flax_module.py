@@ -17,7 +17,6 @@ class FlaxModule(Module):
 
     # static
     module: to.Hashable[flax.linen.Module]
-    sample_inputs: types.Inputs
     mutable: tp.Tuple[str, ...]
     rngs: tp.Tuple[str, ...]
     init_rngs: tp.Tuple[str, ...]
@@ -32,7 +31,6 @@ class FlaxModule(Module):
     def __init__(
         self,
         module: flax.linen.Module,
-        sample_inputs: types.InputLike = (),
         mutable: tp.Sequence[str] = ("batch_stats", "cache"),
         rngs: tp.Sequence[str] = ("dropout",),
         init_rngs: tp.Sequence[str] = ("params",),
@@ -43,7 +41,6 @@ class FlaxModule(Module):
         self.mutable = tuple(mutable)
         self.rngs = tuple(rngs)
         self.init_rngs = tuple(init_rngs)
-        self.sample_inputs = types.Inputs.from_value(sample_inputs)
         self.next_key = KeySeq()
         self.params = None
         self.batch_stats = None
@@ -53,17 +50,17 @@ class FlaxModule(Module):
         if variables is not None:
             self._update_variables(variables)
 
-    def rng_init(self, key: jnp.ndarray) -> None:
-        if self.variables is None:
-            assert self.sample_inputs is not None
-            rngs = self._get_rngs(self.rngs + self.init_rngs)
-            variables = self.module.value.init(
-                rngs, *self.sample_inputs.args, **self.sample_inputs.kwargs
-            )
-            self._update_variables(variables)
-            self.sample_inputs = None
-
     def __call__(self, *args, **kwargs):
+
+        if not self.initialized and self.variables is None:
+            rngs = self._get_rngs(self.rngs + self.init_rngs)
+            _variables = self.module.value.init(
+                rngs,
+                *args,
+                **kwargs,
+            )
+            self._update_variables(_variables)
+
         assert self.variables is not None
         variables = self.variables.copy()
 
@@ -81,7 +78,7 @@ class FlaxModule(Module):
         output, updates = self.module.value.apply(
             variables,
             *args,
-            mutable=self.mutable,
+            mutable=self.mutable if self.initialized else [],
             rngs=rngs,
             **kwargs,
         )

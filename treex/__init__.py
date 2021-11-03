@@ -1,4 +1,4 @@
-__version__ = "0.4.0"
+__version__ = "0.6.1"
 
 from flax.linen import initializers
 from treeo import *

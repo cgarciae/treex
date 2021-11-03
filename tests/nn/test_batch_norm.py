@@ -66,7 +66,6 @@ class BatchNormTest(unittest.TestCase):
         )
         treex_module = (
             tx.BatchNorm(
-                features_in=shape[axis],
                 axis=axis,
                 momentum=momentum,
                 epsilon=epsilon,
@@ -81,7 +80,7 @@ class BatchNormTest(unittest.TestCase):
 
         flax_key, _ = tx.iter_split(key)  # emulate init split
         variables = flax_module.init(flax_key, x)
-        treex_module = treex_module.init(key)
+        treex_module = treex_module.init(key, x)
 
         if use_bias:
             assert np.allclose(variables["params"]["bias"], treex_module.bias)
@@ -110,7 +109,7 @@ class BatchNormTest(unittest.TestCase):
 
     def test_call(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.BatchNorm(2).init(42)
+        module = tx.BatchNorm().init(42, x)
 
         y = module(x)
 
@@ -118,14 +117,15 @@ class BatchNormTest(unittest.TestCase):
 
     def test_tree(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.BatchNorm(2).init(42)
+        module = tx.BatchNorm().init(42, x)
 
         flat = jax.tree_leaves(module)
 
         assert len(flat) == 5
 
     def test_slice(self):
-        module = tx.BatchNorm(2).init(42)
+        x = np.random.uniform(size=(10, 2))
+        module = tx.BatchNorm().init(42, x)
 
         flat = jax.tree_leaves(module.filter(tx.Parameter))
         assert len(flat) == 2
@@ -140,7 +140,7 @@ class BatchNormTest(unittest.TestCase):
 
     def test_jit(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.BatchNorm(2).init(42)
+        module = tx.BatchNorm().init(42, x)
 
         @jax.jit
         def f(module, x):
@@ -166,7 +166,7 @@ class BatchNormTest(unittest.TestCase):
 
     def test_eval(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.BatchNorm(2).init(42)
+        module = tx.BatchNorm().init(42, x)
 
         @jax.jit
         def f(module, x):

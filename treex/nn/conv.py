@@ -6,7 +6,7 @@ import numpy as np
 from flax.linen import linear as flax_module
 
 from treex import types
-from treex.module import Module
+from treex.module import Module, next_key
 
 
 class Conv(Module):
@@ -25,7 +25,6 @@ class Conv(Module):
     bias: tp.Optional[jnp.ndarray] = types.Parameter.node()
 
     # props
-    features_in: int
     features_out: int
     kernel_size: tp.Union[int, tp.Iterable[int]]
     strides: tp.Optional[tp.Iterable[int]]
@@ -47,9 +46,9 @@ class Conv(Module):
 
     def __init__(
         self,
-        features_in: int,
         features_out: int,
         kernel_size: tp.Union[int, tp.Iterable[int]],
+        *,
         strides: tp.Optional[tp.Iterable[int]] = None,
         padding: tp.Union[str, tp.Iterable[tp.Tuple[int, int]]] = "SAME",
         input_dilation: tp.Optional[tp.Iterable[int]] = None,
@@ -69,7 +68,6 @@ class Conv(Module):
     ):
         """
         Arguments:
-            features_in: the number of input features.
             features_out: number of convolution filters.
             kernel_size: shape of the convolutional kernel. For 1D convolution,
                 the kernel size can be passed as an integer. For all other cases, it must
@@ -97,7 +95,6 @@ class Conv(Module):
             bias_init: initializer for the bias.
         """
 
-        self.features_in = features_in
         self.features_out = features_out
         self.kernel_size = kernel_size
         self.strides = strides
@@ -131,30 +128,7 @@ class Conv(Module):
             bias_init=self.bias_init,
         )
 
-    def rng_init(self, key: jnp.ndarray):
-        if isinstance(self.module.kernel_size, int):
-            ndim = 1
-            mindim = self.module.kernel_size
-        else:
-            ndim = len(list(self.module.kernel_size))
-            mindim = min(self.module.kernel_size)
-
-        mindim *= 2
-
-        shape = list(range(mindim, mindim + ndim + 1))
-        shape[-1] = self.features_in
-
-        x = jax.random.uniform(key, shape=shape)
-
-        variables = self.module.init(key, x).unfreeze()
-
-        # Extract collections
-        self.kernel = variables["params"]["kernel"]
-
-        if self.use_bias:
-            self.bias = variables["params"]["bias"]
-
-    def __call__(self, x: np.ndarray) -> jnp.ndarray:
+    def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
         """Applies a convolution to the inputs.
 
         Arguments:
@@ -163,13 +137,23 @@ class Conv(Module):
         Returns:
             The convolved data.
         """
-        assert self.initialized, "Module not initialized"
+        if self.initializing():
+            variables = self.module.init({"params": next_key()}, x)
 
-        params = dict(kernel=self.kernel)
+            # Extract collections
+            params = variables["params"].unfreeze()
+
+            self.kernel = params["kernel"]
+
+            if self.use_bias:
+                self.bias = params["bias"]
+
+        assert self.kernel is not None
+        params = {"kernel": self.kernel}
 
         if self.use_bias:
+            assert self.bias is not None
             params["bias"] = self.bias
 
-        output = self.module.apply(dict(params=params), x)
-
+        output = self.module.apply({"params": params}, x)
         return tp.cast(jnp.ndarray, output)

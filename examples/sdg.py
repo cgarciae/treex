@@ -13,9 +13,7 @@ class MLP(tx.Module):
 
     def __init__(self, features: Sequence[int]):
 
-        self.layers = [
-            tx.Linear(din, dout) for din, dout in zip(features[:-1], features[1:])
-        ]
+        self.layers = [tx.Linear(dout) for dout in features]
 
     def __call__(self, x):
         for linear in self.layers[:-1]:
@@ -23,10 +21,10 @@ class MLP(tx.Module):
         return self.layers[-1](x)
 
 
-model = MLP([1, 12, 8, 1]).init(42)
-
 x = np.random.uniform(-1, 1, size=(100, 1))
 y = 1.4 * x ** 2 - 0.3 + np.random.normal(scale=0.1, size=(100, 1))
+
+model = MLP([12, 8, 1]).init(42, x)
 
 
 @jax.jit

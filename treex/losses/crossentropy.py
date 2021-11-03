@@ -2,42 +2,73 @@ import typing as tp
 
 import jax
 import jax.numpy as jnp
+import optax
 
 from treex import types, utils
-from treex.losses.categorical_crossentropy import categorical_crossentropy
 from treex.losses.loss import Loss, Reduction
 
 
-def sparse_categorical_crossentropy(
+def smooth_labels(
+    target: jnp.ndarray,
+    smoothing: jnp.ndarray,
+) -> jnp.ndarray:
+    smooth_positives = 1.0 - smoothing
+    smooth_negatives = smoothing / target.shape[-1]
+    return smooth_positives * target + smooth_negatives
+
+
+def crossentropy(
     target: jnp.ndarray,
     preds: jnp.ndarray,
-    from_logits: bool = False,
+    *,
+    binary: bool = False,
+    from_logits: bool = True,
+    label_smoothing: tp.Optional[float] = None,
     check_bounds: bool = True,
 ) -> jnp.ndarray:
 
     n_classes = preds.shape[-1]
 
-    if from_logits:
-        preds = jax.nn.log_softmax(preds)
-        loss = -jnp.take_along_axis(preds, target[..., None], axis=-1)[..., 0]
+    if target.ndim == preds.ndim - 1:
+        if target.shape != preds.shape[:-1]:
+            raise ValueError(
+                f"Target shape '{target.shape}' does not match preds shape '{preds.shape}'"
+            )
+        target = jax.nn.one_hot(target, n_classes)
     else:
-        # select output value
-        preds = jnp.take_along_axis(preds, target[..., None], axis=-1)[..., 0]
+        if target.ndim != preds.ndim:
+            raise ValueError(
+                f"Target shape '{target.shape}' does not match preds shape '{preds.shape}'"
+            )
 
-        # calculate log
-        preds = jnp.maximum(preds, types.EPSILON)
-        preds = jnp.log(preds)
-        loss = -preds
+    if label_smoothing is not None:
+        target = optax.smooth_labels(target, label_smoothing)
 
-    if check_bounds:
-        # set NaN where target is negative or larger/equal to the number of preds channels
-        loss = jnp.where(target < 0, jnp.nan, loss)
-        loss = jnp.where(target >= n_classes, jnp.nan, loss)
+    if from_logits:
+        if binary:
+            loss = optax.sigmoid_binary_cross_entropy(preds, target).mean(axis=-1)
+        else:
+            loss = optax.softmax_cross_entropy(preds, target)
+    else:
+        preds = jnp.clip(preds, types.EPSILON, 1.0 - types.EPSILON)
+
+        if binary:
+            loss = target * jnp.log(preds)  # + types.EPSILON)
+            loss += (1 - target) * jnp.log(1 - preds)  # + types.EPSILON)
+            loss = -loss.mean(axis=-1)
+        else:
+            loss = -(target * jnp.log(preds)).sum(axis=-1)
+
+    # TODO: implement check_bounds
+    # if check_bounds:
+    #     # set NaN where target is negative or larger/equal to the number of preds channels
+    #     loss = jnp.where(target < 0, jnp.nan, loss)
+    #     loss = jnp.where(target >= n_classes, jnp.nan, loss)
 
     return loss
 
 
-class SparseCategoricalCrossentropy(Loss):
+class Crossentropy(Loss):
     """
     Computes the crossentropy loss between the target and predictions.
 
@@ -57,7 +88,7 @@ class SparseCategoricalCrossentropy(Loss):
     preds = jnp.array([[0.05, 0.95, 0], [0.1, 0.8, 0.1]])
 
     # Using 'auto'/'sum_over_batch_size' reduction type.
-    scce = tx.losses.SparseCategoricalCrossentropy()
+    scce = tx.losses.Crossentropy()
     result = scce(target, preds)  # 1.177
     assert np.isclose(result, 1.177, rtol=0.01)
 
@@ -66,14 +97,14 @@ class SparseCategoricalCrossentropy(Loss):
     assert np.isclose(result, 0.814, rtol=0.01)
 
     # Using 'sum' reduction type.
-    scce = tx.losses.SparseCategoricalCrossentropy(
+    scce = tx.losses.Crossentropy(
         reduction=tx.losses.Reduction.SUM
     )
     result = scce(target, preds)  # 2.354
     assert np.isclose(result, 2.354, rtol=0.01)
 
     # Using 'none' reduction type.
-    scce = tx.losses.SparseCategoricalCrossentropy(
+    scce = tx.losses.Crossentropy(
         reduction=tx.losses.Reduction.NONE
     )
     result = scce(target, preds)  # [0.0513, 2.303]
@@ -85,7 +116,7 @@ class SparseCategoricalCrossentropy(Loss):
     ```python
     model = elegy.Model(
         module_fn,
-        loss=tx.losses.SparseCategoricalCrossentropy(),
+        loss=tx.losses.Crossentropy(),
         metrics=elegy.metrics.Accuracy(),
         optimizer=optax.adam(1e-3),
     )
@@ -95,12 +126,15 @@ class SparseCategoricalCrossentropy(Loss):
 
     def __init__(
         self,
-        from_logits: bool = False,
+        *,
+        from_logits: bool = True,
+        binary: bool = False,
+        label_smoothing: tp.Optional[float] = None,
         reduction: tp.Optional[Reduction] = None,
+        check_bounds: bool = True,
         weight: tp.Optional[float] = None,
         on: tp.Optional[types.IndexLike] = None,
-        check_bounds: tp.Optional[bool] = True,
-        **kwargs
+        name: tp.Optional[str] = None,
     ):
         """
         Initializes `SparseCategoricalCrossentropy` instance.
@@ -125,10 +159,12 @@ class SparseCategoricalCrossentropy(Loss):
                 if this is the case. If `False`, the check is disabled and the loss may contain
                 incorrect values.
         """
-        super().__init__(reduction=reduction, weight=weight, on=on, **kwargs)
+        super().__init__(reduction=reduction, weight=weight, on=on, name=name)
 
         self._from_logits = from_logits
         self._check_bounds = check_bounds
+        self._binary = binary
+        self._label_smoothing = label_smoothing
 
     def call(
         self, target, preds, sample_weight: tp.Optional[jnp.ndarray] = None
@@ -153,9 +189,11 @@ class SparseCategoricalCrossentropy(Loss):
             Loss values per sample.
         """
 
-        return sparse_categorical_crossentropy(
+        return crossentropy(
             target,
             preds,
+            binary=self._binary,
             from_logits=self._from_logits,
+            label_smoothing=self._label_smoothing,
             check_bounds=self._check_bounds,
         )
