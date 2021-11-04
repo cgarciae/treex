@@ -21,7 +21,7 @@ def _mean_absolute_error(y_pred: jnp.ndarray, y_true: jnp.ndarray) -> jnp.ndarra
     return jnp.mean(jnp.abs(y_pred - y_true), axis=-1)
 
 
-class MeanAbsolutError(Mean):
+class MeanAbsoluteError(Mean):
     def __init__(
         self,
         on: tp.Optional[types.IndexLike] = None,
