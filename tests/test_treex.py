@@ -2,6 +2,7 @@ import typing as tp
 from dataclasses import dataclass
 from inspect import istraceback, signature
 
+import cloudpickle
 import jax
 import jax.numpy as jnp
 import jax.tree_util
@@ -642,6 +643,9 @@ class TestTreex:
         module = M()
 
         assert module._initialized is False
+
+    def test_cloudpickle(self):
+        cloudpickle.dumps(tx.Linear(10))
 
 
 @dataclass
