@@ -147,3 +147,12 @@ class Filters:
             filters: additional filters passed to `filter`.
         """
         return to.filter(self, types.Log, *filters)
+
+    def caches(self: A, *filters: Filter) -> A:
+        """
+        Returns a copy of the Module with only tx.Cache TreeParts, alias for `filter(tx.Cache)`.
+
+        Arguments:
+            filters: additional filters passed to `filter`.
+        """
+        return to.filter(self, types.Cache, *filters)
