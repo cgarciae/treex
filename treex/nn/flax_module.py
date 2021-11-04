@@ -35,6 +35,7 @@ class FlaxModule(Module):
         rngs: tp.Sequence[str] = ("dropout",),
         init_rngs: tp.Sequence[str] = ("params",),
         variables: tp.Optional[FrozenDict] = None,
+        method: tp.Optional[str] = None,
     ) -> None:
 
         self.module = to.Hashable(module)
@@ -46,20 +47,31 @@ class FlaxModule(Module):
         self.batch_stats = None
         self.cache = None
         self.variables = None
+        self.method = method if method is not None else "__call__"
 
         if variables is not None:
             self._update_variables(variables)
 
     def __call__(self, *args, **kwargs):
 
-        if not self.initialized and self.variables is None:
+        method: tp.Callable = getattr(self.module.value, self.method)
+
+        if "training" not in kwargs:
+            arg_names = utils._function_argument_names(method)
+
+            if arg_names is not None and "training" in arg_names:
+                kwargs["training"] = self.training if not self.initializing() else False
+
+        if self.initializing() and self.variables is None:
             rngs = self._get_rngs(self.rngs + self.init_rngs)
-            _variables = self.module.value.init(
+            output, _variables = self.module.value.init_with_output(
                 rngs,
                 *args,
+                method=method,
                 **kwargs,
             )
             self._update_variables(_variables)
+            return output
 
         assert self.variables is not None
         variables = self.variables.copy()
@@ -80,6 +92,7 @@ class FlaxModule(Module):
             *args,
             mutable=self.mutable if self.initialized else [],
             rngs=rngs,
+            method=method,
             **kwargs,
         )
         variables.update(updates.unfreeze())
