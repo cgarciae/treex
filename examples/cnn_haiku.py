@@ -67,9 +67,6 @@ def predict(model: Model, x: jnp.ndarray):
     return model(x).argmax(axis=1)
 
 
-tx.BatchNorm
-
-
 class CNN(hk.Module):
     def __call__(self, x: jnp.ndarray, training: bool):
         # Normalize input
