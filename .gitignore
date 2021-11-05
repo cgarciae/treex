@@ -153,3 +153,5 @@ data
 # rsync
 .git/
 tmp/
+
+.python-version

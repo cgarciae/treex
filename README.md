@@ -2,6 +2,8 @@
 
 _A Pytree Module system for Deep Learning in JAX_
 
+#### Main Features
+
 * 💡 **Intuitive**: Modules contain their own parameters and respect Object Oriented semantics like in PyTorch and Keras.
 * 🌳 **Pytree-based**:  Modules are Pytrees whose leaves are its parameters, meaning they are fully compatible with `jit`, `grad`, `vmap`, etc.
 

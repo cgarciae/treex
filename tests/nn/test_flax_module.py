@@ -21,15 +21,15 @@ class TestFlaxModule:
         flax_module = SomeModule()
         treex_module = tx.FlaxModule(flax_module).init(
             42,
-            inputs=tx.Inputs(x, training=False),
+            inputs=tx.Inputs(x),
         )
 
-        y = treex_module(x, training=True)
+        y = treex_module(x)
 
     def test_pretrained_flax_module(self):
         class SomeModule(flax.linen.Module):
             @flax.linen.compact
-            def __call__(self, x, training, rng):
+            def __call__(self, x, rng, training):
                 x = flax.linen.Dense(16)(x)
                 x = flax.linen.BatchNorm()(x, use_running_average=not training)
                 x = flax.linen.Dropout(0.5)(x, deterministic=not training, rng=rng)
@@ -42,35 +42,52 @@ class TestFlaxModule:
         rng = tx.Key(42)
 
         flax_module = SomeModule()
-        params_key, dropout_key = tx.iter_split(tx.Key(0))
+        flax_key, _ = tx.iter_split(tx.Key(42))
+        flax_key, _ = tx.iter_split(flax_key)
+        params_key, dropout_key = tx.iter_split(flax_key)
         variables = flax_module.init(
             {"params": params_key, "dropout": dropout_key},
             x,
-            training,
             rng,
+            False,
         )
 
         treex_module = tx.FlaxModule(SomeModule(), variables=variables,).init(
             42,
-            inputs=tx.Inputs(x, training=False, rng=rng),
+            inputs=tx.Inputs(x, rng),
         )
 
-        y_treex = treex_module(x, training, rng)
-        y_treex = treex_module(x, training, rng)
+        assert all(
+            np.allclose(a, b)
+            for a, b in zip(
+                jax.tree_leaves(variables["params"]),
+                jax.tree_leaves(treex_module.filter(tx.Parameter)),
+            )
+        )
+        assert all(
+            np.allclose(a, b)
+            for a, b in zip(
+                jax.tree_leaves(variables["batch_stats"]),
+                jax.tree_leaves(treex_module.filter(tx.BatchStat)),
+            )
+        )
+
+        y_treex = treex_module(x, rng)
+        y_treex = treex_module(x, rng)
 
         y_flax, updates = flax_module.apply(
             variables,
             x,
-            training,
             rng,
+            training,
             mutable=["batch_stats"],
         )
         variables = variables.copy(updates)
         y_flax, updates = flax_module.apply(
             variables,
             x,
-            training,
             rng,
+            training,
             mutable=["batch_stats"],
         )
         variables = variables.copy(updates)
@@ -131,7 +148,7 @@ class TestFlaxModule:
             mutable=["batch_stats"],
         )
         variables = variables.copy(updates)
-        y_treex = treex_module(x, training)
+        y_treex = treex_module(x)
 
         assert np.allclose(flax_key, treex_module.next_key.key)
 
@@ -145,7 +162,7 @@ class TestFlaxModule:
             mutable=["batch_stats"],
         )
         variables = variables.copy(updates)
-        y_treex = treex_module(x, training)
+        y_treex = treex_module(x)
         assert np.allclose(flax_key, treex_module.next_key.key)
 
         assert np.allclose(y_treex, y_flax)
@@ -168,6 +185,6 @@ class TestFlaxModule:
         )
         # variables = variables.copy(updates)
         treex_module = treex_module.eval()
-        y_treex = treex_module(x, training)
+        y_treex = treex_module(x)
 
         assert np.allclose(y_treex, y_flax)

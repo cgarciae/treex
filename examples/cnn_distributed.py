@@ -135,7 +135,7 @@ def main(
         tx.Dropout(0.1),
         jax.nn.relu,
         tx.Conv(128, [3, 3], strides=[2, 2]),
-        partial(jnp.mean, axis=[1, 2]),
+        partial(jnp.mean, axis=(1, 2)),
         tx.Linear(10),
     )
     optimizer = tx.Optimizer(optax.adamw(1e-3))
