@@ -116,7 +116,7 @@ def main(
     X_train = X_train[..., None]
     X_test = X_test[..., None]
 
-    model = tx.HaikuModule(forward).init(42, inputs=tx.Inputs(X_train[:32]))
+    model = tx.HaikuModule(forward).init(42, inputs=X_train[:32])
 
     print(model.tabulate())
 
