@@ -22,10 +22,10 @@ class FlaxModule(Module):
     init_rngs: tp.Tuple[str, ...]
 
     # dynamic
-    _params: tp.Optional[tp.Dict[str, tp.Any]] = types.Parameter.node()
-    _batch_stats: tp.Optional[tp.Dict[str, tp.Any]] = types.BatchStat.node()
-    _cache: tp.Optional[tp.Dict[str, tp.Any]] = types.Cache.node()
-    _variables: tp.Union[tp.Dict[str, tp.Dict[str, tp.Any]], None] = types.Log.node()
+    params_: tp.Optional[tp.Dict[str, tp.Any]] = types.Parameter.node()
+    batch_stats_: tp.Optional[tp.Dict[str, tp.Any]] = types.BatchStat.node()
+    cache_: tp.Optional[tp.Dict[str, tp.Any]] = types.Cache.node()
+    variables_: tp.Union[tp.Dict[str, tp.Dict[str, tp.Any]], None] = types.Log.node()
     next_key: KeySeq
 
     def __init__(
@@ -43,10 +43,10 @@ class FlaxModule(Module):
         self.rngs = tuple(rngs)
         self.init_rngs = tuple(init_rngs)
         self.next_key = KeySeq()
-        self._params = None
-        self._batch_stats = None
-        self._cache = None
-        self._variables = None
+        self.params_ = None
+        self.batch_stats_ = None
+        self.cache_ = None
+        self.variables_ = None
         self.method = method if method is not None else "__call__"
 
         if variables is not None:
@@ -62,7 +62,7 @@ class FlaxModule(Module):
             if arg_names is not None and "training" in arg_names:
                 kwargs["training"] = self.training if self.initialized else False
 
-        if self.initializing() and self._variables is None:
+        if self.initializing() and self.variables_ is None:
             rngs = self._get_rngs(self.rngs + self.init_rngs)
             output, _variables = self.module.value.init_with_output(
                 rngs,
@@ -73,17 +73,17 @@ class FlaxModule(Module):
             self._update_variables(_variables)
             return output
 
-        assert self._variables is not None
-        variables = self._variables.copy()
+        assert self.variables_ is not None
+        variables = self.variables_.copy()
 
-        if self._params is not None:
-            variables["params"] = self._params
+        if self.params_ is not None:
+            variables["params"] = self.params_
 
-        if self._batch_stats is not None:
-            variables["batch_stats"] = self._batch_stats
+        if self.batch_stats_ is not None:
+            variables["batch_stats"] = self.batch_stats_
 
-        if self._cache is not None:
-            variables["cache"] = self._cache
+        if self.cache_ is not None:
+            variables["cache"] = self.cache_
 
         rngs = self._get_rngs(self.rngs)
 
@@ -130,12 +130,12 @@ class FlaxModule(Module):
         variables = tp.cast(tp.Dict[str, tp.Dict[str, tp.Any]], variables)
 
         if "params" in variables:
-            self._params = variables.pop("params")
+            self.params_ = variables.pop("params")
 
         if "batch_stats" in variables:
-            self._batch_stats = variables.pop("batch_stats")
+            self.batch_stats_ = variables.pop("batch_stats")
 
         if "cache" in variables:
-            self._cache = variables.pop("cache")
+            self.cache_ = variables.pop("cache")
 
-        self._variables = variables
+        self.variables_ = variables
