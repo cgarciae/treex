@@ -137,3 +137,12 @@ class WrappedCall(tpe.Protocol):
 
     def __call__(self, *args, **kwargs) -> tp.Any:
         ...
+
+
+# -----------------------------------------
+# errors
+# -----------------------------------------
+
+
+class OptionalDependencyNotFound(Exception):
+    pass

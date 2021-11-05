@@ -1,15 +1,19 @@
 import typing as tp
 
-import haiku as hk
 import jax
 import jax.numpy as jnp
 import numpy as np
 import treeo as to
-from haiku.data_structures import to_mutable_dict
 
 from treex import types, utils
 from treex.key_seq import KeySeq
 from treex.module import Module
+
+try:
+    import haiku as hk
+    from haiku.data_structures import to_mutable_dict
+except ImportError:
+    raise types.OptionalDependencyNotFound("Haiku Unavailable")
 
 
 class HaikuModule(Module):
