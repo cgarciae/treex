@@ -67,37 +67,36 @@ def predict(model: Model, x: jnp.ndarray):
     return model(x).argmax(axis=1)
 
 
-class CNN(hk.Module):
-    def __call__(self, x: jnp.ndarray, training: bool):
-        # Normalize input
-        x = x.astype(jnp.float32) / 255.0
+def forward(x: jnp.ndarray, training: bool):
+    # Normalize input
+    x = x.astype(jnp.float32) / 255.0
 
-        # Block 1
-        x = hk.Conv2D(32, [3, 3], stride=[2, 2])(x)
-        x = hk.BatchNorm(create_scale=True, create_offset=True, decay_rate=0.99)(
-            x, is_training=training
-        )
-        x = hk.dropout(hk.next_rng_key(), 0.05, x)
-        x = jax.nn.relu(x)
+    # Block 1
+    x = hk.Conv2D(32, [3, 3], stride=[2, 2])(x)
+    x = hk.BatchNorm(create_scale=True, create_offset=True, decay_rate=0.99)(
+        x, is_training=training
+    )
+    x = hk.dropout(hk.next_rng_key(), 0.05, x)
+    x = jax.nn.relu(x)
 
-        # Block 2
-        x = hk.Conv2D(64, [3, 3], stride=[2, 2])(x)
-        x = hk.BatchNorm(create_scale=True, create_offset=True, decay_rate=0.99)(
-            x, is_training=training
-        )
-        x = hk.dropout(hk.next_rng_key(), 0.1, x)
-        x = jax.nn.relu(x)
+    # Block 2
+    x = hk.Conv2D(64, [3, 3], stride=[2, 2])(x)
+    x = hk.BatchNorm(create_scale=True, create_offset=True, decay_rate=0.99)(
+        x, is_training=training
+    )
+    x = hk.dropout(hk.next_rng_key(), 0.1, x)
+    x = jax.nn.relu(x)
 
-        # Block 3
-        x = hk.Conv2D(128, [3, 3], stride=[2, 2])(x)
+    # Block 3
+    x = hk.Conv2D(128, [3, 3], stride=[2, 2])(x)
 
-        # GlobalAveragePooling2D
-        x = x.mean(axis=(1, 2))
+    # GlobalAveragePooling2D
+    x = x.mean(axis=(1, 2))
 
-        # Classification layer
-        x = hk.Linear(10)(x)
+    # Classification layer
+    x = hk.Linear(10)(x)
 
-        return x
+    return x
 
 
 # define parameters
@@ -116,9 +115,6 @@ def main(
 
     X_train = X_train[..., None]
     X_test = X_test[..., None]
-
-    def forward(x, training):
-        return CNN()(x, training)
 
     model = tx.HaikuModule(forward).init(42, inputs=tx.Inputs(X_train[:32]))
 
