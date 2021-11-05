@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 import treex as tx
 
+Model = tx.FlaxModule
 Batch = tp.Mapping[str, np.ndarray]
 np.random.seed(420)
 
@@ -21,7 +22,7 @@ def loss_fn(
     params: tx.FlaxModule, model: tx.FlaxModule, x: jnp.ndarray, y: jnp.ndarray
 ) -> tp.Tuple[jnp.ndarray, tp.Tuple[tx.FlaxModule, jnp.ndarray]]:
     model = model.merge(params)
-    preds = model(x, training=model.training)
+    preds = model(x)
 
     loss = jnp.mean(
         optax.softmax_cross_entropy(
@@ -37,9 +38,9 @@ def loss_fn(
 
 @jax.jit
 def train_step(
-    model: tx.FlaxModule, optimizer: tx.Optimizer, x: jnp.ndarray, y: jnp.ndarray
-) -> tp.Tuple[jnp.ndarray, tx.FlaxModule, tx.Optimizer, jnp.ndarray]:
-    params = model.filter(tx.Parameter)
+    model: Model, optimizer: tx.Optimizer, x: jnp.ndarray, y: jnp.ndarray
+) -> tp.Tuple[jnp.ndarray, Model, tx.Optimizer, jnp.ndarray]:
+    params = model.parameters()
 
     (loss, (model, acc_batch)), grads = jax.value_and_grad(loss_fn, has_aux=True)(
         params, model, x, y
@@ -53,7 +54,7 @@ def train_step(
 
 @jax.jit
 def test_step(
-    model: tx.FlaxModule, x: jnp.ndarray, y: jnp.ndarray
+    model: Model, x: jnp.ndarray, y: jnp.ndarray
 ) -> tp.Tuple[jnp.ndarray, jnp.ndarray]:
 
     loss, (model, acc_batch) = loss_fn(model, model, x, y)
@@ -62,8 +63,8 @@ def test_step(
 
 
 @jax.jit
-def predict(model: tx.FlaxModule, x: jnp.ndarray):
-    return model(x, model.training).argmax(axis=1)
+def predict(model: Model, x: jnp.ndarray):
+    return model(x).argmax(axis=1)
 
 
 class CNN(linen.Module):
@@ -108,7 +109,7 @@ def main(
     print(model.tabulate())
 
     optimizer = tx.Optimizer(optax.adamw(1e-3))
-    optimizer = optimizer.init(model.filter(tx.Parameter))
+    optimizer = optimizer.init(model.parameters())
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)
