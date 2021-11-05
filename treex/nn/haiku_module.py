@@ -65,10 +65,10 @@ class HaikuModule(Module):
             self.state_ = to_mutable_dict(self.state_)
             return output
 
-        output, self.state_ = self.transform.apply(
+        output, next_state = self.transform.apply(
             self.params_, self.state_, key, *args, **kwargs
         )
 
-        self.state_ = to_mutable_dict(self.state_)
+        self.state_ = to_mutable_dict(next_state)
 
         return output
