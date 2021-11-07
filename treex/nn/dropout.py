@@ -36,6 +36,7 @@ class Dropout(Module):
         self,
         rate: float,
         broadcast_dims: tp.Iterable[int] = (),
+        axis_name: tp.Optional[tp.Any] = None,
     ):
         """
         Create a dropout layer.
@@ -47,7 +48,7 @@ class Dropout(Module):
 
         self.rate = rate
         self.broadcast_dims = broadcast_dims
-        self.next_key = KeySeq()
+        self.next_key = KeySeq(axis_name=axis_name)
 
     @property
     def module(self) -> flax_module.Dropout:
