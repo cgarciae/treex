@@ -10,6 +10,10 @@ import typing_extensions as tpe
 
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
+Filter = tp.Union[
+    tp.Type[tp.Type[tp.Any]],
+    tp.Callable[[to.FieldInfo], bool],
+]
 
 InputLike = tp.Union[tp.Any, tp.Tuple[tp.Any, ...], tp.Dict[str, tp.Any], "Inputs"]
 IndexLike = tp.Union[str, int, tp.Sequence[tp.Union[str, int]]]

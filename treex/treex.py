@@ -6,10 +6,6 @@ from treex import types
 
 A = tp.TypeVar("A")
 T = tp.TypeVar("T", bound="Treex")
-Filter = tp.Union[
-    tp.Type[tp.Type[tp.Any]],
-    tp.Callable[[to.FieldInfo], bool],
-]
 
 
 class Treex(to.Tree, to.Extensions):
@@ -76,7 +72,7 @@ class Treex(to.Tree, to.Extensions):
 
 
 class Filters:
-    def parameters(self: A, *filters: Filter) -> A:
+    def parameters(self: A, *filters: types.Filter) -> A:
         """
         Returns a copy of the Module with only tx.Parameter TreeParts, alias for `filter(tx.Parameter)`.
 
@@ -85,7 +81,7 @@ class Filters:
         """
         return to.filter(self, types.Parameter, *filters)
 
-    def batch_stats(self: A, *filters: Filter) -> A:
+    def batch_stats(self: A, *filters: types.Filter) -> A:
         """
         Returns a copy of the Module with only tx.BatchStat TreeParts, alias for `filter(tx.BatchStat)`.
 
@@ -94,7 +90,7 @@ class Filters:
         """
         return to.filter(self, types.BatchStat, *filters)
 
-    def rngs(self: A, *filters: Filter) -> A:
+    def rngs(self: A, *filters: types.Filter) -> A:
         """
         Returns a copy of the Module with only tx.Rng TreeParts, alias for `filter(tx.Rng)`.
 
@@ -103,7 +99,7 @@ class Filters:
         """
         return to.filter(self, types.Rng, *filters)
 
-    def model_states(self: A, *filters: Filter) -> A:
+    def model_states(self: A, *filters: types.Filter) -> A:
         """
         Returns a copy of the Module with only tx.ModelState TreeParts, alias for `filter(tx.ModelState)`.
 
@@ -112,7 +108,7 @@ class Filters:
         """
         return to.filter(self, types.ModelState, *filters)
 
-    def states(self: A, *filters: Filter) -> A:
+    def states(self: A, *filters: types.Filter) -> A:
         """
         Returns a copy of the Module with only tx.State TreeParts, alias for `filter(tx.State)`.
 
@@ -121,7 +117,7 @@ class Filters:
         """
         return to.filter(self, types.State, *filters)
 
-    def metric_logs(self: A, *filters: Filter) -> A:
+    def metric_logs(self: A, *filters: types.Filter) -> A:
         """
         Returns a copy of the Module with only tx.Metric TreeParts, alias for `filter(tx.Metric)`.
 
@@ -130,7 +126,7 @@ class Filters:
         """
         return to.filter(self, types.MetricLog, *filters)
 
-    def loss_logs(self: A, *filters: Filter) -> A:
+    def loss_logs(self: A, *filters: types.Filter) -> A:
         """
         Returns a copy of the Module with only tx.Loss TreeParts, alias for `filter(tx.Loss)`.
 
@@ -139,7 +135,7 @@ class Filters:
         """
         return to.filter(self, types.LossLog, *filters)
 
-    def logs(self: A, *filters: Filter) -> A:
+    def logs(self: A, *filters: types.Filter) -> A:
         """
         Returns a copy of the Module with only tx.Log TreeParts, alias for `filter(tx.Log)`.
 
@@ -148,7 +144,7 @@ class Filters:
         """
         return to.filter(self, types.Log, *filters)
 
-    def caches(self: A, *filters: Filter) -> A:
+    def caches(self: A, *filters: types.Filter) -> A:
         """
         Returns a copy of the Module with only tx.Cache TreeParts, alias for `filter(tx.Cache)`.
 

@@ -18,10 +18,6 @@ from treex.treex import Filters, Treex
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
 M = tp.TypeVar("M", bound="Module")
-Filter = tp.Union[
-    tp.Type[tp.Type[tp.Any]],
-    tp.Callable[[to.FieldInfo], bool],
-]
 
 
 @dataclass
