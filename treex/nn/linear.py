@@ -54,6 +54,7 @@ class Linear(Module):
             flax_module.Array,
         ] = flax_module.zeros,
         name: tp.Optional[str] = None,
+        axis_name: tp.Optional[tp.Any] = None
     ):
         """
         Arguments:
@@ -73,6 +74,7 @@ class Linear(Module):
         self.precision = precision
         self.kernel_init = kernel_init
         self.bias_init = bias_init
+        self.axis_name = axis_name
 
         self.kernel = None
         self.bias = None
@@ -98,7 +100,8 @@ class Linear(Module):
             The transformed input.
         """
         if self.initializing():
-            variables = self.module.init({"params": next_key()}, x)
+            rngs = {"params": next_key(axis_name=self.axis_name)}
+            variables = self.module.init(rngs, x)
 
             # Extract collections
             params = variables["params"].unfreeze()
