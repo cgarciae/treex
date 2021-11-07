@@ -15,7 +15,7 @@ PyYAML = "^5.4.1"
 rich = "^10.7.0"
 optax = "^0.0.9"
 einops = "^0.3.2"
-treeo = "^0.0.7"
+treeo = "^0.0.8"
 # treeo = { path = "../treeo", develop = true }
 
 [tool.poetry.dev-dependencies]

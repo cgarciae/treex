@@ -577,7 +577,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "fsspec"
-version = "2021.10.1"
+version = "2021.11.0"
 description = "File-system specification"
 category = "dev"
 optional = false
@@ -2485,7 +2485,7 @@ test = ["pytest"]
 
 [[package]]
 name = "treeo"
-version = "0.0.7"
+version = "0.0.8"
 description = ""
 category = "main"
 optional = false
@@ -2705,7 +2705,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "0c5168994daf0d1f565e54a51a1372dbe9d3273a6fab4ef3a126e2d32a9d5a1d"
+content-hash = "6487f7d2fdc0f5e785197f0f6e05dcac78975c8bac9553d30cd34c848fc7b6a0"
 
 [metadata.files]
 absl-py = [
@@ -3152,8 +3152,8 @@ frozenlist = [
     {file = "frozenlist-1.2.0.tar.gz", hash = "sha256:68201be60ac56aff972dc18085800b6ee07973c49103a8aba669dee3d71079de"},
 ]
 fsspec = [
-    {file = "fsspec-2021.10.1-py3-none-any.whl", hash = "sha256:7164a488f3f5bf6a0fb39674978b756dda84e011a5db411a79791b7c38a36ff7"},
-    {file = "fsspec-2021.10.1.tar.gz", hash = "sha256:c245626e3cb8de5cd91485840b215a385fa6f2b0f6ab87978305e99e2d842753"},
+    {file = "fsspec-2021.11.0-py3-none-any.whl", hash = "sha256:8843f31c7a7bb1afc4add371948f10701814594d407ee1b0bb4facec8b517efa"},
+    {file = "fsspec-2021.11.0.tar.gz", hash = "sha256:cbb7bafd59aa33684a92e843877f4adc0109fb0722b1a26e7d08f5a6e2500904"},
 ]
 gast = [
     {file = "gast-0.4.0-py3-none-any.whl", hash = "sha256:b7adcdd5adbebf1adf17378da5ba3f543684dbec47b1cda1f3997e573cd542c4"},
@@ -4343,8 +4343,8 @@ traitlets = [
     {file = "traitlets-5.1.1.tar.gz", hash = "sha256:059f456c5a7c1c82b98c2e8c799f39c9b8128f6d0d46941ee118daace9eb70c7"},
 ]
 treeo = [
-    {file = "treeo-0.0.7-py3-none-any.whl", hash = "sha256:0ac9bbeefc9909cc797fb1b58a5ae43ed058795d94f0571c8f48e66e47a942f8"},
-    {file = "treeo-0.0.7.tar.gz", hash = "sha256:5aae3fded95244cbc6b186dfd743e5d27843014f50701196dc1419544af0d32b"},
+    {file = "treeo-0.0.8-py3-none-any.whl", hash = "sha256:ccef15103d7214441c43bde2b4af50d6d75ce6237d582afe9b9a8cf3114e04bb"},
+    {file = "treeo-0.0.8.tar.gz", hash = "sha256:d9f334cb78c82e28f9424f796361c401b8dbee7a9055ba5ba041bbf6ee8ab22b"},
 ]
 typed-ast = [
     {file = "typed_ast-1.4.3-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:2068531575a125b87a41802130fa7e29f26c09a2833fea68d9a40cf33902eba6"},
