@@ -21,22 +21,12 @@ FlaxInitializer = tp.Callable[
 
 
 class Attention(Module):
-
-    query_kernel: tp.Union[jnp.ndarray, types.Initializer] = types.Parameter.node()
-    key_kernel: tp.Union[jnp.ndarray, types.Initializer] = types.Parameter.node()
-    value_kernel: tp.Union[jnp.ndarray, types.Initializer] = types.Parameter.node()
-    projection_kernel: tp.Union[jnp.ndarray, types.Initializer] = types.Parameter.node()
-    projection_bias: tp.Optional[
-        tp.Union[jnp.ndarray, types.Initializer]
-    ] = types.Parameter.node()
-
     def __init__(
         self,
         num_heads: int,
         *,
         head_size: tp.Optional[int] = None,
         dropout: float = 0.0,
-        use_projection_bias: bool = True,
         kernel_initializer: FlaxInitializer = flax_module.default_kernel_init,
         bias_initializer: FlaxInitializer = flax_module.zeros,
         axis_name: str = "head",
@@ -45,7 +35,6 @@ class Attention(Module):
         self.num_heads = num_heads
         self.head_size = head_size
         self.dropout_rate = dropout
-        self.use_projection_bias = use_projection_bias
         self.kernel_initializer = kernel_initializer
         self.bias_initializer = bias_initializer
         self.axis_name = axis_name
@@ -69,21 +58,18 @@ class Attention(Module):
             head_size,
             kernel_init=module.kernel_initializer,
             bias_init=module.bias_initializer,
-            use_bias=module.use_projection_bias,
             axis_name=module.axis_name,
         )(query)
         key = Linear(
             head_size,
             kernel_init=module.kernel_initializer,
             bias_init=module.bias_initializer,
-            use_bias=module.use_projection_bias,
             axis_name=module.axis_name,
         )(key)
         value = Linear(
             head_size,
             kernel_init=module.kernel_initializer,
             bias_init=module.bias_initializer,
-            use_bias=module.use_projection_bias,
             axis_name=module.axis_name,
         )(value)
 
@@ -174,6 +160,9 @@ class MultiHeadAttention(Module):
         if value is None:
             value = key
 
+        head_size = self.head_size if self.head_size is not None else query.shape[-1]
+        output_size = self.output_size if self.output_size is not None else head_size
+
         # verify shapes
         if key.shape[-2] != value.shape[-2]:
             raise ValueError(
@@ -204,77 +193,42 @@ class MultiHeadAttention(Module):
 
         attention = Attention(
             num_heads=self.num_heads,
-            head_size=self.head_size,
+            head_size=head_size,
             dropout=self.dropout_rate,
-            use_projection_bias=self.use_projection_bias,
             kernel_initializer=self.kernel_initializer,
             bias_initializer=self.bias_initializer,
             axis_name=self.axis_name,
         )
 
+        # head_idxs is used only to inform vmap the number of heads
+        def call_attention(head_idxs, attention, *args):
+            return attention(attention, *args)
+
         multi_head_attention = preserve_state(
             jax.vmap,
-            in_axes=(0, 0, 0, 0, mask_axis),
+            in_axes=(0, 0, None, None, None, mask_axis),
             out_axes=(-1, 0),
             axis_name=self.axis_name,
-        )(attention)
+        )(call_attention)
 
-        multihead_output, multihead_attention_matrix = multi_head_attention(
+        output, attention_matrix = multi_head_attention(
+            jnp.arange(self.num_heads),  # head_idxs
             attention,
             query,
             key,
             value,
             mask,
         )
-        multihead_output = einops.rearrange(multihead_output, "... D H-> ... (D H)")
+        output = einops.rearrange(output, "... D H-> ... (D H)")
 
-        output = jnp.dot(multihead_output, self.projection_kernel)
-
-        if self.projection_bias is not None:
-            assert isinstance(self.projection_bias, jnp.ndarray)
-            output += self.projection_bias
+        output = Linear(
+            output_size,
+            use_bias=self.use_projection_bias,
+            kernel_init=self.kernel_initializer,
+            bias_init=self.bias_initializer,
+        )(output)
 
         if return_attn_coef:
-            return output, multihead_attention_matrix
+            return output, attention_matrix
         else:
             return output
-
-    @staticmethod
-    def attention(
-        params: MultiHeadParams,
-        query: jnp.ndarray,
-        key: jnp.ndarray,
-        value: jnp.ndarray,
-        mask: tp.Optional[jnp.ndarray],
-        dropout: Dropout,
-    ) -> tp.Tuple[jnp.ndarray, jnp.ndarray]:
-
-        # Linear transformations
-        query = jnp.dot(query, params.query_kernel)
-        key = jnp.dot(key, params.key_kernel)
-        value = jnp.dot(value, params.value_kernel)
-
-        # Scale dot-product, doing the division to either query or key
-        # instead of their product saves some computation
-        query /= jnp.sqrt(query.shape[-1])
-
-        # Calculate dot product attention
-        logits = jnp.einsum("...ND, ...MD -> ...NM", query, key)
-
-        # apply mask
-        if mask is not None:
-            logits += -10e9 * (1.0 - mask)
-
-        attention_matrix = jax.nn.softmax(logits)
-
-        # attention dropout
-        rng = jax.random.fold_in(
-            dropout.next_key(),
-            jax.lax.axis_index("head"),
-        )
-        attention_dropout = dropout(attention_matrix, rng=rng)
-
-        # attention * value
-        output = jnp.einsum("...NM, ...MD -> ...ND", attention_dropout, value)
-
-        return output, attention_matrix
