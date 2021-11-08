@@ -17,11 +17,8 @@ from treex.treex import Filters, Treex
 
 A = tp.TypeVar("A")
 B = tp.TypeVar("B")
+C = tp.TypeVar("C", bound=tp.Callable[..., tp.Any])
 M = tp.TypeVar("M", bound="Module")
-Filter = tp.Union[
-    tp.Type[tp.Type[tp.Any]],
-    tp.Callable[[to.FieldInfo], bool],
-]
 
 
 @dataclass
@@ -365,19 +362,105 @@ def compact_module(f) -> type:
     return module_class
 
 
-def next_key() -> jnp.ndarray:
+def preserve_state(
+    transformation: C, *transformation_args, **transformation_kwargs
+) -> C:
+    """
+    Takes in a function transformation such as `jit` or `vmap` and the function `f`
+    to be transformed and returns a the transformed function with the expected behaviour
+    but that additionally preserves the state of the first argument of `f`.
+
+    For example, within a `Module`  if you try to `vmap` over a method with stateful operations like this:
+
+    ```python
+    @jax.vmap
+    def __call__(self, x):
+        self.n += 1
+        return 2.0 * x
+    ```
+
+    It will not work since the composed function `vmap(__call__)` is a pure function so any change
+    to `self` will not be reflected outside.
+
+
+    To solve you can wrap `vmap` using `preserve_state` like this:
+
+    ```python
+    @preserve_state(jax.vmap)
+    def __call__(self, x):
+        self.n += 1
+        return 2.0 * x
+    ```
+
+    This will guarantee that the state of `self` is propagated to the outside.
+
+    Arguments:
+        transformation: The transformation to be applied to the function `f`.
+        f: The function to be transformed.
+        *args: Additional arguments to be passed to the transformation.
+        **kwargs: Additional keyword arguments to be passed to the transformation.
+
+    Returns:
+        The transformed function.
+    """
+
+    @functools.wraps(transformation)
+    def new_transformation(f):
+        f_original = f
+
+        f = _return_first(f)
+        f = _update_first(
+            transformation(f, *transformation_args, **transformation_kwargs)
+        )
+
+        @functools.wraps(f_original)
+        def wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+
+        return wrapper
+
+    return new_transformation
+
+
+def _return_first(f):
+    def wrapper(self, *args, **kwargs):
+        y = f(self, *args, **kwargs)
+        return self, y
+
+    return wrapper
+
+
+def _update_first(f):
+    def wrapper(self, *args, **kwargs):
+        module, y = f(self, *args, **kwargs)
+
+        self.__dict__.update(module.__dict__)
+
+        return y
+
+    return wrapper
+
+
+def next_key(*, axis_name: tp.Optional[tp.Any] = None) -> jnp.ndarray:
     """
     Returns the next key.
 
     Returns:
         The next key.
     """
+    key: jnp.ndarray
+
     if _INIT_CONTEXT.key is None:
         raise RuntimeError(
             "RNG key not set, you are either calling an uninitialized Module outside `.init` or forgot to call `rng_key` context manager."
         )
 
     key, _INIT_CONTEXT.key = utils.iter_split(_INIT_CONTEXT.key)
+
+    if axis_name is not None:
+        axis_index = jax.lax.axis_index(axis_name)
+        key = jax.random.fold_in(key, axis_index)
+
     return key
 
 

@@ -1,6 +1,7 @@
 import typing as tp
 from functools import partial
 
+import haiku as hk
 import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -8,12 +9,11 @@ import numpy as np
 import optax
 import typer
 from datasets.load import load_dataset
-from flax import linen
 from tqdm import tqdm
 
 import treex as tx
 
-Model = tx.FlaxModule
+Model = tx.HaikuModule
 Batch = tp.Mapping[str, np.ndarray]
 np.random.seed(420)
 
@@ -67,22 +67,36 @@ def predict(model: Model, x: jnp.ndarray):
     return model(x).argmax(axis=1)
 
 
-class CNN(linen.Module):
-    @linen.compact
-    def __call__(self, x, training):
-        x = linen.Conv(32, [3, 3], strides=[2, 2])(x)
-        x = linen.BatchNorm(use_running_average=not training)(x)
-        x = linen.Dropout(0.05, deterministic=not training)(x)
-        x = jax.nn.relu(x)
-        x = linen.Conv(64, [3, 3], strides=[2, 2])(x)
-        x = linen.BatchNorm(use_running_average=not training)(x)
-        x = linen.Dropout(0.1, deterministic=not training)(x)
-        x = jax.nn.relu(x)
-        x = linen.Conv(128, [3, 3], strides=[2, 2])(x)
-        x = x.mean(axis=(1, 2))  # GlobalAveragePooling2D
-        x = linen.Dense(10)(x)
+def forward(x: jnp.ndarray, training: bool):
+    # Normalize input
+    x = x.astype(jnp.float32) / 255.0
 
-        return x
+    # Block 1
+    x = hk.Conv2D(32, [3, 3], stride=[2, 2])(x)
+    x = hk.BatchNorm(create_scale=True, create_offset=True, decay_rate=0.99)(
+        x, is_training=training
+    )
+    x = hk.dropout(hk.next_rng_key(), 0.05, x)
+    x = jax.nn.relu(x)
+
+    # Block 2
+    x = hk.Conv2D(64, [3, 3], stride=[2, 2])(x)
+    x = hk.BatchNorm(create_scale=True, create_offset=True, decay_rate=0.99)(
+        x, is_training=training
+    )
+    x = hk.dropout(hk.next_rng_key(), 0.1, x)
+    x = jax.nn.relu(x)
+
+    # Block 3
+    x = hk.Conv2D(128, [3, 3], stride=[2, 2])(x)
+
+    # GlobalAveragePooling2D
+    x = x.mean(axis=(1, 2))
+
+    # Classification layer
+    x = hk.Linear(10)(x)
+
+    return x
 
 
 # define parameters
@@ -102,9 +116,7 @@ def main(
     X_train = X_train[..., None]
     X_test = X_test[..., None]
 
-    model = tx.FlaxModule(
-        CNN(),
-    ).init(42, inputs=tx.Inputs(X_train[:32], training=False))
+    model = tx.HaikuModule(forward).init(42, inputs=X_train[:32])
 
     print(model.tabulate())
 
