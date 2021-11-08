@@ -35,7 +35,7 @@ mkdocs-jupyter = { version = "^0.17.3", python = ">=3.7" }
 mkdocs-material = "^7.2.5"
 einops = "^0.3.2"
 torchmetrics = "^0.5.1"
-tensorflow-cpu = "^2.6.0"
+tensorflow = "^2.6.0"
 datasets = "^1.14.0"
 cloudpickle = "^2.0.0"
 dm-haiku = "^0.0.5"
