@@ -65,6 +65,7 @@ class MeanAbsoluteError(Mean):
         self,
         y_true: jnp.ndarray,
         y_pred: jnp.ndarray,
+        sample_weight: jnp.ndarray = None,
     ) -> tp.Any:
         """
         Accumulates metric statistics. `y_true` and `y_pred` should have the same shape.
@@ -74,11 +75,13 @@ class MeanAbsoluteError(Mean):
                 Ground truth values. shape = `[batch_size, d0, .. dN]`.
             y_pred:
                 The predicted values. shape = `[batch_size, d0, .. dN]`
+            sample_weight:
+                Optional weighting of each example. Defaults to 1. shape = `[batch_size, d0, .. dN]`
         Returns:
             Array with the cumulative mean absolute error.
         """
         values = _mean_absolute_error(y_pred, y_true)
-        return super().update(values)
+        return super().update(values, sample_weight)
 
     def compute(self):
         """Computes MAE based on inputs passed in to ``update`` previously."""
