@@ -18,7 +18,7 @@ def _mean_absolute_error(y_pred: jnp.ndarray, y_true: jnp.ndarray) -> jnp.ndarra
     """
 
     y_true = y_true.astype(y_pred.dtype)
-    return jnp.mean(jnp.abs(y_pred - y_true), axis=-1)
+    return jnp.abs(y_pred - y_true)
 
 
 class MeanAbsoluteError(Mean):
