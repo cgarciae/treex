@@ -6,3 +6,5 @@ from .mean_absolute_error import MeanAbsoluteError
 from .metric import Metric
 from .metrics import AuxMetrics, Metrics
 from .reduce import Reduce, Reduction
+
+MAE = MeanAbsoluteError

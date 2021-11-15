@@ -87,3 +87,17 @@ class TestMAE:
             np.array(mean_absolute_error_instance.compute()),
             mean_absolute_error.compute().numpy(),
         )
+
+    def test_mae_short(self):
+
+        y_true = np.random.randn(8, 20, 20)
+        y_pred = np.random.randn(8, 20, 20)
+
+        mean_absolute_error_tx = tx.metrics.MeanAbsoluteError()
+        mae_treex = mean_absolute_error_tx(**{"y_true": y_true, "y_pred": y_pred})
+
+        mean_absolute_error_tx_short = tx.metrics.MAE()
+        mae_treex_short = mean_absolute_error_tx_short(
+            **{"y_true": y_true, "y_pred": y_pred}
+        )
+        assert np.isclose(np.array(mae_treex), np.array(mae_treex_short))
