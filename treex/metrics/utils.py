@@ -570,7 +570,7 @@ def select_topk(prob_tensor: jnp.ndarray, topk: int = 1, dim: int = 1) -> jnp.nd
     idx_axis0 = jnp.expand_dims(jnp.arange(prob_tensor.shape[0]), axis=1)
     val, idx_axis1 = jax.lax.top_k(prob_tensor, topk)
 
-    return jax.ops.index_update(zeros, jax.ops.index[idx_axis0, idx_axis1], 1)
+    return zeros.at[idx_axis0, idx_axis1].set(1)
 
 
 def _check_num_classes_mc(
