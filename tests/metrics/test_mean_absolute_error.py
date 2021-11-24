@@ -14,14 +14,12 @@ class TestMAE:
         y_true = np.random.randn(8, 20, 20)
         y_pred = np.random.randn(8, 20, 20)
 
-        mean_absolute_error_tx = tx.metrics.MeanAbsoluteError()
-        mae_treex = mean_absolute_error_tx(**{"y_true": y_true, "y_pred": y_pred})
+        mae_tx = tx.metrics.MeanAbsoluteError()
+        mae_tx_value = mae_tx(y_true=y_true, y_pred=y_pred)
 
-        mean_absolute_error_tm = tm.MeanAbsoluteError()
-        mae_tm = mean_absolute_error_tm(
-            torch.from_numpy(y_pred), torch.from_numpy(y_true)
-        )
-        assert np.isclose(np.array(mae_treex), mae_tm.numpy())
+        mae_tm = tm.MeanAbsoluteError()
+        mae_tm_value = mae_tm(torch.from_numpy(y_pred), torch.from_numpy(y_true))
+        assert np.isclose(np.array(mae_tx_value), mae_tm_value.numpy())
 
     @hp.given(
         use_sample_weight=st.booleans(),
@@ -39,19 +37,17 @@ class TestMAE:
                 sum = sample_weight.sum()
 
         params = {"y_true": y_true, "y_pred": y_pred}
-        mean_absolute_error_tx = tx.metrics.MeanAbsoluteError()
+        mae_tx = tx.metrics.MeanAbsoluteError()
         if use_sample_weight:
             params.update({"sample_weight": sample_weight})
-        mae_treex = mean_absolute_error_tx(**params)
+        mae_tx_value = mae_tx(**params)
 
-        mean_absolute_error_tx = tx.metrics.MeanAbsoluteError()
+        mae_tx = tx.metrics.MeanAbsoluteError()
         if use_sample_weight:
             y_true, y_pred = y_true[sample_weight == 1], y_pred[sample_weight == 1]
-        mae_treex_no_sample_weight = mean_absolute_error_tx(
-            **{"y_true": y_true, "y_pred": y_pred}
-        )
+        mae_tx_no_sample_weight = mae_tx(y_true=y_true, y_pred=y_pred)
 
-        assert np.isclose(mae_treex, mae_treex_no_sample_weight)
+        assert np.isclose(mae_tx_value, mae_tx_no_sample_weight)
 
     @hp.given(
         use_sample_weight=st.booleans(),
@@ -67,25 +63,24 @@ class TestMAE:
             sample_weight = np.random.choice([0, 1], 8 * 20).reshape((8, 20))
             params.update({"sample_weight": sample_weight})
 
-        mean_absolute_error_tx = tx.metrics.MeanAbsoluteError()
-        mae_treex = mean_absolute_error_tx(**params)
+        mae_tx = tx.metrics.MeanAbsoluteError()(**params)
 
-        assert isinstance(mae_treex, jnp.ndarray)
+        assert isinstance(mae_tx, jnp.ndarray)
 
     def test_accumulative_mae(self):
-        mean_absolute_error_instance = tx.metrics.MeanAbsoluteError()
-        mean_absolute_error = tm.MeanAbsoluteError()
+        mae_tx = tx.metrics.MeanAbsoluteError()
+        mae_tm = tm.MeanAbsoluteError()
         for batch in range(2):
 
             y_true = np.random.randn(8, 5, 5)
             y_pred = np.random.randn(8, 5, 5)
 
-            mean_absolute_error_instance(**{"y_true": y_true, "y_pred": y_pred})
-            mean_absolute_error(torch.from_numpy(y_pred), torch.from_numpy(y_true))
+            mae_tx(y_true=y_true, y_pred=y_pred)
+            mae_tm(torch.from_numpy(y_pred), torch.from_numpy(y_true))
 
         assert np.isclose(
-            np.array(mean_absolute_error_instance.compute()),
-            mean_absolute_error.compute().numpy(),
+            np.array(mae_tx.compute()),
+            mae_tm.compute().numpy(),
         )
 
     def test_mae_short(self):
@@ -93,11 +88,6 @@ class TestMAE:
         y_true = np.random.randn(8, 20, 20)
         y_pred = np.random.randn(8, 20, 20)
 
-        mean_absolute_error_tx = tx.metrics.MeanAbsoluteError()
-        mae_treex = mean_absolute_error_tx(**{"y_true": y_true, "y_pred": y_pred})
-
-        mean_absolute_error_tx_short = tx.metrics.MAE()
-        mae_treex_short = mean_absolute_error_tx_short(
-            **{"y_true": y_true, "y_pred": y_pred}
-        )
-        assert np.isclose(np.array(mae_treex), np.array(mae_treex_short))
+        mae_tx_long = tx.metrics.MeanAbsoluteError()(y_true=y_true, y_pred=y_pred)
+        mae_tx_short = tx.metrics.MAE()(y_true=y_true, y_pred=y_pred)
+        assert np.isclose(np.array(mae_tx_long), np.array(mae_tx_short))
