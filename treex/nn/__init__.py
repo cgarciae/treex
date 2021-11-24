@@ -5,7 +5,6 @@ from .conv import Conv
 from .dropout import Dropout
 from .flatten import Flatten
 from .flax_module import FlaxModule
-from .haiku_module import HaikuModule
 from .linear import Linear
 from .mlp import MLP
 from .sequential import Lambda, Sequential, sequence

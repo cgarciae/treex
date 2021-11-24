@@ -12,7 +12,7 @@ from treex.module import Module
 try:
     import haiku as hk
     from haiku.data_structures import to_mutable_dict
-except ImportError:
+except (ImportError, ModuleNotFoundError):
     raise types.OptionalDependencyNotFound("Haiku Unavailable")
 
 

@@ -154,7 +154,7 @@ Under the hood all calls to submodule constructors (e.g. `Linear(...)`) inside `
 </details>
 
 ## Status
-Treex is in an early stage, things might brake between versions but we will respect semanting versioning. Since Treex layers are numerically equivalent to Flax, it borrows some maturity and yields more confidence over its results. Feedback is much appreciated.
+Treex is in an early stage, things might break between versions but we will respect semanting versioning. Since Treex layers are numerically equivalent to Flax, it borrows some maturity and yields more confidence over its results. Feedback is much appreciated.
 
 **Roadmap**:
 
