@@ -83,6 +83,3 @@ class MeanAbsoluteError(Mean):
         values = _mean_absolute_error(y_pred, y_true)
         return super().update(values, sample_weight)
 
-    def compute(self):
-        """Computes MAE based on inputs passed in to ``update`` previously."""
-        return super().compute()
