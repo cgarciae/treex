@@ -64,24 +64,23 @@ class Reduce(Metric):
 
         # perform update
         if sample_weight is not None:
-            sample_weight = sample_weight
-
-            # Update dimensions of weights to match with values if possible.
-            # values, _, sample_weight = tf_losses_utils.squeeze_or_expand_dimensions(
-            #     values, sample_weight=sample_weight
-            # )
+            if sample_weight.ndim > values.ndim:
+                raise Exception(
+                    f"sample_weight dimention is higher than values, when masking values sample_weight dimention needs to be equal or lower than values dimension, currently values have shape equal to {values.shape}"
+                )
 
             try:
                 # Broadcast weights if possible.
                 sample_weight = jnp.broadcast_to(sample_weight, values.shape)
             except ValueError:
                 # Reduce values to same ndim as weight array
-                ndim = values.ndim
-                weight_ndim = sample_weight.ndim
+                values_ndim, weight_ndim = values.ndim, sample_weight.ndim
                 if self.reduction == Reduction.sum:
-                    values = jnp.sum(values, axis=list(range(weight_ndim, ndim)))
+                    values = jnp.sum(values, axis=list(range(weight_ndim, values_ndim)))
                 else:
-                    values = jnp.mean(values, axis=list(range(weight_ndim, ndim)))
+                    values = jnp.mean(
+                        values, axis=list(range(weight_ndim, values_ndim))
+                    )
 
             values = values * sample_weight
 
@@ -105,7 +104,6 @@ class Reduce(Metric):
 
         if self.count is not None:
             assert num_values is not None
-
             self.count = (self.count + num_values).astype(self.count.dtype)
 
     def compute(self) -> tp.Any:

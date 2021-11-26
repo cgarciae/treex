@@ -1,6 +1,6 @@
 
-# treex.Apply
+# treex.apply
 
-::: treeo.mixins.Apply
+::: treeo.api.apply
     selection:
         inherited_members: true
