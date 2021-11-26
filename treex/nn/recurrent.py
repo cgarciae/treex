@@ -15,7 +15,7 @@ from treex.nn.linear import Linear
 CallableModule = tp.Callable[..., jnp.ndarray]
 
 
-class GRUCell(Module):
+class GRU(Module):
     gate_fn: CallableModule = flax_module.sigmoid
     activation_fn: CallableModule = flax_module.tanh
     kernel_init: tp.Callable[
@@ -27,9 +27,12 @@ class GRUCell(Module):
     bias_init: tp.Callable[
         [flax_module.PRNGKey, flax_module.Shape, flax_module.Dtype], flax_module.Array
     ]
+    params: tp.Any = types.Parameter.node()
 
-    # TODO: Might remove the rand_key depending on how it affects the API
-    next_key: KeySeq
+    # static
+    return_final: bool = False
+    time_major: bool = False
+    unroll: int = 1
 
     # TODO: Add typing info and documentation
     def __init__(
@@ -39,47 +42,49 @@ class GRUCell(Module):
         activation_fn: CallableModule = flax_module.tanh,
         kernel_init: CallableModule = flax_module.default_kernel_init,
         recurrent_kernel_init=flax_module.orthogonal(),
-        bias_init=flax_module.zeros
+        bias_init=flax_module.zeros,
+        return_final: bool = False,
+        time_major: bool = False,
+        unroll: int = 1
     ):
         self.gate_fn = gate_fn
         self.activation_fn = activation_fn
         self.kernel_init = kernel_init
         self.recurrent_kernel_init = recurrent_kernel_init
         self.bias_init = bias_init
-        self.next_key = KeySeq()
+        self.params = {}
+        self.return_final = return_final
+        self.time_major = time_major
+        self.unroll = unroll
 
-    @to.compact
-    def __call__(self, carry: jnp.ndarray, inputs: jnp.ndarray):
-        hidden_features = carry.shape[-1]
-        dense_h = partial(
-            Linear,
-            features_out=hidden_features,
-            use_bias=False,
-            kernel_init=self.recurrent_kernel_init,
-            bias_init=self.bias_init,
-        )
-        dense_i = partial(
-            Linear,
-            features_out=hidden_features,
-            use_bias=True,
+    @property
+    def module(self):
+        return flax_module.GRUCell(
+            gate_fn=self.gate_fn,
+            activation_fn=self.activation_fn,
             kernel_init=self.kernel_init,
             bias_init=self.bias_init,
         )
-        r = self.gate_fn(dense_i(name="ir")(inputs) + dense_h(name="hr")(carry))
-        z = self.gate_fn(dense_i(name="iz")(inputs) + dense_h(name="hz")(carry))
-        n = self.activation_fn(
-            dense_i(name="in")(inputs) + r * dense_h(name="hn", use_bias=True)(carry)
-        )
-        new_h = (1.0 - z) * n + z * carry
-        return new_h, new_h
 
-    @staticmethod
-    def initialize_carry(rng, batch_dims, size, init_fn=flax_module.zeros):
-        mem_shape = batch_dims + (size,)
-        return init_fn(rng, mem_shape)
+    def __call__(self, carry, x):
+        # Move time dimension to be the first so it can be looped over
+        if not self.time_major:
+            x = jnp.transpose(x, (1, 0, 2))
 
-    def init_carry(self, batch_dims, init_fn=flax_module.zeros):
-        # TODO Check if `module.init(key, ...)` has been called
-        return GRUCell.initialize_carry(
-            self.next_key(), batch_dims, self.hn.kernel.shape[0], init_fn
-        )
+        if self.initializing():
+            _variables = self.module.init(next_key(), carry, x[0, ...])
+            self.params = _variables["params"]
+
+        variables = dict(params=self.params)
+
+        def iter_fn(carry, x):
+            return self.module.apply(variables, carry, x)
+
+        carry, hidden = jax.lax.scan(iter_fn, carry, x, unroll=self.unroll)
+        # hidden = jnp.swapaxes(hidden, 0, self.axis)
+        if not self.time_major:
+            hidden = jnp.transpose(hidden, (1, 0, 2))
+
+        if self.return_final:
+            return carry
+        return carry, hidden
