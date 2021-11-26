@@ -610,7 +610,6 @@ class TestTreex:
         print(module.tabulate())
 
     def test_treex_filter(self):
-
         tree = dict(a=1, b=Linear(3, 4))
 
         tree2 = tx.filter(tree, tx.Parameter)
@@ -618,6 +617,16 @@ class TestTreex:
 
         tree2 = tx.filter(tree, lambda field: isinstance(field.value, int))
         assert tree2["a"] == 1
+
+    def test_treex_parameter_filter(self):
+        mlp = MLP(2, 3, 5)
+        mlp.linear1.freeze(inplace=True)
+
+        params = mlp.trainable_parameters()
+        assert isinstance(params.linear1.b, tx.Nothing)
+        assert isinstance(params.linear1.w, tx.Nothing)
+        assert not isinstance(params.linear2.b, tx.Nothing)
+        assert not isinstance(params.linear2.w, tx.Nothing)
 
     def test_module_map(self):
         class A(tx.Module):
