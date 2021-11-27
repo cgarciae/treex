@@ -33,8 +33,10 @@ class TestGRU:
     def test_forward(self, batch_size, hidden_dim, features, timesteps, time_major):
         key = tx.Key(8)
 
-        gru = recurrent.GRU(return_state=True, return_sequences=True, time_major=time_major)
-        gru = gru.init(key, (jnp.ones((1, hidden_dim)), jnp.ones((1, 1, features))))
+        gru = recurrent.GRU(
+            return_state=True, return_sequences=True, time_major=time_major
+        )
+        gru = gru.init(key, (jnp.ones((1, 1, features)), jnp.ones((1, hidden_dim))))
 
         carry = gru.module.initialize_carry(key, (batch_size,), hidden_dim)
 
@@ -42,7 +44,7 @@ class TestGRU:
         if time_major:
             dims = (timesteps, batch_size, features)
 
-        final_state, sequences = gru(carry, jnp.ones(dims))
+        sequences, final_state = gru(jnp.ones(dims), carry)
 
         assert final_state.shape == (batch_size, hidden_dim)
 
@@ -50,6 +52,26 @@ class TestGRU:
             assert sequences.shape == (timesteps, batch_size, hidden_dim)
         else:
             assert sequences.shape == (batch_size, timesteps, hidden_dim)
+
+    def test_jit(self):
+        x = np.random.uniform(size=(10, 20, 2))
+        module = recurrent.GRU().init(42, (x, jnp.zeros((10, 3))))
+
+        @jax.jit
+        def f(module, x):
+            return module, module(x, jnp.zeros((10, 3)))
+
+        module2, y = f(module, x)
+        assert y.shape == (10, 3)
+        print(jax.tree_leaves(module))
+        print(jax.tree_leaves(module2))
+        assert all(
+            np.allclose(a, b)
+            for a, b in zip(
+                jax.tree_leaves(module.parameters()),
+                jax.tree_leaves(module2.parameters()),
+            )
+        )
 
     @hp.given(return_state=st.booleans(), return_sequences=st.booleans())
     @hp.settings(deadline=None, max_examples=20)
@@ -60,17 +82,21 @@ class TestGRU:
         batch_size = 32
         time = 10
 
-        gru = recurrent.GRU(return_state=return_state, return_sequences=return_sequences)
-        gru = gru.init(key, (jnp.ones((1, hidden_dim)), jnp.ones((1, 1, features))))
+        gru = recurrent.GRU(
+            return_state=return_state, return_sequences=return_sequences
+        )
+        gru = gru.init(key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))))
 
-        output = gru(jnp.zeros((batch_size, hidden_dim)), jnp.ones((batch_size, time, features)))
+        output = gru(
+            jnp.ones((batch_size, time, features)), jnp.zeros((batch_size, hidden_dim))
+        )
 
         sequence_shape = (batch_size, time, hidden_dim)
         state_shape = (batch_size, hidden_dim)
         if return_sequences and not return_state:
             assert output.shape == sequence_shape
         elif return_state and return_sequences:
-            assert output[0].shape == state_shape and output[1].shape == sequence_shape
+            assert output[0].shape == sequence_shape and output[1].shape == state_shape
         else:
             assert output.shape == state_shape
 
@@ -82,10 +108,17 @@ class TestGRU:
         time = 10
 
         gru_fwd = recurrent.GRU(go_backwards=False)
-        gru_fwd = gru_fwd.init(key, (jnp.ones((1, hidden_dim)), jnp.ones((1, 1, features))))
+        gru_fwd = gru_fwd.init(
+            key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim)))
+        )
 
         gru_bwd = recurrent.GRU(go_backwards=True)
         gru_bwd.params = gru_fwd.params
-        init_carry, inputs  = (jnp.zeros((batch_size, hidden_dim)), jnp.ones((batch_size, time, features)))
+        inputs, init_carry = (
+            jnp.ones((batch_size, time, features)),
+            jnp.zeros((batch_size, hidden_dim)),
+        )
 
-        assert np.allclose(gru_fwd(init_carry, inputs[:, ::-1, :]), gru_fwd(init_carry, inputs))
+        assert np.allclose(
+            gru_fwd(inputs[:, ::-1, :], init_carry), gru_fwd(inputs, init_carry)
+        )

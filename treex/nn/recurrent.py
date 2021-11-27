@@ -71,10 +71,11 @@ class GRU(Module):
             bias_init=self.bias_init,
         )
 
-    def __call__(self, carry, x):
+    def __call__(self, x, carry):
         # Move time dimension to be the first so it can be looped over
         if not self.time_major:
             x = jnp.transpose(x, (1, 0, 2))
+
         if self.go_backwards:
             x = x[::-1, :, :]
 
@@ -94,5 +95,5 @@ class GRU(Module):
         if self.return_sequences and not self.return_state:
             return sequences
         if self.return_sequences and self.return_state:
-            return final_state, sequences
+            return sequences, final_state
         return final_state
