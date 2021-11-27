@@ -17,7 +17,7 @@ class TestGRU:
     @hp.settings(deadline=None, max_examples=20)
     def test_init_carry(self, batch_size, hidden_dim):
         next_key = tx.KeySeq().init(42)
-        carry = recurrent.GRU().module.initialize_carry(
+        carry = recurrent.GRU(hidden_dim).module.initialize_carry(
             next_key, (batch_size,), hidden_dim
         )
         assert carry.shape == (batch_size, hidden_dim)
@@ -33,7 +33,7 @@ class TestGRU:
     def test_forward(self, batch_size, hidden_dim, features, timesteps, time_major):
         key = tx.Key(8)
 
-        gru = recurrent.GRU(
+        gru = recurrent.GRU(hidden_dim,
             return_state=True, return_sequences=True, time_major=time_major
         )
         gru = gru.init(key, (jnp.ones((1, 1, features)), jnp.ones((1, hidden_dim))))
@@ -55,7 +55,7 @@ class TestGRU:
 
     def test_jit(self):
         x = np.random.uniform(size=(10, 20, 2))
-        module = recurrent.GRU().init(42, (x, jnp.zeros((10, 3))))
+        module = recurrent.GRU(3).init(42, (x, jnp.zeros((10, 3))))
 
         @jax.jit
         def f(module, x):
@@ -82,7 +82,7 @@ class TestGRU:
         batch_size = 32
         time = 10
 
-        gru = recurrent.GRU(
+        gru = recurrent.GRU(hidden_dim,
             return_state=return_state, return_sequences=return_sequences
         )
         gru = gru.init(key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))))
@@ -100,19 +100,19 @@ class TestGRU:
         else:
             assert output.shape == state_shape
 
-    def test_reverse(self):
+    def test_backward_mode(self):
         key = tx.Key(8)
         hidden_dim = 5
         features = 10
         batch_size = 32
         time = 10
 
-        gru_fwd = recurrent.GRU(go_backwards=False)
+        gru_fwd = recurrent.GRU(hidden_dim, go_backwards=False)
         gru_fwd = gru_fwd.init(
             key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim)))
         )
 
-        gru_bwd = recurrent.GRU(go_backwards=True)
+        gru_bwd = recurrent.GRU(hidden_dim, go_backwards=True)
         gru_bwd.params = gru_fwd.params
         inputs, init_carry = (
             jnp.ones((batch_size, time, features)),
@@ -122,3 +122,19 @@ class TestGRU:
         assert np.allclose(
             gru_fwd(inputs[:, ::-1, :], init_carry), gru_fwd(inputs, init_carry)
         )
+
+    def test_optional_initial_state(self):
+        key = tx.Key(8)
+        hidden_dim = 5
+        features = 10
+        batch_size = 32
+        time = 10
+
+        gru = recurrent.GRU(hidden_dim, go_backwards=False)
+        gru = gru.init(
+            key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim)))
+        )
+
+        inputs = np.random.rand(batch_size, time, features)
+        assert np.allclose(gru(inputs), gru(inputs, np.zeros((batch_size, hidden_dim))))
+        assert np.allclose(gru(inputs), gru(inputs, gru.initialize_state(batch_size)))
