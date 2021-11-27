@@ -33,8 +33,8 @@ class TestGRU:
     def test_forward(self, batch_size, hidden_dim, features, timesteps, time_major):
         key = tx.Key(8)
 
-        gru = recurrent.GRU(hidden_dim,
-            return_state=True, return_sequences=True, time_major=time_major
+        gru = recurrent.GRU(
+            hidden_dim, return_state=True, return_sequences=True, time_major=time_major
         )
         gru = gru.init(key, (jnp.ones((1, 1, features)), jnp.ones((1, hidden_dim))))
 
@@ -59,7 +59,7 @@ class TestGRU:
 
         @jax.jit
         def f(module, x):
-            return module, module(x, jnp.zeros((10, 3)))
+            return module, module(x)
 
         module2, y = f(module, x)
         assert y.shape == (10, 3)
@@ -82,8 +82,8 @@ class TestGRU:
         batch_size = 32
         time = 10
 
-        gru = recurrent.GRU(hidden_dim,
-            return_state=return_state, return_sequences=return_sequences
+        gru = recurrent.GRU(
+            hidden_dim, return_state=return_state, return_sequences=return_sequences
         )
         gru = gru.init(key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))))
 
@@ -131,10 +131,37 @@ class TestGRU:
         time = 10
 
         gru = recurrent.GRU(hidden_dim, go_backwards=False)
-        gru = gru.init(
-            key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim)))
-        )
+        gru = gru.init(key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))))
 
         inputs = np.random.rand(batch_size, time, features)
         assert np.allclose(gru(inputs), gru(inputs, np.zeros((batch_size, hidden_dim))))
         assert np.allclose(gru(inputs), gru(inputs, gru.initialize_state(batch_size)))
+
+    def test_stateful(self):
+        key = tx.Key(8)
+        hidden_dim = 5
+        features = 10
+        batch_size = 32
+        time = 10
+
+        gru = recurrent.GRU(hidden_dim, stateful=True)
+        gru = gru.init(key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))))
+        base = recurrent.GRU(hidden_dim, stateful=False)
+        base = base.init(key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))))
+        base.params = gru.params
+
+        inputs = np.random.rand(batch_size, time, features)
+
+        # Initial state with zeros
+        last_state = gru(inputs)
+        assert np.allclose(last_state, base(inputs, np.zeros((batch_size, hidden_dim))))
+
+        # Subsequent calls starting from `last_state`
+        state = last_state
+        last_state = gru(inputs)
+        assert np.allclose(last_state, base(inputs, state))
+
+        # Subsequent calls starting from `last_state`
+        state = last_state
+        last_state = gru(inputs)
+        assert np.allclose(last_state, base(inputs, state))

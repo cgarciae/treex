@@ -31,17 +31,20 @@ class GRU(Module):
         [flax_module.PRNGKey, flax_module.Shape, flax_module.Dtype], flax_module.Array
     ]
     params: tp.Dict[str, tp.Dict[str, flax_module.Array]] = types.Parameter.node()
+    last_state: flax_module.Array = types.BatchStat.node()
 
     # static
     hidden_units: int
     return_state: bool
     return_sequences: bool
     go_backwards: bool
+    stateful: bool
     time_major: bool
     unroll: int
 
     def __init__(
-        self, units: int,
+        self,
+        units: int,
         *,
         gate_fn: CallableModule = flax_module.sigmoid,
         activation_fn: CallableModule = flax_module.tanh,
@@ -52,6 +55,7 @@ class GRU(Module):
         return_sequences: bool = False,
         return_state: bool = False,
         go_backwards: bool = False,
+        stateful: bool = False,
         time_major: bool = False,
         unroll: int = 1
     ):
@@ -66,10 +70,12 @@ class GRU(Module):
         self.return_sequences = return_sequences
         self.return_state = return_state
         self.go_backwards = go_backwards
+        self.stateful = stateful
         self.time_major = time_major
         self.unroll = unroll
 
         self.next_key = KeySeq()
+        self.last_state = None
 
     @property
     def module(self):
@@ -81,9 +87,11 @@ class GRU(Module):
         )
 
     def initialize_state(self, batch_size):
-        return self.module.initialize_carry(self.next_key(), (batch_size,), self.hidden_units, self.initial_state_init)
+        return self.module.initialize_carry(
+            self.next_key(), (batch_size,), self.hidden_units, self.initial_state_init
+        )
 
-    def __call__(self, x, initial_state = None):
+    def __call__(self, x, initial_state=None):
         # Move time dimension to be the first so it can be looped over
         if not self.time_major:
             x = jnp.transpose(x, (1, 0, 2))
@@ -93,6 +101,8 @@ class GRU(Module):
 
         if initial_state is None:
             initial_state = self.initialize_state(x.shape[1])
+            if self.stateful and self.last_state is not None:
+                initial_state = self.last_state
 
         if self.initializing():
             _variables = self.module.init(next_key(), initial_state, x[0, ...])
@@ -103,7 +113,12 @@ class GRU(Module):
         def iter_fn(state, x):
             return self.module.apply(variables, state, x)
 
-        final_state, sequences = jax.lax.scan(iter_fn, initial_state, x, unroll=self.unroll)
+        final_state, sequences = jax.lax.scan(
+            iter_fn, initial_state, x, unroll=self.unroll
+        )
+        if self.stateful and not self.initializing():
+            self.last_state = final_state
+
         if not self.time_major:
             sequences = jnp.transpose(sequences, (1, 0, 2))
 
