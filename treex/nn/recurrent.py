@@ -16,6 +16,12 @@ CallableModule = tp.Callable[..., jnp.ndarray]
 
 
 class GRU(Module):
+    """Gated Recurrent Unit - Cho et al. 2014
+
+    `GRU` is implemented as a wrapper on top of `flax.linen.GRUCell`, providing higher level
+    functionality and features similar to what can be found in that of `tf.keras.layers.GRU`.
+    """
+
     gate_fn: CallableModule = flax_module.sigmoid
     activation_fn: CallableModule = flax_module.tanh
     kernel_init: tp.Callable[
@@ -59,6 +65,29 @@ class GRU(Module):
         time_major: bool = False,
         unroll: int = 1
     ):
+        """
+        Arguments:
+            units: dimensionality of the state space
+            gate_fn: activation function used for gates. (default: `sigmoid`)
+            kernel_init: initializer function for the kernels that transform the input
+              (default: `lecun_normal`)
+            recurrent_kernel_init: initializer function for the kernels that transform
+              the hidden state (default: `orthogonal`)
+            bias_init: initializer function for the bias parameters (default: `zeros`)
+            initial_state_init: initializer function for the hidden state (default: `zeros`)
+            return_sequences: whether to return the last state or the sequences (default: `False`)
+            return_state: whether to return the last state in addition to the sequences
+              (default: `False`)
+            go_backwards: whether to process the input sequence backwards and return the
+              reversed sequence (default: `False`)
+            stateful: whether to use the last state of the current batch as the start_state
+              of the next batch (default: `False`)
+            time_major: defines the shape of the `input` and `output`. If `True`, the inputs
+              and outputs will have a shape of `[timesteps, batch, feature]`, otherwise it will
+              be `[batch, timesteps, feature]`.
+            unroll: number of iterations to be unrolled into a single XLA iteration using
+              `jax.lax.scan` (default: `1`)
+        """
         self.hidden_units = units
         self.gate_fn = gate_fn
         self.activation_fn = activation_fn
@@ -78,7 +107,7 @@ class GRU(Module):
         self.last_state = None
 
     @property
-    def module(self):
+    def module(self) -> flax_module.GRUCell:
         return flax_module.GRUCell(
             gate_fn=self.gate_fn,
             activation_fn=self.activation_fn,
@@ -86,12 +115,37 @@ class GRU(Module):
             bias_init=self.bias_init,
         )
 
-    def initialize_state(self, batch_size):
+    def initialize_state(self, batch_size: int) -> jnp.ndarray:
+        """Initializes the hidden state of the GRU
+
+        Arguments:
+            batch_size: Number of elements in a batch
+
+        Returns:
+            The initial hidden state as specified by `initial_state_init`
+        """
         return self.module.initialize_carry(
             self.next_key(), (batch_size,), self.hidden_units, self.initial_state_init
         )
 
-    def __call__(self, x, initial_state=None):
+    def __call__(
+        self, x: jnp.ndarray, initial_state: tp.Optional[jnp.ndarray] = None
+    ) -> tp.Union[jnp.ndarray, tp.Tuple[jnp.ndarray, jnp.ndarray]]:
+        """Applies the GRU to the sequence of inputs `x` starting from the `initial_state`.
+
+        Arguments:
+            `x`: sequence of inputs to the GRU
+            `initial_state`: optional initial hidden state. If nothing is specified,
+              either the `last_state` (i.e. the output from the previous batch is used
+              if `stateful == True`) or the `initial_state` is gotten from the `initial_state_init`
+              function
+
+        Returns:
+            - The final state of the GRU by default
+            - The full sequence of states (if `return_sequences == True`)
+            - A tuple of both the sequence of states and final state (if both
+                `return_state` and `return_sequences` are `True`)
+        """
         # Move time dimension to be the first so it can be looped over
         if not self.time_major:
             x = jnp.transpose(x, (1, 0, 2))
