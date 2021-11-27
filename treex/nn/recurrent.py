@@ -27,23 +27,26 @@ class GRU(Module):
     bias_init: tp.Callable[
         [flax_module.PRNGKey, flax_module.Shape, flax_module.Dtype], flax_module.Array
     ]
-    params: tp.Any = types.Parameter.node()
+    params: tp.Dict[str, tp.Dict[str, flax_module.Array]] = types.Parameter.node()
 
     # static
-    return_final: bool = False
-    time_major: bool = False
-    unroll: int = 1
+    return_state: bool
+    return_sequences: bool
+    go_backwards: bool
+    time_major: bool
+    unroll: int
 
-    # TODO: Add typing info and documentation
     def __init__(
         self,
         *,
         gate_fn: CallableModule = flax_module.sigmoid,
         activation_fn: CallableModule = flax_module.tanh,
         kernel_init: CallableModule = flax_module.default_kernel_init,
-        recurrent_kernel_init=flax_module.orthogonal(),
-        bias_init=flax_module.zeros,
-        return_final: bool = False,
+        recurrent_kernel_init: CallableModule = flax_module.orthogonal(),
+        bias_init: CallableModule = flax_module.zeros,
+        return_sequences: bool = False,
+        return_state: bool = False,
+        go_backwards: bool = False,
         time_major: bool = False,
         unroll: int = 1
     ):
@@ -53,7 +56,9 @@ class GRU(Module):
         self.recurrent_kernel_init = recurrent_kernel_init
         self.bias_init = bias_init
         self.params = {}
-        self.return_final = return_final
+        self.return_sequences = return_sequences
+        self.return_state = return_state
+        self.go_backwards = go_backwards
         self.time_major = time_major
         self.unroll = unroll
 
@@ -70,6 +75,8 @@ class GRU(Module):
         # Move time dimension to be the first so it can be looped over
         if not self.time_major:
             x = jnp.transpose(x, (1, 0, 2))
+        if self.go_backwards:
+            x = x[::-1, :, :]
 
         if self.initializing():
             _variables = self.module.init(next_key(), carry, x[0, ...])
@@ -80,11 +87,12 @@ class GRU(Module):
         def iter_fn(carry, x):
             return self.module.apply(variables, carry, x)
 
-        carry, hidden = jax.lax.scan(iter_fn, carry, x, unroll=self.unroll)
-        # hidden = jnp.swapaxes(hidden, 0, self.axis)
+        final_state, sequences = jax.lax.scan(iter_fn, carry, x, unroll=self.unroll)
         if not self.time_major:
-            hidden = jnp.transpose(hidden, (1, 0, 2))
+            sequences = jnp.transpose(sequences, (1, 0, 2))
 
-        if self.return_final:
-            return carry
-        return carry, hidden
+        if self.return_sequences and not self.return_state:
+            return sequences
+        if self.return_sequences and self.return_state:
+            return final_state, sequences
+        return final_state
