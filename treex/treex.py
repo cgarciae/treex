@@ -81,6 +81,16 @@ class Filters:
         """
         return to.filter(self, types.Parameter, *filters)
 
+    def trainable_parameters(self: A, *filters: types.Filter) -> A:
+        """
+        Returns a copy of the Module with only tx.Parameter TreeParts which are not frozen, alias for
+        `filter(tx.Parameter, lambda field: not field.module.frozen)`.
+
+        Arguments:
+            filters: additional filters passed to `filter`.
+        """
+        return self.parameters(lambda field: not field.module.frozen, *filters)
+
     def batch_stats(self: A, *filters: types.Filter) -> A:
         """
         Returns a copy of the Module with only tx.BatchStat TreeParts, alias for `filter(tx.BatchStat)`.

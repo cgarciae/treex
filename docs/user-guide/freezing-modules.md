@@ -24,7 +24,7 @@ for layer in model.layers[:-1]:
 # fine-tune the model
 ...
 ```
-In this example we can leveraged the fact that `Sequential` has its submodules in `.layers` to freeze all but the last layers. 
+In this example we can leveraged the fact that `Sequential` has its submodules in `.layers` to freeze all but the last layers.
 
 Freezing modules is useful for tasks such as Transfer Learning where you want to keep most of the weights in a model unchange and train only a few of them on a new dataset. If you have a backbone you can just freeze the entire model.
 
@@ -38,17 +38,15 @@ model = tx.Sequential(
 ).init(42)
 
 ...
+# Initialize optimizer with only the trainable set of parameters
+optimizer = optimizer.init(model.trainable_parameters())
+...
 
 @jax.jit
 def train_step(model, x, y, optimizer):
     # only differentiate w.r.t. parameters whose module is not frozen
-    params = model.filter(
-        tx.Parameter,
-        lambda field: not field.module.frozen,
-    )
+    params = model.trainable_parameters()
     (loss, model), grads = loss_fn(params, model, x, y)
 
     ...
 ```
-
-Notice that here we used a custom callback to `filter` to select only parameters from Modules that are not frozen.
