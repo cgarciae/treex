@@ -37,7 +37,7 @@ class GRU(Module):
         [flax_module.PRNGKey, flax_module.Shape, flax_module.Dtype], flax_module.Array
     ]
     params: tp.Dict[str, tp.Dict[str, flax_module.Array]] = types.Parameter.node()
-    last_state: flax_module.Array = types.BatchStat.node()
+    last_state: flax_module.Array = types.Cache.node()
 
     # static
     hidden_units: int
@@ -45,7 +45,7 @@ class GRU(Module):
     return_sequences: bool
     go_backwards: bool
     stateful: bool
-    time_major: bool
+    time_axis: tp.Tuple[int]
     unroll: int
 
     def __init__(
@@ -62,7 +62,7 @@ class GRU(Module):
         return_state: bool = False,
         go_backwards: bool = False,
         stateful: bool = False,
-        time_major: bool = False,
+        time_axis: int = 0,
         unroll: int = 1
     ):
         """
@@ -82,9 +82,8 @@ class GRU(Module):
               reversed sequence (default: `False`)
             stateful: whether to use the last state of the current batch as the start_state
               of the next batch (default: `False`)
-            time_major: defines the shape of the `input` and `output`. If `True`, the inputs
-              and outputs will have a shape of `[timesteps, batch, feature]`, otherwise it will
-              be `[batch, timesteps, feature]`.
+            time_axis: specifies which axis of the input corresponds to the timesteps. By default,
+              `time_axis = 0` which corresponds to the input being of shape `[timesteps, ...]`
             unroll: number of iterations to be unrolled into a single XLA iteration using
               `jax.lax.scan` (default: `1`)
         """
@@ -100,7 +99,7 @@ class GRU(Module):
         self.return_state = return_state
         self.go_backwards = go_backwards
         self.stateful = stateful
-        self.time_major = time_major
+        self.time_axis = (time_axis,)
         self.unroll = unroll
 
         self.next_key = KeySeq()
@@ -115,7 +114,7 @@ class GRU(Module):
             bias_init=self.bias_init,
         )
 
-    def initialize_state(self, batch_size: int) -> jnp.ndarray:
+    def initialize_state(self, batch_dim: tp.Union[tp.Tuple[int], int]) -> jnp.ndarray:
         """Initializes the hidden state of the GRU
 
         Arguments:
@@ -124,8 +123,10 @@ class GRU(Module):
         Returns:
             The initial hidden state as specified by `initial_state_init`
         """
+        if not isinstance(batch_dim, tp.Iterable):
+            batch_dim = (batch_dim,)
         return self.module.initialize_carry(
-            self.next_key(), (batch_size,), self.hidden_units, self.initial_state_init
+            self.next_key(), batch_dim, self.hidden_units, self.initial_state_init
         )
 
     def __call__(
@@ -146,20 +147,22 @@ class GRU(Module):
             - A tuple of both the sequence of states and final state (if both
                 `return_state` and `return_sequences` are `True`)
         """
-        # Move time dimension to be the first so it can be looped over
-        if not self.time_major:
-            x = jnp.transpose(x, (1, 0, 2))
+        # Move time axis to be the first so it can be looped over
+        # Note: not needed with jax_utils.scan_in_dim
+        x = jnp.swapaxes(x, self.time_axis, 0)
 
         if self.go_backwards:
-            x = x[::-1, :, :]
+            x = x[::-1]
 
         if initial_state is None:
-            initial_state = self.initialize_state(x.shape[1])
+            initial_state = self.initialize_state(x.shape[len(self.time_axis) : -1])
             if self.stateful and self.last_state is not None:
                 initial_state = self.last_state
 
         if self.initializing():
-            _variables = self.module.init(next_key(), initial_state, x[0, ...])
+            _variables = self.module.init(
+                next_key(), initial_state, x[(0,) * len(self.time_axis)]
+            )
             self.params = _variables["params"]
 
         variables = dict(params=self.params)
@@ -173,8 +176,8 @@ class GRU(Module):
         if self.stateful and not self.initializing():
             self.last_state = final_state
 
-        if not self.time_major:
-            sequences = jnp.transpose(sequences, (1, 0, 2))
+        # Note: Not needed with jax_utils.scan_in_dim
+        sequences = jnp.swapaxes(sequences, self.time_axis, 0)
 
         if self.return_sequences and not self.return_state:
             return sequences
