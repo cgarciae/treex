@@ -8,6 +8,11 @@ readme = "README.md"
 repository = "https://github.com/cgarciae/treex"
 homepage = "https://cgarciae.github.io/treex"
 
+[[tool.poetry.source]]
+name = "torch"
+url = "https://eternalphane.github.io/pytorch-pypi/"
+secondary = true
+
 [tool.poetry.dependencies]
 python = "^3.7"
 flax = "^0.3.4"
@@ -34,6 +39,7 @@ mkdocstrings = "^0.15.2"
 mkdocs-jupyter = { version = "^0.17.3", python = ">=3.7" }
 mkdocs-material = "^7.2.5"
 einops = "^0.3.2"
+torch="1.10.0+cpu"
 torchmetrics = "^0.5.1"
 tensorflow = "^2.6.0"
 datasets = "^1.14.0"

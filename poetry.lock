@@ -2522,7 +2522,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "torch"
-version = "1.10.1"
+version = "1.10.0+cpu"
 description = "Tensors and Dynamic neural networks in Python with strong GPU acceleration"
 category = "dev"
 optional = false
@@ -2530,6 +2530,11 @@ python-versions = ">=3.6.2"
 
 [package.dependencies]
 typing-extensions = "*"
+
+[package.source]
+type = "legacy"
+url = "https://eternalphane.github.io/pytorch-pypi"
+reference = "torch"
 
 [[package]]
 name = "torchmetrics"
@@ -2807,7 +2812,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "d05d38b7e37375278cff84136b96ef390ee0f1a620ded9f6d68edf8c9f833d08"
+content-hash = "11ea87a7dcf3b11c41371c1e0ad745b8ad5fdc914cd908cd113eb16b9a7b50c1"
 
 [metadata.files]
 absl-py = [
@@ -4467,9 +4472,7 @@ toolz = [
     {file = "toolz-0.11.2-py3-none-any.whl", hash = "sha256:a5700ce83414c64514d82d60bcda8aabfde092d1c1a8663f9200c07fdcc6da8f"},
     {file = "toolz-0.11.2.tar.gz", hash = "sha256:6b312d5e15138552f1bda8a4e66c30e236c831b612b2bf0005f8a1df10a4bc33"},
 ]
-torch = [
-    {file = "torch-1.10.1-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:adbb5f292e260e39715d67478823e03e3001db1af5b02c18caa34549dccb421e"},
-]
+torch = []
 torchmetrics = [
     {file = "torchmetrics-0.5.1-py3-none-any.whl", hash = "sha256:4e5497bc5c9d19fa520748cda89f6d863868bb5be33ec47d2834c0988bf737c5"},
     {file = "torchmetrics-0.5.1.tar.gz", hash = "sha256:22fbcb6fc05348ca3f2bd06e0763e88411a6b68c2b9fc26084b39d40cc4021b0"},
