@@ -36,15 +36,21 @@ def getinfo(module: ModuleType, path: tp.Tuple[str, ...]) -> tp.Dict[str, tp.Any
         (name, path + (name,), getattr(module, name)) for name in member_names
     )
     all_members = {
-        name: MemberInfo(
-            member=getinfo(value, path) if inspect.ismodule(value) else value,
+        name: getinfo(value, path)
+        if inspect.ismodule(value)
+        else MemberInfo(
+            member=value,
             path=path,
         )
         for name, path, value in names_paths_values
         if value
     }
 
-    return {name: info for name, info in all_members.items() if info.member}
+    return {
+        name: info
+        for name, info in all_members.items()
+        if isinstance(info, dict) and len(info) > 0 or isinstance(info, MemberInfo)
+    }
 
 
 docs_info = getinfo(MODULE, ())
@@ -76,13 +82,7 @@ template = """
 
 ::: {{module_path}}
     selection:
-        inherited_members: true
-        {%- if members %}
-        members:
-        {%- for member in members %}
-            - {{member}}
-        {%- endfor %}
-        {% endif %}
+        inherited_members: false
 """
 
 api_path = Path("docs/api")
