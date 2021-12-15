@@ -1,6 +1,6 @@
 
 # treex.Optimizer
 
-::: treex.optimizer.Optimizer
+::: treex.Optimizer
     selection:
-        inherited_members: true
+        inherited_members: false

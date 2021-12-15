@@ -1,6 +1,6 @@
 
 # treex.BatchNorm
 
-::: treex.nn.batch_norm.BatchNorm
+::: treex.BatchNorm
     selection:
-        inherited_members: true
+        inherited_members: false

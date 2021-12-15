@@ -1,6 +1,6 @@
 
 # treex.MLP
 
-::: treex.nn.mlp.MLP
+::: treex.MLP
     selection:
-        inherited_members: true
+        inherited_members: false

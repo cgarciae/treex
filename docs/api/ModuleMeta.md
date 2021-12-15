@@ -1,6 +1,6 @@
 
 # treex.ModuleMeta
 
-::: treex.module.ModuleMeta
+::: treex.ModuleMeta
     selection:
-        inherited_members: true
+        inherited_members: false

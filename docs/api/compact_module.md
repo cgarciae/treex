@@ -1,6 +1,6 @@
 
 # treex.compact_module
 
-::: treex.module.compact_module
+::: treex.compact_module
     selection:
-        inherited_members: true
+        inherited_members: false

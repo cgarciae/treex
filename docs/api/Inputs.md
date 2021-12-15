@@ -1,6 +1,6 @@
 
 # treex.Inputs
 
-::: treex.types.Inputs
+::: treex.Inputs
     selection:
-        inherited_members: true
+        inherited_members: false

@@ -1,6 +1,6 @@
 
 # treex.BatchStat
 
-::: treex.types.BatchStat
+::: treex.BatchStat
     selection:
-        inherited_members: true
+        inherited_members: false

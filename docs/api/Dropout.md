@@ -1,6 +1,6 @@
 
 # treex.Dropout
 
-::: treex.nn.dropout.Dropout
+::: treex.Dropout
     selection:
-        inherited_members: true
+        inherited_members: false

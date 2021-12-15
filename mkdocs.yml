@@ -18,6 +18,7 @@ nav:
     Freezing Modules: user-guide/freezing-modules.md
 - API Reference:
     Apply: api/Apply.md
+    ArrayLike: api/ArrayLike.md
     BatchNorm: api/BatchNorm.md
     BatchStat: api/BatchStat.md
     Cache: api/Cache.md
@@ -28,13 +29,13 @@ nav:
     Extensions: api/Extensions.md
     FieldInfo: api/FieldInfo.md
     FieldMetadata: api/FieldMetadata.md
-    Filters: api/Filters.md
+    Filter: api/Filter.md
     Flatten: api/Flatten.md
     FlaxModule: api/FlaxModule.md
+    HaikuModule: api/HaikuModule.md
     Hashable: api/Hashable.md
     Initializer: api/Initializer.md
     Inputs: api/Inputs.md
-    Key: api/Key.md
     KeySeq: api/KeySeq.md
     KindMixin: api/KindMixin.md
     Lambda: api/Lambda.md
@@ -43,6 +44,7 @@ nav:
     Loss: api/Loss.md
     LossAndLogs: api/LossAndLogs.md
     LossLog: api/LossLog.md
+    MISSING: api/MISSING.md
     MLP: api/MLP.md
     Map: api/Map.md
     Merge: api/Merge.md
@@ -53,6 +55,7 @@ nav:
     ModelState: api/ModelState.md
     Module: api/Module.md
     ModuleMeta: api/ModuleMeta.md
+    NOTHING: api/NOTHING.md
     Named: api/Named.md
     Nothing: api/Nothing.md
     Opaque: api/Opaque.md
@@ -68,18 +71,65 @@ nav:
     Tree: api/Tree.md
     TreeMeta: api/TreeMeta.md
     TreePart: api/TreePart.md
-    Treex: api/Treex.md
     add_field_info: api/add_field_info.md
     apply: api/apply.md
     compact: api/compact.md
     compact_module: api/compact_module.md
     field: api/field.md
     filter: api/filter.md
-    iter_split: api/iter_split.md
+    losses:
+      CosineSimilarity: api/losses/CosineSimilarity.md
+      Crossentropy: api/losses/Crossentropy.md
+      Huber: api/losses/Huber.md
+      Loss: api/losses/Loss.md
+      MeanAbsoluteError: api/losses/MeanAbsoluteError.md
+      MeanAbsolutePercentageError: api/losses/MeanAbsolutePercentageError.md
+      MeanSquaredError: api/losses/MeanSquaredError.md
+      MeanSquaredLogarithmicError: api/losses/MeanSquaredLogarithmicError.md
+      Reduction: api/losses/Reduction.md
+      cosine_similarity: api/losses/cosine_similarity.md
+      crossentropy: api/losses/crossentropy.md
+      huber: api/losses/huber.md
+      mean_absolute_error: api/losses/mean_absolute_error.md
+      mean_absolute_percentage_error: api/losses/mean_absolute_percentage_error.md
+      mean_squared_error: api/losses/mean_squared_error.md
+      mean_squared_logarithmic_error: api/losses/mean_squared_logarithmic_error.md
     map: api/map.md
     merge: api/merge.md
+    metrics:
+      Accuracy: api/metrics/Accuracy.md
+      AuxLosses: api/metrics/AuxLosses.md
+      AuxMetrics: api/metrics/AuxMetrics.md
+      LossAndLogs: api/metrics/LossAndLogs.md
+      Losses: api/metrics/Losses.md
+      MAE: api/metrics/MAE.md
+      MSE: api/metrics/MSE.md
+      Mean: api/metrics/Mean.md
+      MeanAbsoluteError: api/metrics/MeanAbsoluteError.md
+      MeanSquareError: api/metrics/MeanSquareError.md
+      Metric: api/metrics/Metric.md
+      Metrics: api/metrics/Metrics.md
+      Reduce: api/metrics/Reduce.md
+      Reduction: api/metrics/Reduction.md
     next_key: api/next_key.md
+    nn:
+      BatchNorm: api/nn/BatchNorm.md
+      Conv: api/nn/Conv.md
+      Dropout: api/nn/Dropout.md
+      Flatten: api/nn/Flatten.md
+      FlaxModule: api/nn/FlaxModule.md
+      HaikuModule: api/nn/HaikuModule.md
+      Lambda: api/nn/Lambda.md
+      Linear: api/nn/Linear.md
+      MLP: api/nn/MLP.md
+      Sequential: api/nn/Sequential.md
+      sequence: api/nn/sequence.md
     node: api/node.md
+    preserve_state: api/preserve_state.md
+    regularizers:
+      L1: api/regularizers/L1.md
+      L1L2: api/regularizers/L1L2.md
+      L2: api/regularizers/L2.md
     rng_key: api/rng_key.md
     sequence: api/sequence.md
     static: api/static.md
@@ -114,6 +164,8 @@ markdown_extensions:
 plugins:
 - search
 - mkdocs-jupyter
-- mkdocstrings
+- mkdocstrings:
+    watch:
+    - treex
 extra_javascript:
 - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML

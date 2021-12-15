@@ -1,6 +1,6 @@
 
 # treex.MetricState
 
-::: treex.types.MetricState
+::: treex.MetricState
     selection:
-        inherited_members: true
+        inherited_members: false

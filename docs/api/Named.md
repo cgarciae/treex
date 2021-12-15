@@ -1,6 +1,6 @@
 
 # treex.Named
 
-::: treex.types.Named
+::: treex.Named
     selection:
-        inherited_members: true
+        inherited_members: false

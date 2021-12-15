@@ -1,6 +1,6 @@
 
 # treex.Rng
 
-::: treex.types.Rng
+::: treex.Rng
     selection:
-        inherited_members: true
+        inherited_members: false

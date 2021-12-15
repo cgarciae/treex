@@ -1,6 +1,6 @@
 
 # treex.rng_key
 
-::: treex.module.rng_key
+::: treex.rng_key
     selection:
-        inherited_members: true
+        inherited_members: false

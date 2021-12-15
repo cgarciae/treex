@@ -1,0 +1,31 @@
+name: Update GitHub Pages
+on:
+  release:
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v2.3.1
+
+      - name: Install Poetry 📖
+        uses: snok/install-poetry@v1.1.1
+        with:
+          version: 1.1.4
+
+      - name: Install Dependencies
+        run: |
+          poetry config virtualenvs.create false
+          poetry install
+
+      - name: Build Docs 🔨
+        run: |
+          cp README.md docs/index.md
+          python scripts/update_docs.py
+          mkdocs build
+        
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@4.1.6
+        with:
+          branch: gh-pages
+          folder: site

@@ -1,6 +1,6 @@
 
 # treex.Lambda
 
-::: treex.nn.sequential.Lambda
+::: treex.Lambda
     selection:
-        inherited_members: true
+        inherited_members: false

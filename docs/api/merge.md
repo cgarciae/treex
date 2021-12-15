@@ -1,6 +1,6 @@
 
-# treex.Merge
+# treex.merge
 
-::: treeo.mixins.Merge
+::: treex.merge
     selection:
-        inherited_members: true
+        inherited_members: false

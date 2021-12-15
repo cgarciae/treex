@@ -1,6 +1,6 @@
 
 # treex.Log
 
-::: treex.types.Log
+::: treex.Log
     selection:
-        inherited_members: true
+        inherited_members: false

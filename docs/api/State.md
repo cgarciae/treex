@@ -1,6 +1,6 @@
 
 # treex.State
 
-::: treex.types.State
+::: treex.State
     selection:
-        inherited_members: true
+        inherited_members: false

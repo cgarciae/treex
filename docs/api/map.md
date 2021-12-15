@@ -1,6 +1,6 @@
 
-# treex.Map
+# treex.map
 
-::: treeo.mixins.Map
+::: treex.map
     selection:
-        inherited_members: true
+        inherited_members: false

@@ -1,6 +1,6 @@
 
 # treex.to_string
 
-::: treeo.api.to_string
+::: treex.to_string
     selection:
-        inherited_members: true
+        inherited_members: false

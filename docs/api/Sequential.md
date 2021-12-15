@@ -1,6 +1,6 @@
 
 # treex.Sequential
 
-::: treex.nn.sequential.Sequential
+::: treex.Sequential
     selection:
-        inherited_members: true
+        inherited_members: false

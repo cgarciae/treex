@@ -1,6 +1,6 @@
 
 # treex.next_key
 
-::: treex.module.next_key
+::: treex.next_key
     selection:
-        inherited_members: true
+        inherited_members: false

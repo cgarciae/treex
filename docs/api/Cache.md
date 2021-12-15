@@ -1,6 +1,6 @@
 
 # treex.Cache
 
-::: treex.types.Cache
+::: treex.Cache
     selection:
-        inherited_members: true
+        inherited_members: false

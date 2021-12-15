@@ -1,6 +1,6 @@
 
 # treex.FieldMetadata
 
-::: treeo.types.FieldMetadata
+::: treex.FieldMetadata
     selection:
-        inherited_members: true
+        inherited_members: false

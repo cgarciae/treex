@@ -1,6 +1,6 @@
 
 # treex.Loss
 
-::: treex.losses.loss.Loss
+::: treex.Loss
     selection:
-        inherited_members: true
+        inherited_members: false

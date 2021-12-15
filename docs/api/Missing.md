@@ -1,6 +1,6 @@
 
 # treex.Missing
 
-::: treeo.types.Missing
+::: treex.Missing
     selection:
-        inherited_members: true
+        inherited_members: false

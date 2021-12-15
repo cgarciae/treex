@@ -1,6 +1,6 @@
 
 # treex.TreePart
 
-::: treex.types.TreePart
+::: treex.TreePart
     selection:
-        inherited_members: true
+        inherited_members: false

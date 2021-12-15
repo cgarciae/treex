@@ -1,6 +1,6 @@
 
 # treex.Initializer
 
-::: treex.types.Initializer
+::: treex.Initializer
     selection:
-        inherited_members: true
+        inherited_members: false

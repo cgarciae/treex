@@ -1,6 +1,6 @@
 
 # treex.TreeMeta
 
-::: treeo.tree.TreeMeta
+::: treex.TreeMeta
     selection:
-        inherited_members: true
+        inherited_members: false

@@ -1,6 +1,6 @@
 
 # treex.Linear
 
-::: treex.nn.linear.Linear
+::: treex.Linear
     selection:
-        inherited_members: true
+        inherited_members: false

@@ -1,6 +1,6 @@
 
 # treex.MetricLog
 
-::: treex.types.MetricLog
+::: treex.MetricLog
     selection:
-        inherited_members: true
+        inherited_members: false

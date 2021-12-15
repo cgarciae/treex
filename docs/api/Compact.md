@@ -1,6 +1,6 @@
 
 # treex.Compact
 
-::: treeo.mixins.Compact
+::: treex.Compact
     selection:
-        inherited_members: true
+        inherited_members: false

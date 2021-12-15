@@ -1,6 +1,6 @@
 
 # treex.Nothing
 
-::: treeo.types.Nothing
+::: treex.Nothing
     selection:
-        inherited_members: true
+        inherited_members: false

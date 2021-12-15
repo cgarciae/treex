@@ -1,6 +1,6 @@
 
 # treex.ToString
 
-::: treeo.mixins.ToString
+::: treex.ToString
     selection:
-        inherited_members: true
+        inherited_members: false

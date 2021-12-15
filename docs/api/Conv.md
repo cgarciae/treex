@@ -1,6 +1,6 @@
 
 # treex.Conv
 
-::: treex.nn.conv.Conv
+::: treex.Conv
     selection:
-        inherited_members: true
+        inherited_members: false

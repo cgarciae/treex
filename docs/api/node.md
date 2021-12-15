@@ -1,6 +1,6 @@
 
 # treex.node
 
-::: treeo.utils.node
+::: treex.node
     selection:
-        inherited_members: true
+        inherited_members: false

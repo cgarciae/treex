@@ -1,6 +1,6 @@
 
 # treex.KeySeq
 
-::: treex.key_seq.KeySeq
+::: treex.KeySeq
     selection:
-        inherited_members: true
+        inherited_members: false

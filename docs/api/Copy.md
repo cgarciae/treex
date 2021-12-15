@@ -1,6 +1,6 @@
 
 # treex.Copy
 
-::: treeo.mixins.Copy
+::: treex.Copy
     selection:
-        inherited_members: true
+        inherited_members: false

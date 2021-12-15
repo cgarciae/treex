@@ -13,3 +13,17 @@ try:
     from .haiku_module import HaikuModule
 except types.OptionalDependencyNotFound:
     pass
+
+__all__ = [
+    "BatchNorm",
+    "Conv",
+    "Dropout",
+    "Flatten",
+    "FlaxModule",
+    "Linear",
+    "MLP",
+    "Lambda",
+    "Sequential",
+    "sequence",
+    "HaikuModule",
+]

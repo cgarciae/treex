@@ -1,6 +1,6 @@
 
 # treex.Parameter
 
-::: treex.types.Parameter
+::: treex.Parameter
     selection:
-        inherited_members: true
+        inherited_members: false

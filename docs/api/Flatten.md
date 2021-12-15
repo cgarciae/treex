@@ -1,6 +1,6 @@
 
 # treex.Flatten
 
-::: treex.nn.flatten.Flatten
+::: treex.Flatten
     selection:
-        inherited_members: true
+        inherited_members: false

@@ -1,6 +1,6 @@
 
 # treex.FlaxModule
 
-::: treex.nn.flax_module.FlaxModule
+::: treex.FlaxModule
     selection:
-        inherited_members: true
+        inherited_members: false

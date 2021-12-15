@@ -1,6 +1,6 @@
 
 # treex.Module
 
-::: treex.module.Module
+::: treex.Module
     selection:
-        inherited_members: true
+        inherited_members: false

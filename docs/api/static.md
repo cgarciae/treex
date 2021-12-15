@@ -1,6 +1,6 @@
 
 # treex.static
 
-::: treeo.utils.static
+::: treex.static
     selection:
-        inherited_members: true
+        inherited_members: false

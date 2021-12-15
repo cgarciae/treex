@@ -1,6 +1,6 @@
 
 # treex.Extensions
 
-::: treeo.mixins.Extensions
+::: treex.Extensions
     selection:
-        inherited_members: true
+        inherited_members: false
