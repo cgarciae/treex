@@ -9,7 +9,20 @@ from treex.metrics import LossAndLogs, Metric
 from treex.module import *
 from treex.nn import *
 from treex.optimizer import *
-from treex.types import *
+from treex.types import (
+    BatchStat,
+    Cache,
+    Log,
+    LossLog,
+    MetricLog,
+    MetricState,
+    ModelState,
+    OptState,
+    Parameter,
+    Rng,
+    State,
+    TreePart,
+)
 from treex.utils import *
 
 from . import (

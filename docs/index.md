@@ -2,8 +2,10 @@
 
 _A Pytree Module system for Deep Learning in JAX_
 
+#### Main Features
+
 * 💡 **Intuitive**: Modules contain their own parameters and respect Object Oriented semantics like in PyTorch and Keras.
-* 🌳 **Pytree-based**:  Modules are Pytrees whos leaves are its parameters, meaning they are fully compatible with `jit`, `grad`, `vmap`, etc.
+* 🌳 **Pytree-based**:  Modules are Pytrees whose leaves are its parameters, meaning they are fully compatible with `jit`, `grad`, `vmap`, etc.
 
 Treex is implemented on top of [Treeo](https://github.com/cgarciae/treeo) and reexports all of its API for convenience.
 
@@ -152,7 +154,7 @@ Under the hood all calls to submodule constructors (e.g. `Linear(...)`) inside `
 </details>
 
 ## Status
-Treex is in an early stage, things might brake between versions but we will respect semanting versioning. Since Treex layers are numerically equivalent to Flax, it borrows some maturity and yields more confidence over its results. Feedback is much appreciated.
+Treex is in an early stage, things might break between versions but we will respect semanting versioning. Since Treex layers are numerically equivalent to Flax, it borrows some maturity and yields more confidence over its results. Feedback is much appreciated.
 
 **Roadmap**:
 
