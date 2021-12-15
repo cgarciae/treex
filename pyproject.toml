@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "treex"
-version = "0.6.5"
+version = "0.6.6"
 description = ""
 authors = ["Cristian Garcia <cgarcia.e88@gmail.com>"]
 license = "MIT"
@@ -15,7 +15,7 @@ PyYAML = "^5.4.1"
 rich = "^10.7.0"
 optax = "^0.0.9"
 einops = "^0.3.2"
-treeo = "^0.0.8"
+treeo = "^0.0.9"
 # treeo = { path = "../treeo", develop = true }
 
 [tool.poetry.dev-dependencies]
