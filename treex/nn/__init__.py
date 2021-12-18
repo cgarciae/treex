@@ -11,8 +11,10 @@ from .sequential import Lambda, Sequential, sequence
 
 try:
     from .haiku_module import HaikuModule
+
+    _haiku_available = True
 except types.OptionalDependencyNotFound:
-    pass
+    _haiku_available = False
 
 __all__ = [
     "BatchNorm",
@@ -25,5 +27,7 @@ __all__ = [
     "Lambda",
     "Sequential",
     "sequence",
-    "HaikuModule",
 ]
+
+if _haiku_available:
+    __all__.append("HaikuModule")
