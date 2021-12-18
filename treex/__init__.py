@@ -17,6 +17,7 @@ from treex.module import (
 )
 from treex.nn import *
 from treex.optimizer import Optimizer
+from treex.treex import Treex
 from treex.types import (
     BatchStat,
     Cache,
@@ -53,6 +54,7 @@ __all__ = (
         "next_key",
         "rng_key",
         "Optimizer",
+        "Treex",
         "BatchStat",
         "Cache",
         "Log",
