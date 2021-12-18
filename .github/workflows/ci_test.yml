@@ -79,8 +79,3 @@ jobs:
 
       - name: Test Import Treex
         run: python -c "import treex"
-
-      - name: Test Import Elegy
-        run: |
-          pip install elegy
-          python -c "import elegy"
