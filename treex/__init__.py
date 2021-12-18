@@ -17,7 +17,7 @@ from treex.module import (
 )
 from treex.nn import *
 from treex.optimizer import Optimizer
-from treex.treex import Treex
+from treex.treex import Filters, Treex
 from treex.types import (
     BatchStat,
     Cache,
@@ -39,40 +39,40 @@ from treex.utils import Key, iter_split
 
 from . import losses, metrics, nn, regularizers
 
-__all__ = (
-    treeo.__all__
-    + nn.__all__
-    + [
-        "KeySeq",
-        "Loss",
-        "LossAndLogs",
-        "Metric",
-        "Module",
-        "ModuleMeta",
-        "compact_module",
-        "preserve_state",
-        "next_key",
-        "rng_key",
-        "Optimizer",
-        "Treex",
-        "BatchStat",
-        "Cache",
-        "Log",
-        "LossLog",
-        "MetricLog",
-        "MetricState",
-        "ModelState",
-        "OptState",
-        "Parameter",
-        "Rng",
-        "State",
-        "TreePart",
-        "Initializer",
-        "Inputs",
-        "Named",
-        "losses",
-        "metrics",
-        "nn",
-        "regularizers",
-    ]
-)
+__all__ = [
+    "KeySeq",
+    "Loss",
+    "LossAndLogs",
+    "Metric",
+    "Module",
+    "ModuleMeta",
+    "compact_module",
+    "preserve_state",
+    "next_key",
+    "rng_key",
+    "Optimizer",
+    "Treex",
+    "Filters",
+    "BatchStat",
+    "Cache",
+    "Log",
+    "LossLog",
+    "MetricLog",
+    "MetricState",
+    "ModelState",
+    "OptState",
+    "Parameter",
+    "Rng",
+    "State",
+    "TreePart",
+    "Initializer",
+    "Inputs",
+    "Named",
+    "losses",
+    "metrics",
+    "nn",
+    "regularizers",
+]
+
+__all__.extend(treeo.__all__)
+__all__.extend(nn.__all__)
