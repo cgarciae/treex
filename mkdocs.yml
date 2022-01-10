@@ -26,11 +26,14 @@ nav:
     Conv: api/Conv.md
     Copy: api/Copy.md
     Dropout: api/Dropout.md
+    Embed: api/Embed.md
     Extensions: api/Extensions.md
     FieldInfo: api/FieldInfo.md
     FieldMetadata: api/FieldMetadata.md
     Filter: api/Filter.md
+    Filters: api/Filters.md
     Flatten: api/Flatten.md
+    FlattenMode: api/FlattenMode.md
     FlaxModule: api/FlaxModule.md
     HaikuModule: api/HaikuModule.md
     Hashable: api/Hashable.md
@@ -59,6 +62,7 @@ nav:
     Named: api/Named.md
     Nothing: api/Nothing.md
     Opaque: api/Opaque.md
+    OpaquePredicate: api/OpaquePredicate.md
     OptState: api/OptState.md
     Optimizer: api/Optimizer.md
     Parameter: api/Parameter.md
@@ -71,12 +75,16 @@ nav:
     Tree: api/Tree.md
     TreeMeta: api/TreeMeta.md
     TreePart: api/TreePart.md
+    Treex: api/Treex.md
     add_field_info: api/add_field_info.md
     apply: api/apply.md
     compact: api/compact.md
     compact_module: api/compact_module.md
+    copy: api/copy.md
     field: api/field.md
     filter: api/filter.md
+    flatten_mode: api/flatten_mode.md
+    in_compact: api/in_compact.md
     losses:
       CosineSimilarity: api/losses/CosineSimilarity.md
       Crossentropy: api/losses/Crossentropy.md
@@ -116,6 +124,7 @@ nav:
       BatchNorm: api/nn/BatchNorm.md
       Conv: api/nn/Conv.md
       Dropout: api/nn/Dropout.md
+      Embed: api/nn/Embed.md
       Flatten: api/nn/Flatten.md
       FlaxModule: api/nn/FlaxModule.md
       HaikuModule: api/nn/HaikuModule.md
