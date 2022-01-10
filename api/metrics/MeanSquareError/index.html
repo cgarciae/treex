@@ -586,6 +586,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../Embed/" class="md-nav__link">
+        Embed
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../Extensions/" class="md-nav__link">
         Extensions
       </a>
@@ -1401,18 +1415,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_68" type="checkbox" id="__nav_3_68" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_69" type="checkbox" id="__nav_3_69" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_3_68">
+        <label class="md-nav__link" for="__nav_3_69">
           losses
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="losses" data-md-level="2">
-        <label class="md-nav__title" for="__nav_3_68">
+        <label class="md-nav__title" for="__nav_3_69">
           <span class="md-nav__icon md-icon"></span>
           losses
         </label>
@@ -1688,18 +1702,18 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_71" type="checkbox" id="__nav_3_71" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_72" type="checkbox" id="__nav_3_72" checked>
       
       
       
       
-        <label class="md-nav__link" for="__nav_3_71">
+        <label class="md-nav__link" for="__nav_3_72">
           metrics
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="metrics" data-md-level="2">
-        <label class="md-nav__title" for="__nav_3_71">
+        <label class="md-nav__title" for="__nav_3_72">
           <span class="md-nav__icon md-icon"></span>
           metrics
         </label>
@@ -1992,18 +2006,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_73" type="checkbox" id="__nav_3_73" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_74" type="checkbox" id="__nav_3_74" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_3_73">
+        <label class="md-nav__link" for="__nav_3_74">
           nn
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="nn" data-md-level="2">
-        <label class="md-nav__title" for="__nav_3_73">
+        <label class="md-nav__title" for="__nav_3_74">
           <span class="md-nav__icon md-icon"></span>
           nn
         </label>
@@ -2045,6 +2059,20 @@
     <li class="md-nav__item">
       <a href="../../nn/Dropout/" class="md-nav__link">
         Dropout
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nn/Embed/" class="md-nav__link">
+        Embed
       </a>
     </li>
   
@@ -2207,18 +2235,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_76" type="checkbox" id="__nav_3_76" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_77" type="checkbox" id="__nav_3_77" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_3_76">
+        <label class="md-nav__link" for="__nav_3_77">
           regularizers
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="regularizers" data-md-level="2">
-        <label class="md-nav__title" for="__nav_3_76">
+        <label class="md-nav__title" for="__nav_3_77">
           <span class="md-nav__icon md-icon"></span>
           regularizers
         </label>
@@ -2446,7 +2474,7 @@
 
 
 <h2 class="doc doc-heading" id="treex.metrics.mean_square_error.MeanSquareError.__call__">
-<code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">preds</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
   <span class="doc doc-properties">
       <small class="doc doc-property doc-property-special"><code>special</code></small>
@@ -2456,7 +2484,7 @@
 
     <div class="doc doc-contents ">
 
-      <p>Accumulates metric statistics. <code>y_true</code> and <code>y_pred</code> should have the same shape.</p>
+      <p>Accumulates metric statistics. <code>target</code> and <code>preds</code> should have the same shape.</p>
 
 <p><strong>Parameters:</strong></p>
 <table>
@@ -2470,13 +2498,13 @@
   </thead>
   <tbody>
       <tr>
-        <td><code>y_true</code></td>
+        <td><code>target</code></td>
         <td><code>ndarray</code></td>
         <td><p>Ground truth values. shape = <code>[batch_size, d0, .. dN]</code>.</p></td>
         <td><em>required</em></td>
       </tr>
       <tr>
-        <td><code>y_pred</code></td>
+        <td><code>preds</code></td>
         <td><code>ndarray</code></td>
         <td><p>The predicted values. shape = <code>[batch_size, d0, .. dN]</code></p></td>
         <td><em>required</em></td>
@@ -2508,24 +2536,24 @@
           <summary>Source code in <code>treex/metrics/mean_square_error.py</code></summary>
           <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">update</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
-    <span class="n">y_true</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">y_pred</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">target</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">preds</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">sample_weight</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tp</span><span class="o">.</span><span class="n">Any</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Accumulates metric statistics. `y_true` and `y_pred` should have the same shape.</span>
+<span class="sd">    Accumulates metric statistics. `target` and `preds` should have the same shape.</span>
 
 <span class="sd">    Arguments:</span>
-<span class="sd">        y_true:</span>
+<span class="sd">        target:</span>
 <span class="sd">            Ground truth values. shape = `[batch_size, d0, .. dN]`.</span>
-<span class="sd">        y_pred:</span>
+<span class="sd">        preds:</span>
 <span class="sd">            The predicted values. shape = `[batch_size, d0, .. dN]`</span>
 <span class="sd">        sample_weight:</span>
 <span class="sd">            Optional weighting of each example. Defaults to 1. shape = `[batch_size, d0, .. dN]`</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        Array with the cumulative mean absolute error.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">values</span> <span class="o">=</span> <span class="n">_mean_square_error</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_true</span><span class="p">)</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="n">_mean_square_error</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
 </code></pre></div>
         </details>
@@ -2569,11 +2597,11 @@ Where :math:<code>y</code> is a tensor of target values, and :math:<code>\hat{y}
         <td><code>on</code></td>
         <td><code>Union[str, int, Sequence[Union[str, int]]]</code></td>
         <td><p>A string or integer, or iterable of string or integers, that
-indicate how to index/filter the <code>y_true</code> and <code>y_pred</code>
+indicate how to index/filter the <code>target</code> and <code>preds</code>
 arguments before passing them to <code>call</code>. For example if <code>on = "a"</code> then
-<code>y_true = y_true["a"]</code>. If <code>on</code> is an iterable
+<code>target = target["a"]</code>. If <code>on</code> is an iterable
 the structures will be indexed iteratively, for example if <code>on = ["a", 0, "b"]</code>
-then <code>y_true = y_true["a"][0]["b"]</code>, same for <code>y_pred</code>. For more information
+then <code>target = target["a"][0]["b"]</code>, same for <code>preds</code>. For more information
 check out <a href="https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior">Keras-like behavior</a>.</p></td>
         <td><code>None</code></td>
       </tr>
@@ -2598,10 +2626,10 @@ check out <a href="https://poets-ai.github.io/elegy/guides/modules-losses-metric
 <blockquote>
 <p>import jax.numpy as jnp
 from treex.metrics.mean_square_error import MeanSquareError</p>
-<p>y_true = jnp.array([3.0, -0.5, 2.0, 7.0])
-y_pred = jnp.array([3.0, -0.5, 2.0, 7.0])</p>
+<p>target = jnp.array([3.0, -0.5, 2.0, 7.0])
+preds = jnp.array([3.0, -0.5, 2.0, 7.0])</p>
 <p>mse = MeanSquareError()
-mse(y_pred, y_true)</p>
+mse(preds, target)</p>
 </blockquote>
 </blockquote>
 </blockquote>
@@ -2622,11 +2650,11 @@ mse(y_pred, y_true)</p>
 <span class="sd">    Args:</span>
 <span class="sd">        on:</span>
 <span class="sd">            A string or integer, or iterable of string or integers, that</span>
-<span class="sd">            indicate how to index/filter the `y_true` and `y_pred`</span>
+<span class="sd">            indicate how to index/filter the `target` and `preds`</span>
 <span class="sd">            arguments before passing them to `call`. For example if `on = &quot;a&quot;` then</span>
-<span class="sd">            `y_true = y_true[&quot;a&quot;]`. If `on` is an iterable</span>
+<span class="sd">            `target = target[&quot;a&quot;]`. If `on` is an iterable</span>
 <span class="sd">            the structures will be indexed iteratively, for example if `on = [&quot;a&quot;, 0, &quot;b&quot;]`</span>
-<span class="sd">            then `y_true = y_true[&quot;a&quot;][0][&quot;b&quot;]`, same for `y_pred`. For more information</span>
+<span class="sd">            then `target = target[&quot;a&quot;][0][&quot;b&quot;]`, same for `preds`. For more information</span>
 <span class="sd">            check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).</span>
 <span class="sd">        name:</span>
 <span class="sd">            Module name</span>
@@ -2638,11 +2666,11 @@ mse(y_pred, y_true)</p>
 <span class="sd">    &gt;&gt;&gt; import jax.numpy as jnp</span>
 <span class="sd">    &gt;&gt;&gt; from treex.metrics.mean_square_error import MeanSquareError</span>
 
-<span class="sd">    &gt;&gt;&gt; y_true = jnp.array([3.0, -0.5, 2.0, 7.0])</span>
-<span class="sd">    &gt;&gt;&gt; y_pred = jnp.array([3.0, -0.5, 2.0, 7.0])</span>
+<span class="sd">    &gt;&gt;&gt; target = jnp.array([3.0, -0.5, 2.0, 7.0])</span>
+<span class="sd">    &gt;&gt;&gt; preds = jnp.array([3.0, -0.5, 2.0, 7.0])</span>
 
 <span class="sd">    &gt;&gt;&gt; mse = MeanSquareError()</span>
-<span class="sd">    &gt;&gt;&gt; mse(y_pred, y_true)</span>
+<span class="sd">    &gt;&gt;&gt; mse(preds, target)</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">on</span><span class="o">=</span><span class="n">on</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
@@ -2659,14 +2687,14 @@ mse(y_pred, y_true)</p>
 
 
 <h2 class="doc doc-heading" id="treex.metrics.mean_square_error.MeanSquareError.update">
-<code class="highlight language-python"><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">preds</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 
 </h2>
 
     <div class="doc doc-contents ">
 
-      <p>Accumulates metric statistics. <code>y_true</code> and <code>y_pred</code> should have the same shape.</p>
+      <p>Accumulates metric statistics. <code>target</code> and <code>preds</code> should have the same shape.</p>
 
 <p><strong>Parameters:</strong></p>
 <table>
@@ -2680,13 +2708,13 @@ mse(y_pred, y_true)</p>
   </thead>
   <tbody>
       <tr>
-        <td><code>y_true</code></td>
+        <td><code>target</code></td>
         <td><code>ndarray</code></td>
         <td><p>Ground truth values. shape = <code>[batch_size, d0, .. dN]</code>.</p></td>
         <td><em>required</em></td>
       </tr>
       <tr>
-        <td><code>y_pred</code></td>
+        <td><code>preds</code></td>
         <td><code>ndarray</code></td>
         <td><p>The predicted values. shape = <code>[batch_size, d0, .. dN]</code></p></td>
         <td><em>required</em></td>
@@ -2718,24 +2746,24 @@ mse(y_pred, y_true)</p>
           <summary>Source code in <code>treex/metrics/mean_square_error.py</code></summary>
           <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">update</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
-    <span class="n">y_true</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">y_pred</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">target</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">preds</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">sample_weight</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tp</span><span class="o">.</span><span class="n">Any</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Accumulates metric statistics. `y_true` and `y_pred` should have the same shape.</span>
+<span class="sd">    Accumulates metric statistics. `target` and `preds` should have the same shape.</span>
 
 <span class="sd">    Arguments:</span>
-<span class="sd">        y_true:</span>
+<span class="sd">        target:</span>
 <span class="sd">            Ground truth values. shape = `[batch_size, d0, .. dN]`.</span>
-<span class="sd">        y_pred:</span>
+<span class="sd">        preds:</span>
 <span class="sd">            The predicted values. shape = `[batch_size, d0, .. dN]`</span>
 <span class="sd">        sample_weight:</span>
 <span class="sd">            Optional weighting of each example. Defaults to 1. shape = `[batch_size, d0, .. dN]`</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        Array with the cumulative mean absolute error.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">values</span> <span class="o">=</span> <span class="n">_mean_square_error</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y_true</span><span class="p">)</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="n">_mean_square_error</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
 </code></pre></div>
         </details>
