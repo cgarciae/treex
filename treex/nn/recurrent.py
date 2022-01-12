@@ -62,7 +62,7 @@ class GRU(Module):
         return_state: bool = False,
         go_backwards: bool = False,
         stateful: bool = False,
-        time_axis: int = 0,
+        time_axis: int = -2,
         unroll: int = 1
     ):
         """
@@ -83,7 +83,7 @@ class GRU(Module):
             stateful: whether to use the last state of the current batch as the start_state
               of the next batch (default: `False`)
             time_axis: specifies which axis of the input corresponds to the timesteps. By default,
-              `time_axis = 0` which corresponds to the input being of shape `[timesteps, ...]`
+              `time_axis = -2` which corresponds to the input being of shape `[..., timesteps, :, :]`
             unroll: number of iterations to be unrolled into a single XLA iteration using
               `jax.lax.scan` (default: `1`)
         """
