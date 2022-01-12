@@ -55,7 +55,7 @@ class TestGRU:
 
     def test_jit(self):
         x = np.random.uniform(size=(20, 10, 2))
-        module = recurrent.GRU(3).init(42, (x, jnp.zeros((10, 3))))
+        module = recurrent.GRU(3, time_axis=0).init(42, (x, jnp.zeros((10, 3))))
 
         @jax.jit
         def f(module, x):
@@ -83,7 +83,7 @@ class TestGRU:
         time = 10
 
         gru = recurrent.GRU(
-            hidden_dim, return_state=return_state, return_sequences=return_sequences
+            hidden_dim, time_axis=0, return_state=return_state, return_sequences=return_sequences
         )
         gru = gru.init(key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))))
 
@@ -107,12 +107,12 @@ class TestGRU:
         batch_size = 32
         time = 10
 
-        gru_fwd = recurrent.GRU(hidden_dim, go_backwards=False)
+        gru_fwd = recurrent.GRU(hidden_dim, time_axis=0, go_backwards=False)
         gru_fwd = gru_fwd.init(
             key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim)))
         )
 
-        gru_bwd = recurrent.GRU(hidden_dim, go_backwards=True)
+        gru_bwd = recurrent.GRU(hidden_dim, time_axis=0, go_backwards=True)
         gru_bwd.params = gru_fwd.params
         inputs, init_carry = (
             jnp.ones((time, batch_size, features)),
@@ -130,7 +130,7 @@ class TestGRU:
         batch_size = 32
         time = 10
 
-        gru = recurrent.GRU(hidden_dim, go_backwards=False)
+        gru = recurrent.GRU(hidden_dim, time_axis=0, go_backwards=False)
         gru = gru.init(key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))))
 
         inputs = np.random.rand(time, batch_size, features)
@@ -144,9 +144,9 @@ class TestGRU:
         batch_size = 32
         time = 10
 
-        gru = recurrent.GRU(hidden_dim, stateful=True)
+        gru = recurrent.GRU(hidden_dim, time_axis=0, stateful=True)
         gru = gru.init(key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))))
-        base = recurrent.GRU(hidden_dim, stateful=False)
+        base = recurrent.GRU(hidden_dim, time_axis=0, stateful=False)
         base = base.init(key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))))
         base.params = gru.params
 
