@@ -5,6 +5,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import treeo as to
+from flax import jax_utils
 from flax.linen import recurrent as flax_module
 
 from treex import types
@@ -62,7 +63,7 @@ class GRU(Module):
         return_state: bool = False,
         go_backwards: bool = False,
         stateful: bool = False,
-        time_axis: int = -2,
+        time_axis: tp.Union[tp.Tuple[int], int] = -2,
         unroll: int = 1
     ):
         """
@@ -83,7 +84,8 @@ class GRU(Module):
             stateful: whether to use the last state of the current batch as the start_state
               of the next batch (default: `False`)
             time_axis: specifies which axis of the input corresponds to the timesteps. By default,
-              `time_axis = -2` which corresponds to the input being of shape `[..., timesteps, :, :]`
+              `time_axis = -2` which corresponds to the input being of shape `[..., timesteps, :, :]`.
+              One could also pass in a tuple of ints if there are different time axes.
             unroll: number of iterations to be unrolled into a single XLA iteration using
               `jax.lax.scan` (default: `1`)
         """
@@ -99,7 +101,7 @@ class GRU(Module):
         self.return_state = return_state
         self.go_backwards = go_backwards
         self.stateful = stateful
-        self.time_axis = (time_axis,)
+        self.time_axis = (time_axis,) if isinstance(time_axis, int) else time_axis
         self.unroll = unroll
 
         self.next_key = KeySeq()
@@ -147,12 +149,8 @@ class GRU(Module):
             - A tuple of both the sequence of states and final state (if both
                 `return_state` and `return_sequences` are `True`)
         """
-        # Move time axis to be the first so it can be looped over
-        # Note: not needed with jax_utils.scan_in_dim
-        x = jnp.swapaxes(x, self.time_axis, 0)
-
         if self.go_backwards:
-            x = x[::-1]
+            x = jnp.flip(x, self.time_axis)
 
         if initial_state is None:
             initial_state = self.initialize_state(x.shape[len(self.time_axis) : -1])
@@ -170,14 +168,11 @@ class GRU(Module):
         def iter_fn(state, x):
             return self.module.apply(variables, state, x)
 
-        final_state, sequences = jax.lax.scan(
-            iter_fn, initial_state, x, unroll=self.unroll
+        final_state, sequences = jax_utils.scan_in_dim(
+            iter_fn, initial_state, x, axis=self.time_axis, unroll=self.unroll
         )
         if self.stateful and not self.initializing():
             self.last_state = final_state
-
-        # Note: Not needed with jax_utils.scan_in_dim
-        sequences = jnp.swapaxes(sequences, self.time_axis, 0)
 
         if self.return_sequences and not self.return_state:
             return sequences
