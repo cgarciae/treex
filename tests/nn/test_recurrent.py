@@ -83,7 +83,10 @@ class TestGRU:
         time = 10
 
         gru = recurrent.GRU(
-            hidden_dim, time_axis=0, return_state=return_state, return_sequences=return_sequences
+            hidden_dim,
+            time_axis=0,
+            return_state=return_state,
+            return_sequences=return_sequences,
         )
         gru = gru.init(key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))))
 
