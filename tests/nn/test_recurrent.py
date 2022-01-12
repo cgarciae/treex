@@ -137,20 +137,6 @@ class TestGRU:
         assert np.allclose(gru(inputs), gru(inputs, np.zeros((batch_size, hidden_dim))))
         assert np.allclose(gru(inputs), gru(inputs, gru.initialize_state(batch_size)))
 
-    def test_multiple_time_dimensions(self):
-        key = tx.Key(8)
-        hidden_dim = 5
-        features = 10
-        batch_size = 32
-        time = 10
-
-        gru = recurrent.GRU(hidden_dim, go_backwards=False, time_axis=(0, 1))
-        gru = gru.init(key, (jnp.ones((1, 1, 1, features)), jnp.zeros((1, hidden_dim))))
-
-        inputs = np.random.rand(time, time, batch_size, features)
-        output = gru(inputs)
-        assert output.shape == [time, time, batch_size, features]
-
     def test_stateful(self):
         key = tx.Key(8)
         hidden_dim = 5
