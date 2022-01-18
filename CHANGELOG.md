@@ -2,7 +2,41 @@
 
 ## [Unreleased](https://github.com/cgarciae/treex/tree/HEAD)
 
-[Full Changelog](https://github.com/cgarciae/treex/compare/0.6.4...HEAD)
+[Full Changelog](https://github.com/cgarciae/treex/compare/0.6.8...HEAD)
+
+**Merged pull requests:**
+
+- Initial implementation of GRU layers [\#48](https://github.com/cgarciae/treex/pull/48) ([ptigwe](https://github.com/ptigwe))
+
+## [0.6.8](https://github.com/cgarciae/treex/tree/0.6.8) (2022-01-10)
+
+[Full Changelog](https://github.com/cgarciae/treex/compare/0.6.7...0.6.8)
+
+**Merged pull requests:**
+
+- Fix metric argument names [\#56](https://github.com/cgarciae/treex/pull/56) ([cgarciae](https://github.com/cgarciae))
+- Add Embed layer [\#54](https://github.com/cgarciae/treex/pull/54) ([cgarciae](https://github.com/cgarciae))
+
+## [0.6.7](https://github.com/cgarciae/treex/tree/0.6.7) (2021-12-18)
+
+[Full Changelog](https://github.com/cgarciae/treex/compare/0.6.6...0.6.7)
+
+**Merged pull requests:**
+
+- Test import on CI [\#53](https://github.com/cgarciae/treex/pull/53) ([cgarciae](https://github.com/cgarciae))
+
+## [0.6.6](https://github.com/cgarciae/treex/tree/0.6.6) (2021-12-15)
+
+[Full Changelog](https://github.com/cgarciae/treex/compare/0.6.5...0.6.6)
+
+**Merged pull requests:**
+
+- Update treeo [\#52](https://github.com/cgarciae/treex/pull/52) ([cgarciae](https://github.com/cgarciae))
+- Fix documentation [\#51](https://github.com/cgarciae/treex/pull/51) ([cgarciae](https://github.com/cgarciae))
+
+## [0.6.5](https://github.com/cgarciae/treex/tree/0.6.5) (2021-12-12)
+
+[Full Changelog](https://github.com/cgarciae/treex/compare/0.6.4...0.6.5)
 
 **Merged pull requests:**
 
