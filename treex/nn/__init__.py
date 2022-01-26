@@ -1,6 +1,5 @@
 from treex import types
 
-from .batch_norm import BatchNorm
 from .conv import Conv
 from .dropout import Dropout
 from .embed import Embed
@@ -8,6 +7,7 @@ from .flatten import Flatten
 from .flax_module import FlaxModule
 from .linear import Linear
 from .mlp import MLP
+from .norm import BatchNorm
 from .sequential import Lambda, Sequential, sequence
 
 try:
