@@ -29,10 +29,10 @@ class TestFlaxModule:
     def test_pretrained_flax_module(self):
         class SomeModule(flax.linen.Module):
             @flax.linen.compact
-            def __call__(self, x, rng, training):
+            def __call__(self, x, training):
                 x = flax.linen.Dense(16)(x)
                 x = flax.linen.BatchNorm()(x, use_running_average=not training)
-                x = flax.linen.Dropout(0.5)(x, deterministic=not training, rng=rng)
+                x = flax.linen.Dropout(0.5)(x, deterministic=not training)
                 x = flax.linen.Conv(16, [3])(x)
 
                 return x
@@ -48,13 +48,12 @@ class TestFlaxModule:
         variables = flax_module.init(
             {"params": params_key, "dropout": dropout_key},
             x,
-            rng,
             False,
         )
 
         treex_module = tx.FlaxModule(SomeModule(), variables=variables,).init(
             42,
-            inputs=tx.Inputs(x, rng),
+            inputs=tx.Inputs(x),
         )
 
         assert all(
@@ -72,23 +71,26 @@ class TestFlaxModule:
             )
         )
 
-        y_treex = treex_module(x, rng)
-        y_treex = treex_module(x, rng)
+        flax_next_key = treex_module.next_key.copy()
+        y_treex = treex_module(x)
+        y_treex = treex_module(x)
 
+        rng, next_rng = tx.iter_split(dropout_key)
         y_flax, updates = flax_module.apply(
             variables,
             x,
-            rng,
             training,
             mutable=["batch_stats"],
+            rngs={"dropout": flax_next_key()},
         )
+
         variables = variables.copy(updates)
         y_flax, updates = flax_module.apply(
             variables,
             x,
-            rng,
             training,
             mutable=["batch_stats"],
+            rngs={"dropout": flax_next_key()},
         )
         variables = variables.copy(updates)
 

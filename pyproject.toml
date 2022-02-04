@@ -15,7 +15,7 @@ secondary = true
 
 [tool.poetry.dependencies]
 python = "^3.7"
-flax = "^0.3.4"
+flax = "^0.4.0"
 PyYAML = "^5.4.1"
 rich = "^10.7.0"
 optax = "^0.0.9"
