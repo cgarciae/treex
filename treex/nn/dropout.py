@@ -89,7 +89,7 @@ class Dropout(Module):
             variables,
             x,
             deterministic=not training,
-            rngs={'dropout': rng},
+            rngs={"dropout": rng},
         )
 
         return tp.cast(jnp.ndarray, output)

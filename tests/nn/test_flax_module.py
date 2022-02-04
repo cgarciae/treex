@@ -76,20 +76,12 @@ class TestFlaxModule:
 
         rng, next_rng = tx.iter_split(dropout_key)
         y_flax, updates = flax_module.apply(
-            variables,
-            x,
-            training,
-            mutable=["batch_stats"],
-            rngs={"dropout": rng}
+            variables, x, training, mutable=["batch_stats"], rngs={"dropout": rng}
         )
 
         variables = variables.copy(updates)
         y_flax, updates = flax_module.apply(
-            variables,
-            x,
-            training,
-            mutable=["batch_stats"],
-            rngs={"dropout": rng}
+            variables, x, training, mutable=["batch_stats"], rngs={"dropout": rng}
         )
         variables = variables.copy(updates)
 
