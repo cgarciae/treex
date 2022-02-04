@@ -1,7 +1,7 @@
 name: Update GitHub Pages
 on:
   release:
-  push:
+  pull_request:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
