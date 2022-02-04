@@ -27,7 +27,9 @@ jobs:
       - name: Publish to PyPI
         run: |
           echo poetry build
-          echo poetry publish --username ${ABC} --password ${ABC}
+          echo poetry publish \
+            --username ${{ secrets.PYPI_USERNAME }} \
+            --password ${{ secrets.PYPI_PASSWORD }}
 
       # - name: Build Docs 🔨
       #   run: |
