@@ -1,6 +1,7 @@
 name: Update GitHub Pages
 on:
   release:
+  push:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -22,15 +23,20 @@ jobs:
         run: |
           poetry config virtualenvs.create false
           poetry install
-
-      - name: Build Docs 🔨
+      
+      - name: Publish to PyPI
         run: |
-          cp README.md docs/index.md
-          python scripts/update_docs.py
-          mkdocs build
+          echo poetry build
+          echo poetry publish --username ${ABC} --password ${ABC}
+
+      # - name: Build Docs 🔨
+      #   run: |
+      #     cp README.md docs/index.md
+      #     python scripts/update_docs.py
+      #     mkdocs build
         
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@4.1.6
-        with:
-          branch: gh-pages
-          folder: site
+      # - name: Deploy Page 🚀
+      #   uses: JamesIves/github-pages-deploy-action@4.1.6
+      #   with:
+      #     branch: gh-pages
+      #     folder: site
