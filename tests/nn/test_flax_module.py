@@ -1,7 +1,7 @@
-import numpy as np
-
 import flax
 import jax
+import numpy as np
+
 import treex as tx
 
 
@@ -71,21 +71,30 @@ class TestFlaxModule:
             )
         )
 
+        flax_next_key = treex_module.next_key.copy()
         y_treex = treex_module(x)
         y_treex = treex_module(x)
 
         rng, next_rng = tx.iter_split(dropout_key)
         y_flax, updates = flax_module.apply(
-            variables, x, training, mutable=["batch_stats"], rngs={"dropout": rng}
+            variables,
+            x,
+            training,
+            mutable=["batch_stats"],
+            rngs={"dropout": flax_next_key()},
         )
 
         variables = variables.copy(updates)
         y_flax, updates = flax_module.apply(
-            variables, x, training, mutable=["batch_stats"], rngs={"dropout": rng}
+            variables,
+            x,
+            training,
+            mutable=["batch_stats"],
+            rngs={"dropout": flax_next_key()},
         )
         variables = variables.copy(updates)
 
-        # assert np.allclose(y_treex, y_flax)
+        assert np.allclose(y_treex, y_flax)
 
         assert all(
             np.allclose(a, b)
