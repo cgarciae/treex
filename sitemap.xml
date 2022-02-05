@@ -2,697 +2,697 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://cgarciae.github.io/treex/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Apply/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/ArrayLike/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/BatchNorm/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/BatchStat/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Cache/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Compact/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Conv/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Copy/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Dropout/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Embed/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Extensions/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/FieldInfo/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/FieldMetadata/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Filter/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Filters/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Flatten/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/FlattenMode/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/FlaxModule/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/GroupNorm/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/HaikuModule/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Hashable/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Initializer/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Inputs/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/KeySeq/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/KindMixin/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Lambda/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/LayerNorm/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Linear/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Log/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Loss/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/LossAndLogs/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/LossLog/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/MISSING/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/MLP/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Map/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Merge/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Metric/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/MetricLog/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/MetricState/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Missing/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/ModelState/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Module/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/ModuleMeta/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/NOTHING/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Named/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Nothing/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Opaque/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/OpaquePredicate/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/OptState/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Optimizer/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Parameter/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Repr/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Rng/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Sequential/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/State/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/ToDict/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/ToString/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Tree/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/TreeMeta/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/TreePart/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/Treex/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/add_field_info/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/apply/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/compact/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/compact_module/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/copy/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/field/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/filter/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/flatten_mode/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/in_compact/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/map/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/merge/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/next_key/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/node/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/preserve_state/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/rng_key/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/sequence/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/static/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/to_dict/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/to_string/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/losses/CosineSimilarity/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/losses/Crossentropy/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/losses/Huber/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/losses/Loss/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/losses/MeanAbsoluteError/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/losses/MeanAbsolutePercentageError/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/losses/MeanSquaredError/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/losses/MeanSquaredLogarithmicError/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/losses/Reduction/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/losses/cosine_similarity/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/losses/crossentropy/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/losses/huber/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/losses/mean_absolute_error/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/losses/mean_absolute_percentage_error/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/losses/mean_squared_error/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/losses/mean_squared_logarithmic_error/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/metrics/Accuracy/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/metrics/AuxLosses/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/metrics/AuxMetrics/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/metrics/LossAndLogs/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/metrics/Losses/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/metrics/MAE/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/metrics/MSE/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/metrics/Mean/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/metrics/MeanAbsoluteError/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/metrics/MeanSquareError/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/metrics/Metric/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/metrics/Metrics/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/metrics/Reduce/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/metrics/Reduction/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/nn/BatchNorm/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/nn/Conv/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/nn/Dropout/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/nn/Embed/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/nn/Flatten/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/nn/FlaxModule/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/nn/GroupNorm/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/nn/HaikuModule/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/nn/Lambda/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/nn/LayerNorm/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/nn/Linear/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/nn/MLP/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/nn/Sequential/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/nn/sequence/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/regularizers/L1/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/regularizers/L1L2/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/api/regularizers/L2/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/user-guide/defining-modules/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/user-guide/freezing-modules/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/user-guide/initialization/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/user-guide/intro/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/user-guide/optimizer/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/user-guide/pytrees/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/user-guide/state-management/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/user-guide/training-state/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/user-guide/api/filter/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/user-guide/api/map/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://cgarciae.github.io/treex/user-guide/api/merge/</loc>
-         <lastmod>2022-02-04</lastmod>
+         <lastmod>2022-02-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
