@@ -1,6 +1,7 @@
 name: Update GitHub Pages
 on:
   release:
+    types: [published]
 jobs:
   publish-docs:
     runs-on: ubuntu-latest
