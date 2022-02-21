@@ -22,6 +22,8 @@ jobs:
 
       - name: Install Dependencies
         run: |
+          poetry config virtualenvs.create false
+          pip install -U certifi
           poetry install
       
       - name: Build Docs 🔨

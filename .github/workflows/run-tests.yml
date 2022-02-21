@@ -74,6 +74,7 @@ jobs:
       - name: Install Dependencies
         run: |
           poetry config virtualenvs.create false
+          pip install -U certifi
           poetry install --no-dev
       - name: Test Import Treex
         run: python -c "import treex"
