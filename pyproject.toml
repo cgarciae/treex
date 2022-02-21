@@ -45,6 +45,7 @@ tensorflow = "^2.6.0"
 datasets = "^1.14.0"
 cloudpickle = "^2.0.0"
 dm-haiku = "^0.0.5"
+pytest-cov = "^3.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
