@@ -18,7 +18,7 @@ jobs:
       - name: Install Poetry 📖
         uses: snok/install-poetry@v1
         with:
-          version: 1.1.13
+          version: 1.1.5
 
       - name: Install Dependencies
         run: |
