@@ -198,6 +198,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
         depth: int = -1,
         signature: bool = False,
         param_types: bool = True,
+        return_table: bool = False,
     ) -> str:
         """
         Returns a tabular representation of the module.
@@ -206,6 +207,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
             depth: The maximum depth of the representation in terms of nested Modules, -1 means no limit.
             signature: Whether to show the signature of the Module.
             param_types: Whether to show the types of the parameters.
+            return_table: Return the `rich.table.Table` object.
         Returns:
             A string containing the tabular representation.
         """
@@ -332,7 +334,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
             self, add_padding=False
         )
 
-        return utils._get_rich_repr(table)
+        return table if return_table else utils._get_rich_repr(table)
 
 
 # -----------------------------------------------------------------------
