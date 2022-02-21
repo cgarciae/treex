@@ -5,7 +5,7 @@ on:
 
 jobs:
   update-poetry-lock:
-    # if: github.ref_name == 'action-poetry-update'
+    if: github.ref_name == 'action-poetry-update'
     name: Update Poetry Lock
     runs-on: ubuntu-latest
     steps:
