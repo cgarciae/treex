@@ -45,7 +45,8 @@ jobs:
         uses: codecov/codecov-action@v1
 
       - name: Test Examples
-        run: poetry run bash scripts/test-examples.sh
+        run: |
+          poetry run source scripts/test-examples.sh
 
   test-import:
     name: Test Import without Dev Dependencies
