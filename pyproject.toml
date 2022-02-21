@@ -43,6 +43,7 @@ dm-haiku = "^0.0.6"
 pytest-cov = "^3.0.0"
 tensorflow-cpu = "^2.8.0"
 datasets = "^1.18.3"
+typer = "^0.4.0"
 
 
 [build-system]
