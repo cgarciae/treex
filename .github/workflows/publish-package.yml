@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
-        uses: actions/checkout@v2.3.1
+        uses: actions/checkout@v2
 
       - name: Set up Python 3.8
         uses: actions/setup-python@v2
@@ -18,7 +18,7 @@ jobs:
       - name: Install Poetry 📖
         uses: snok/install-poetry@v1
         with:
-          version: 1.1.4
+          version: 1.1.13
 
       - name: Install Dependencies
         run: |
