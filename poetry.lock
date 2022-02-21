@@ -204,7 +204,7 @@ python-versions = "~=3.7"
 name = "certifi"
 version = "2021.10.8"
 description = "Python package for providing Mozilla's CA Bundle."
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 
@@ -2331,7 +2331,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.11"
-content-hash = "96e2407230a68a7cf9a95ac8068f58a351614214e1c64133399ad81667e6d31a"
+content-hash = "ba30caa4f12222a873348ec25235d27e2b2e15e12465d17014dfc6388d9bbba0"
 
 [metadata.files]
 absl-py = [

@@ -21,6 +21,7 @@ rich = "^11.2.0"
 optax = "^0.1.1"
 einops = "^0.4.0"
 treeo = "^0.0.10"
+certifi = "^2021.10.8"
 
 
 [tool.poetry.dev-dependencies]
@@ -42,7 +43,6 @@ dm-haiku = "^0.0.6"
 pytest-cov = "^3.0.0"
 tensorflow-cpu = "^2.8.0"
 datasets = "^1.18.3"
-certifi = "^2021.10.8"
 
 
 [build-system]
