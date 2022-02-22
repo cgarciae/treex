@@ -33,7 +33,7 @@ jobs:
           mkdocs build
         
       - name: Deploy Page 🚀
-        uses: JamesIves/github-pages-deploy-action@4
+        uses: JamesIves/github-pages-deploy-action@4.1.6
         with:
           branch: gh-pages
           folder: site
