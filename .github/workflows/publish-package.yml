@@ -29,8 +29,8 @@ jobs:
       - name: Build Docs 🔨
         run: |
           cp README.md docs/index.md
-          poetry run python scripts/update_docs.py
-          poetry run mkdocs build
+          python scripts/update_docs.py
+          mkdocs build
         
       - name: Deploy Page 🚀
         uses: JamesIves/github-pages-deploy-action@4
