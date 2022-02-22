@@ -14,37 +14,37 @@ url = "https://eternalphane.github.io/pytorch-pypi/"
 secondary = true
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = ">=3.7,<3.11"
 flax = "^0.4.0"
-PyYAML = "^5.4.1"
-rich = "^10.7.0"
-optax = "^0.0.9"
-einops = "^0.3.2"
-treeo = "^0.0.9"
-# treeo = { path = "../treeo", develop = true }
+PyYAML = "^6.0"
+rich = "^11.2.0"
+optax = "^0.1.1"
+einops = "^0.4.0"
+treeo = "^0.0.10"
+certifi = "^2021.10.8"
+
 
 [tool.poetry.dev-dependencies]
-jax = "^0.2.24"
-jaxlib = "^0.1.73"
-matplotlib = { version = "^3.4.3", python = ">=3.7" }
-pytest = "^5.2"
-streambook = "^0.2"
-black = {version = "^20.8b0", allow-prereleases = true, python = ">=3.6.2" }
-jupyterlab = "^3.1.7"
-hypothesis = "^6.14.8"
-pre-commit = "^2.14.0"
-isort = "^5.9.3"
-mkdocs = "^1.2.2"
-mkdocstrings = "^0.15.2"
-mkdocs-jupyter = { version = "^0.17.3", python = ">=3.7" }
-mkdocs-material = "^7.2.5"
-einops = "^0.3.2"
-torch="1.10.0+cpu"
-torchmetrics = "^0.5.1"
-tensorflow = "^2.6.0"
-datasets = "^1.14.0"
+jax = "^0.3.1"
+jaxlib = "^0.3.0"
+pytest = "^7.0.1"
+jupyterlab = "^3.2.9"
+hypothesis = "^6.37.1"
+pre-commit = "^2.17.0"
+isort = "^5.10.1"
+mkdocs = "^1.2.3"
+mkdocstrings = "^0.18.0"
+mkdocs-material = "^8.2.1"
+einops = "^0.4.0"
+torch = "1.10.2+cpu"
+torchmetrics = "^0.7.2"
 cloudpickle = "^2.0.0"
-dm-haiku = "^0.0.5"
+dm-haiku = "^0.0.6"
+pytest-cov = "^3.0.0"
+tensorflow-cpu = "^2.8.0"
+datasets = "^1.18.3"
+typer = "^0.4.0"
+
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
