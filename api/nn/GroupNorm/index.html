@@ -8,11 +8,10 @@
       
       
       
-      
         <link rel="canonical" href="https://cgarciae.github.io/treex/api/nn/GroupNorm/">
       
       <link rel="icon" href="../../../images/favicon.png">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.0">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.2.1">
     
     
       
@@ -20,10 +19,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.8b42a75e.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.e8d9bf0c.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.3f5d1f46.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.e6a45f82.min.css">
         
       
     
@@ -33,16 +32,15 @@
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
-        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
-    
     
     
       <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
     
+    <script>__md_scope=new URL("../../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
-
 
     
     
@@ -57,7 +55,6 @@
     <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
   
     
-    <script>function __prefix(e){return new URL("../../..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
@@ -74,6 +71,7 @@
       
     </div>
     
+    
       
 
 <header class="md-header" data-md-component="header">
@@ -81,7 +79,7 @@
     <a href="../../.." title="Treex" class="md-header__button md-logo" aria-label="Treex" data-md-component="logo">
       
   
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path d="M471.1 96C405 96 353.3 137.3 320 174.6 286.7 137.3 235 96 168.9 96 75.8 96 0 167.8 0 256s75.8 160 168.9 160c66.1 0 117.8-41.3 151.1-78.6 33.3 37.3 85 78.6 151.1 78.6 93.1 0 168.9-71.8 168.9-160S564.2 96 471.1 96zM168.9 320c-40.2 0-72.9-28.7-72.9-64s32.7-64 72.9-64c38.2 0 73.4 36.1 94 64-20.4 27.6-55.9 64-94 64zm302.2 0c-38.2 0-73.4-36.1-94-64 20.4-27.6 55.9-64 94-64 40.2 0 72.9 28.7 72.9 64s-32.7 64-72.9 64z"/></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M494.9 96.01c-38.78 0-75.22 15.09-102.6 42.5L320 210.8l-72.2-72.3C220.39 111.09 183.96 96 145.2 96 65.11 96.01 0 161.1 0 241.1v29.75c0 80.03 65.11 145.1 145.1 145.1 38.78 0 75.22-15.09 102.6-42.5L320 301.3l72.23 72.25c27.41 27.41 63.84 42.5 102.6 42.5C574.9 416 640 350.9 640 270.9v-29.75c0-80.05-65.1-145.14-145.1-145.14zM202.5 328.3c-15.31 15.31-35.69 23.75-57.38 23.75C100.4 352 64 315.6 64 270.9v-29.75c0-44.72 36.41-81.13 81.14-81.13 21.69 0 42.06 8.438 57.38 23.75l72.23 72.25-72.25 72.28zM576 270.9c0 44.72-36.41 81.13-81.14 81.13-21.69 0-42.06-8.438-57.38-23.75l-72.23-72.25 72.23-72.25c15.31-15.31 35.69-23.75 57.38-23.75C539.6 160 576 196.4 576 241.1v29.8z"/></svg>
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -109,8 +107,7 @@
       <label class="md-header__button md-icon" for="__search">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
       </label>
-      
-<div class="md-search" data-md-component="search" role="dialog">
+      <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
@@ -142,8 +139,7 @@
     
     
       <div class="md-header__source">
-        
-<a href="https://github.com/cgarciae/treex/" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/cgarciae/treex/" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
@@ -181,15 +177,14 @@
     <a href="../../.." title="Treex" class="md-nav__button md-logo" aria-label="Treex" data-md-component="logo">
       
   
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path d="M471.1 96C405 96 353.3 137.3 320 174.6 286.7 137.3 235 96 168.9 96 75.8 96 0 167.8 0 256s75.8 160 168.9 160c66.1 0 117.8-41.3 151.1-78.6 33.3 37.3 85 78.6 151.1 78.6 93.1 0 168.9-71.8 168.9-160S564.2 96 471.1 96zM168.9 320c-40.2 0-72.9-28.7-72.9-64s32.7-64 72.9-64c38.2 0 73.4 36.1 94 64-20.4 27.6-55.9 64-94 64zm302.2 0c-38.2 0-73.4-36.1-94-64 20.4-27.6 55.9-64 94-64 40.2 0 72.9 28.7 72.9 64s-32.7 64-72.9 64z"/></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M494.9 96.01c-38.78 0-75.22 15.09-102.6 42.5L320 210.8l-72.2-72.3C220.39 111.09 183.96 96 145.2 96 65.11 96.01 0 161.1 0 241.1v29.75c0 80.03 65.11 145.1 145.1 145.1 38.78 0 75.22-15.09 102.6-42.5L320 301.3l72.23 72.25c27.41 27.41 63.84 42.5 102.6 42.5C574.9 416 640 350.9 640 270.9v-29.75c0-80.05-65.1-145.14-145.1-145.14zM202.5 328.3c-15.31 15.31-35.69 23.75-57.38 23.75C100.4 352 64 315.6 64 270.9v-29.75c0-44.72 36.41-81.13 81.14-81.13 21.69 0 42.06 8.438 57.38 23.75l72.23 72.25-72.25 72.28zM576 270.9c0 44.72-36.41 81.13-81.14 81.13-21.69 0-42.06-8.438-57.38-23.75l-72.23-72.25 72.23-72.25c15.31-15.31 35.69-23.75 57.38-23.75C539.6 160 576 196.4 576 241.1v29.8z"/></svg>
 
     </a>
     Treex
   </label>
   
     <div class="md-nav__source">
-      
-<a href="https://github.com/cgarciae/treex/" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/cgarciae/treex/" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
@@ -546,6 +541,20 @@
     <li class="md-nav__item">
       <a href="../../Conv/" class="md-nav__link">
         Conv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ConvTranspose/" class="md-nav__link">
+        ConvTranspose
       </a>
     </li>
   
@@ -1443,18 +1452,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_71" type="checkbox" id="__nav_3_71" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_72" type="checkbox" id="__nav_3_72" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_3_71">
+        <label class="md-nav__link" for="__nav_3_72">
           losses
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="losses" data-md-level="2">
-        <label class="md-nav__title" for="__nav_3_71">
+        <label class="md-nav__title" for="__nav_3_72">
           <span class="md-nav__icon md-icon"></span>
           losses
         </label>
@@ -1728,18 +1737,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_74" type="checkbox" id="__nav_3_74" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_75" type="checkbox" id="__nav_3_75" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_3_74">
+        <label class="md-nav__link" for="__nav_3_75">
           metrics
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="metrics" data-md-level="2">
-        <label class="md-nav__title" for="__nav_3_74">
+        <label class="md-nav__title" for="__nav_3_75">
           <span class="md-nav__icon md-icon"></span>
           metrics
         </label>
@@ -1973,18 +1982,18 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_76" type="checkbox" id="__nav_3_76" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_77" type="checkbox" id="__nav_3_77" checked>
       
       
       
       
-        <label class="md-nav__link" for="__nav_3_76">
+        <label class="md-nav__link" for="__nav_3_77">
           nn
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="nn" data-md-level="2">
-        <label class="md-nav__title" for="__nav_3_76">
+        <label class="md-nav__title" for="__nav_3_77">
           <span class="md-nav__icon md-icon"></span>
           nn
         </label>
@@ -2012,6 +2021,20 @@
     <li class="md-nav__item">
       <a href="../Conv/" class="md-nav__link">
         Conv
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConvTranspose/" class="md-nav__link">
+        ConvTranspose
       </a>
     </li>
   
@@ -2099,6 +2122,7 @@
       </a>
       
         
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -2284,18 +2308,18 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_79" type="checkbox" id="__nav_3_79" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_80" type="checkbox" id="__nav_3_80" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_3_79">
+        <label class="md-nav__link" for="__nav_3_80">
           regularizers
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="regularizers" data-md-level="2">
-        <label class="md-nav__title" for="__nav_3_79">
+        <label class="md-nav__title" for="__nav_3_80">
           <span class="md-nav__icon md-icon"></span>
           regularizers
         </label>
@@ -2438,6 +2462,7 @@
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -2484,12 +2509,13 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/cgarciae/treex/edit/master/docs/api/nn/GroupNorm.md" title="Edit this page" class="md-content__button md-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
-                  </a>
-                
-                
-                <h1 id="treexnngroupnorm">treex.nn.GroupNorm</h1>
+<a href="https://github.com/cgarciae/treex/edit/master/docs/api/nn/GroupNorm.md" title="Edit this page" class="md-content__button md-icon">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+</a>
+
+
+
+<h1 id="treexnngroupnorm">treex.nn.GroupNorm</h1>
 
 
   <div class="doc doc-object doc-class">
@@ -2501,6 +2527,144 @@
 <p><code>GroupNorm</code> is implemented as a wrapper over <code>flax.linen.GroupNorm</code>, its constructor arguments accept the same arguments including any Flax artifacts such as initializers.</p>
 <p>This op is similar to batch normalization, but statistics are shared across equally-sized groups of channels and not shared across batch dimension. Thus, group normalization does not depend on the batch composition and does not require maintaining internal state for storing statistics. The user should either specify the total number of channel groups or the number of channels per group..</p>
 
+        <details class="quote">
+          <summary>Source code in <code>treex/nn/norm.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">GroupNorm</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Group normalization Module (arxiv.org/abs/1803.08494).</span>
+
+
+<span class="sd">    `GroupNorm` is implemented as a wrapper over `flax.linen.GroupNorm`, its constructor arguments accept the same arguments including any Flax artifacts such as initializers.</span>
+
+<span class="sd">    This op is similar to batch normalization, but statistics are shared across equally-sized groups of channels and not shared across batch dimension. Thus, group normalization does not depend on the batch composition and does not require maintaining internal state for storing statistics. The user should either specify the total number of channel groups or the number of channels per group..</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># pytree</span>
+    <span class="n">scale</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">Parameter</span><span class="o">.</span><span class="n">node</span><span class="p">()</span>
+    <span class="n">bias</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">Parameter</span><span class="o">.</span><span class="n">node</span><span class="p">()</span>
+
+    <span class="c1"># props</span>
+    <span class="n">num_groups</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">group_size</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">flax_module</span><span class="o">.</span><span class="n">Dtype</span>
+    <span class="n">use_bias</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">use_scale</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">bias_init</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Callable</span><span class="p">[</span>
+        <span class="p">[</span><span class="n">flax_module</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">,</span> <span class="n">flax_module</span><span class="o">.</span><span class="n">Shape</span><span class="p">,</span> <span class="n">flax_module</span><span class="o">.</span><span class="n">Dtype</span><span class="p">],</span>
+        <span class="n">flax_module</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">scale_init</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Callable</span><span class="p">[</span>
+        <span class="p">[</span><span class="n">flax_module</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">,</span> <span class="n">flax_module</span><span class="o">.</span><span class="n">Shape</span><span class="p">,</span> <span class="n">flax_module</span><span class="o">.</span><span class="n">Dtype</span><span class="p">],</span>
+        <span class="n">flax_module</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">num_groups</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
+        <span class="n">group_size</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-5</span><span class="p">,</span>
+        <span class="n">dtype</span><span class="p">:</span> <span class="n">flax_module</span><span class="o">.</span><span class="n">Dtype</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+        <span class="n">use_bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">use_scale</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">bias_init</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Callable</span><span class="p">[</span>
+            <span class="p">[</span><span class="n">flax_module</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">,</span> <span class="n">flax_module</span><span class="o">.</span><span class="n">Shape</span><span class="p">,</span> <span class="n">flax_module</span><span class="o">.</span><span class="n">Dtype</span><span class="p">],</span>
+            <span class="n">flax_module</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="n">flax_module</span><span class="o">.</span><span class="n">initializers</span><span class="o">.</span><span class="n">zeros</span><span class="p">,</span>
+        <span class="n">scale_init</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Callable</span><span class="p">[</span>
+            <span class="p">[</span><span class="n">flax_module</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">,</span> <span class="n">flax_module</span><span class="o">.</span><span class="n">Shape</span><span class="p">,</span> <span class="n">flax_module</span><span class="o">.</span><span class="n">Dtype</span><span class="p">],</span>
+            <span class="n">flax_module</span><span class="o">.</span><span class="n">Array</span><span class="p">,</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="n">flax_module</span><span class="o">.</span><span class="n">initializers</span><span class="o">.</span><span class="n">ones</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Arguments:</span>
+<span class="sd">            num_groups: the total number of channel groups. The default value of 32 is proposed by the original group normalization paper.</span>
+<span class="sd">            group_size: the number of channels in a group.</span>
+<span class="sd">            epsilon: a small float added to variance to avoid dividing by zero.</span>
+<span class="sd">            dtype: the dtype of the computation (default: float32).</span>
+<span class="sd">            use_bias:  if True, bias (beta) is added.</span>
+<span class="sd">            use_scale: if True, multiply by scale (gamma).</span>
+<span class="sd">                When the next layer is linear (also e.g. nn.relu), this can be disabled</span>
+<span class="sd">                since the scaling will be done by the next layer.</span>
+<span class="sd">            bias_init: initializer for bias, by default, zero.</span>
+<span class="sd">            scale_init: initializer for scale, by default, one.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_groups</span> <span class="o">=</span> <span class="n">num_groups</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group_size</span> <span class="o">=</span> <span class="n">group_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">dtype</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_bias</span> <span class="o">=</span> <span class="n">use_bias</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_scale</span> <span class="o">=</span> <span class="n">use_scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias_init</span> <span class="o">=</span> <span class="n">bias_init</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale_init</span> <span class="o">=</span> <span class="n">scale_init</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">module</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">flax_module</span><span class="o">.</span><span class="n">GroupNorm</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">flax_module</span><span class="o">.</span><span class="n">GroupNorm</span><span class="p">(</span>
+            <span class="n">num_groups</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_groups</span><span class="p">,</span>
+            <span class="n">group_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">group_size</span><span class="p">,</span>
+            <span class="n">epsilon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+            <span class="n">use_bias</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_bias</span><span class="p">,</span>
+            <span class="n">use_scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_scale</span><span class="p">,</span>
+            <span class="n">bias_init</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_init</span><span class="p">,</span>
+            <span class="n">scale_init</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scale_init</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Normalizes the individual input over equally-sized group of channels.</span>
+
+<span class="sd">        Arguments:</span>
+<span class="sd">            x: the input to be normalized.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Normalized inputs (the same shape as inputs).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">initializing</span><span class="p">():</span>
+            <span class="n">variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">init</span><span class="p">(</span>
+                <span class="n">next_key</span><span class="p">(),</span>
+                <span class="n">x</span><span class="p">,</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">unfreeze</span><span class="p">()</span>
+
+            <span class="c1"># Extract collections</span>
+            <span class="k">if</span> <span class="s2">&quot;params&quot;</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_bias</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;bias&quot;</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_scale</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;scale&quot;</span><span class="p">]</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_bias</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;bias&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bias</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_scale</span><span class="p">:</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;scale&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span>
+
+        <span class="n">variables</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># call apply</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+            <span class="n">variables</span><span class="p">,</span>
+            <span class="n">x</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">tp</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+</code></pre></div>
+        </details>
 
 
 
@@ -2521,7 +2685,7 @@
 
 
 
-<h2 id="treex.nn.norm.GroupNorm.__call__" class="doc doc-heading">
+<h2 class="doc doc-heading" id="treex.nn.norm.GroupNorm.__call__">
 <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span></code>
 
   <span class="doc doc-properties">
@@ -2629,8 +2793,8 @@
 
 
 
-<h2 id="treex.nn.norm.GroupNorm.__init__" class="doc doc-heading">
-<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">num_groups</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">group_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-05</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">jax</span><span class="o">.</span><span class="n">_src</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">lax_numpy</span><span class="o">.</span><span class="n">float32</span><span class="s1">&#39;&gt;, use_bias=True, use_scale=True, bias_init=&lt;function zeros at 0x7f119d9daee0&gt;, scale_init=&lt;function ones at 0x7f119d9e4040&gt;)</span></code>
+<h2 class="doc doc-heading" id="treex.nn.norm.GroupNorm.__init__">
+<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">num_groups</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">group_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-05</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">jax</span><span class="o">.</span><span class="n">_src</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">lax_numpy</span><span class="o">.</span><span class="n">float32</span><span class="s1">&#39;&gt;, use_bias=True, use_scale=True, bias_init=&lt;function zeros at 0x7f8860592290&gt;, scale_init=&lt;function ones at 0x7f8860598200&gt;)</span></code>
 
   <span class="doc doc-properties">
       <small class="doc doc-property doc-property-special"><code>special</code></small>
@@ -2694,13 +2858,13 @@ since the scaling will be done by the next layer.</p></td>
         <td><code>bias_init</code></td>
         <td><code>Callable[[Any, Tuple[int], Any], Any]</code></td>
         <td><p>initializer for bias, by default, zero.</p></td>
-        <td><code>&lt;function zeros at 0x7f119d9daee0&gt;</code></td>
+        <td><code>&lt;function zeros at 0x7f8860592290&gt;</code></td>
       </tr>
       <tr>
         <td><code>scale_init</code></td>
         <td><code>Callable[[Any, Tuple[int], Any], Any]</code></td>
         <td><p>initializer for scale, by default, one.</p></td>
-        <td><code>&lt;function ones at 0x7f119d9e4040&gt;</code></td>
+        <td><code>&lt;function ones at 0x7f8860598200&gt;</code></td>
       </tr>
   </tbody>
 </table>
@@ -2764,11 +2928,6 @@ since the scaling will be done by the next layer.</p></td>
     </div>
 
   </div>
-                
-              
-              
-                
-
 
               
             </article>
@@ -2777,8 +2936,7 @@ since the scaling will be done by the next layer.</p></td>
         
       </main>
       
-        
-<footer class="md-footer">
+        <footer class="md-footer">
   
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
@@ -2817,48 +2975,47 @@ since the scaling will be done by the next layer.</p></td>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
-      <div class="md-footer-copyright">
-        
-        
-          Made with
-          <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
-            Material for MkDocs
-          </a>
-        
-        
-      </div>
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
       
-  <div class="md-footer-social">
+        <div class="md-social">
+  
+    
     
       
       
-        
-        
-      
-      <a href="https://github.com/cgarciae" target="_blank" rel="noopener" title="github.com" class="md-footer-social__link">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
-      </a>
+    
+    <a href="https://github.com/cgarciae" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+    </a>
+  
+    
     
       
       
-        
-        
-      
-      <a href="https://twitter.com/cgarciae88" target="_blank" rel="noopener" title="twitter.com" class="md-footer-social__link">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
-      </a>
+    
+    <a href="https://twitter.com/cgarciae88" target="_blank" rel="noopener" title="twitter.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
+    </a>
+  
+    
     
       
       
-        
-        
-      
-      <a href="https://www.linkedin.com/in/cgarciae" target="_blank" rel="noopener" title="www.linkedin.com" class="md-footer-social__link">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg>
-      </a>
     
-  </div>
-
+    <a href="https://www.linkedin.com/in/cgarciae" target="_blank" rel="noopener" title="www.linkedin.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg>
+    </a>
+  
+</div>
+      
     </div>
   </div>
 </footer>
@@ -2867,10 +3024,10 @@ since the scaling will be done by the next layer.</p></td>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.f8263e09.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../../assets/javascripts/workers/search.bd0b6b67.min.js"}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.4fc53ad4.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.8aa65030.min.js"></script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
       
