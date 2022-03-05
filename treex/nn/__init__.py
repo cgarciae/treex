@@ -1,6 +1,6 @@
 from treex import types
 
-from .conv import Conv
+from .conv import Conv, ConvTranspose
 from .dropout import Dropout
 from .embed import Embed
 from .flatten import Flatten
@@ -20,6 +20,7 @@ except types.OptionalDependencyNotFound:
 __all__ = [
     "BatchNorm",
     "Conv",
+    "ConvTranspose",
     "Dropout",
     "Embed",
     "Flatten",
