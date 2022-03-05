@@ -24,6 +24,7 @@ nav:
     Cache: api/Cache.md
     Compact: api/Compact.md
     Conv: api/Conv.md
+    ConvTranspose: api/ConvTranspose.md
     Copy: api/Copy.md
     Dropout: api/Dropout.md
     Embed: api/Embed.md
@@ -35,6 +36,7 @@ nav:
     Flatten: api/Flatten.md
     FlattenMode: api/FlattenMode.md
     FlaxModule: api/FlaxModule.md
+    GroupNorm: api/GroupNorm.md
     HaikuModule: api/HaikuModule.md
     Hashable: api/Hashable.md
     Initializer: api/Initializer.md
@@ -42,6 +44,7 @@ nav:
     KeySeq: api/KeySeq.md
     KindMixin: api/KindMixin.md
     Lambda: api/Lambda.md
+    LayerNorm: api/LayerNorm.md
     Linear: api/Linear.md
     Log: api/Log.md
     Loss: api/Loss.md
@@ -123,12 +126,15 @@ nav:
     nn:
       BatchNorm: api/nn/BatchNorm.md
       Conv: api/nn/Conv.md
+      ConvTranspose: api/nn/ConvTranspose.md
       Dropout: api/nn/Dropout.md
       Embed: api/nn/Embed.md
       Flatten: api/nn/Flatten.md
       FlaxModule: api/nn/FlaxModule.md
+      GroupNorm: api/nn/GroupNorm.md
       HaikuModule: api/nn/HaikuModule.md
       Lambda: api/nn/Lambda.md
+      LayerNorm: api/nn/LayerNorm.md
       Linear: api/nn/Linear.md
       MLP: api/nn/MLP.md
       Sequential: api/nn/Sequential.md
