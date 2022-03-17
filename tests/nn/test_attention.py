@@ -29,9 +29,9 @@ class MultiHeadDotProductAttentionTest(unittest.TestCase):
         batch_size=st.integers(min_value=1, max_value=32),
         length=st.integers(min_value=1, max_value=32),
         log2_features_in=st.integers(min_value=1, max_value=5),
-        log2_num_heads=st.integers(min_value=1, max_value=3),
-        log2_qkv_features=st.integers(min_value=1, max_value=5),
-        log2_out_features=st.integers(min_value=1, max_value=5),
+        log2_num_heads=st.integers(min_value=0, max_value=2),
+        log2_qkv_features=st.integers(min_value=3, max_value=5),
+        log2_out_features=st.integers(min_value=3, max_value=5),
         broadcast_dropout=st.booleans(),
         dropout_rate=st.floats(min_value=0.0, max_value=1.0),
         deterministic=st.booleans(),
@@ -41,7 +41,7 @@ class MultiHeadDotProductAttentionTest(unittest.TestCase):
         decode=st.booleans(),
         training=st.booleans(),
     )
-    @hp.settings(deadline=None, max_examples=1)
+    @hp.settings(deadline=None, max_examples=20)
     def test_equivalence(
         self,
         batch_size,
@@ -73,7 +73,8 @@ class MultiHeadDotProductAttentionTest(unittest.TestCase):
             out_features=2 ** log2_out_features,
             broadcast_dropout=broadcast_dropout,
             dropout_rate=dropout_rate,
-            deterministic=deterministic,
+            # deterministic=deterministic,
+            deterministic=False,
             kernel_init=kernel_init,
             bias_init=bias_init,
             use_bias=use_bias,
@@ -85,15 +86,19 @@ class MultiHeadDotProductAttentionTest(unittest.TestCase):
             out_features=2 ** log2_out_features,
             broadcast_dropout=broadcast_dropout,
             dropout_rate=dropout_rate,
-            deterministic=deterministic,
+            # deterministic=deterministic,
+            deterministic=False,
             kernel_init=kernel_init,
             bias_init=bias_init,
             use_bias=use_bias,
             decode=False,
         ).train(training)
 
-        flax_key, _ = tx.iter_split(key)  # emulate init split
-        variables = flax_module.init(key, inputs_q, inputs_kv)
+        _, flax_key = tx.iter_split(key)  # emulate init split
+        param_key, _ = tx.iter_split(flax_key)  # emulate init split
+        variables = flax_module.init(
+            {"params": param_key, "dropout": key}, inputs_q, inputs_kv
+        )
         treex_module = treex_module.init(key, (inputs_q, inputs_kv))
 
         assert np.allclose(
@@ -123,12 +128,11 @@ class MultiHeadDotProductAttentionTest(unittest.TestCase):
             )
 
         # split key same way tx.Dropout does internally
-        rng, _ = tx.iter_split(flax_key, 2)
         y_flax = flax_module.apply(
-            variables, rngs={"dropout": rng}, inputs_q=inputs_q, inputs_kv=inputs_kv
+            variables, rngs={"dropout": key}, inputs_q=inputs_q, inputs_kv=inputs_kv
         )
 
-        y_treex = treex_module(inputs_q=inputs_q, inputs_kv=inputs_kv)
+        y_treex = treex_module(inputs_q=inputs_q, inputs_kv=inputs_kv, rng=key)
 
         assert np.allclose(y_flax, y_treex)
 

@@ -156,7 +156,7 @@ class MultiHeadDotProductAttention(Module):
           output of shape `[batch_sizes..., length, features]`.
         """
         if self.initializing():
-            rngs = {"params": next_key()}
+            rngs = {"params": next_key(), "dropout": next_key()}
             variables = self.module.init(rngs, inputs_q, inputs_kv, mask)
 
             # Extract collections
@@ -171,12 +171,6 @@ class MultiHeadDotProductAttention(Module):
         assert self.key is not None
         assert self.value is not None
         assert self.out is not None
-
-        if self.use_bias:
-            assert self.query["bias"] is not None
-            assert self.key["bias"] is not None
-            assert self.value["bias"] is not None
-            assert self.out["bias"] is not None
 
         params = {
             "query": self.query,
