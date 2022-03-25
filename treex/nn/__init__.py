@@ -1,5 +1,6 @@
 from treex import types
 
+from .attention import MultiHeadDotProductAttention
 from .conv import Conv, ConvTranspose
 from .dropout import Dropout
 from .embed import Embed
@@ -29,6 +30,7 @@ __all__ = [
     "LayerNorm",
     "Linear",
     "MLP",
+    "MultiHeadDotProductAttention",
     "Lambda",
     "Sequential",
     "sequence",
