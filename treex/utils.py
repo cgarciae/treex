@@ -19,7 +19,7 @@ from treex import types
 _pymap = map
 _pyfilter = filter
 
-LEAF_TYPES = (to.Nothing, types.Initializer, type(None))
+LEAF_TYPES = (to.Nothing, type(None))
 PAD = r"{pad}"
 
 
@@ -28,7 +28,7 @@ PAD = r"{pad}"
 # --------------------------------------------------------------------
 
 
-def iter_split(key: tp.Any, num: int = 2) -> tp.Tuple[tp.Any, ...]:
+def iter_split(key: tp.Any, num: int = 2) -> tp.Tuple[jnp.ndarray, ...]:
     splits = jax.random.split(key, num)
     return tuple(splits[i] for i in range(num))
 

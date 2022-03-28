@@ -67,22 +67,23 @@ class DropoutTest(unittest.TestCase):
 
     def test_call(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.Dropout(0.5).init(42)
+        module = tx.Dropout(0.5).init(42, x)
 
-        y = module(x)
+        y, module = module.apply(420, x)
 
         assert y.shape == (10, 2)
 
     def test_tree(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.Dropout(0.5).init(42)
+        module = tx.Dropout(0.5).init(42, x)
 
         flat = jax.tree_leaves(module)
 
-        assert len(flat) == 1
+        assert len(flat) == 0
 
     def test_slice(self):
-        module = tx.Dropout(0.5).init(42)
+        x = np.random.uniform(size=(10, 2))
+        module = tx.Dropout(0.5).init(42, x)
 
         flat = jax.tree_leaves(module.filter(tx.Parameter))
 
@@ -90,39 +91,32 @@ class DropoutTest(unittest.TestCase):
 
         flat = jax.tree_leaves(module.filter(tx.State))
 
-        assert len(flat) == 1
+        assert len(flat) == 0
 
     def test_jit(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.Dropout(0.5).init(42)
+        module = tx.Dropout(0.5).init(42, x)
 
         @jax.jit
         def f(module, x):
-            return module, module(x)
+            return module.apply(42, x)
 
-        module2, y = f(module, x)
+        y, module2 = f(module, x)
 
         assert y.shape == (10, 2)
-        assert not all(
-            np.allclose(a, b)
-            for a, b in zip(
-                jax.tree_leaves(module.filter(tx.State)),
-                jax.tree_leaves(module2.filter(tx.State)),
-            )
-        )
 
     def test_eval(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.Dropout(0.5).init(42)
+        module = tx.Dropout(0.5).init(42, x)
 
-        y1 = module(x)
-        y2 = module(x)
+        y1, module = module.apply(42, x)
+        y2, module = module.apply(69, x)
 
         assert not np.allclose(y1, y2)
 
         module = module.eval()
 
-        y1 = module(x)
-        y2 = module(x)
+        y1, module = module.apply(42, x)
+        y2, module = module.apply(69, x)
 
         assert np.allclose(y1, y2)

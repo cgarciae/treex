@@ -6,7 +6,6 @@ import numpy as np
 import treeo as to
 
 from treex import types, utils
-from treex.key_seq import KeySeq
 from treex.module import Module
 
 try:
@@ -24,7 +23,6 @@ class HaikuModule(Module):
     # dynamic
     params_: tp.Optional[hk.Params] = types.Parameter.node()
     state_: tp.Optional[hk.State] = types.BatchStat.node()
-    next_key: KeySeq
 
     def __init__(
         self,
@@ -41,7 +39,6 @@ class HaikuModule(Module):
             if not isinstance(transform, hk.TransformedWithState)
             else transform
         )
-        self.next_key = KeySeq()
         self.params_ = to_mutable_dict(params) if params is not None else None
         self.state_ = to_mutable_dict(states) if states is not None else None
 

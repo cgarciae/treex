@@ -8,7 +8,6 @@ import treeo as to
 from flax.linen import recurrent as flax_module
 
 from treex import types
-from treex.key_seq import KeySeq
 from treex.module import Module, next_key
 from treex.nn.linear import Linear
 
@@ -102,7 +101,6 @@ class GRU(Module):
         self.time_axis = (time_axis,)
         self.unroll = unroll
 
-        self.next_key = KeySeq()
         self.last_state = None
 
     @property

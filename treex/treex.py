@@ -8,7 +8,18 @@ A = tp.TypeVar("A")
 T = tp.TypeVar("T", bound="Treex")
 
 
-class Treex(to.Tree, to.Extensions):
+class Treex(
+    to.Tree,
+    to.Immutable,
+    to.Copy,
+    to.ToString,
+    to.ToDict,
+    to.Repr,
+    to.Filter,
+    to.Merge,
+    to.Map,
+    to.Compact,
+):
     """
     A Tree class with all Mixin Extensions. Base class for all Treex classes.
     """

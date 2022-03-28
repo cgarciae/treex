@@ -21,7 +21,6 @@ from treex.treex import Filters, Treex
 from treex.types import (
     BatchStat,
     Cache,
-    Initializer,
     Inputs,
     Log,
     LossLog,
@@ -65,7 +64,6 @@ __all__ = [
     "Rng",
     "State",
     "TreePart",
-    "Initializer",
     "Inputs",
     "Named",
     "losses",

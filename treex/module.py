@@ -9,6 +9,7 @@ import jax.numpy as jnp
 import jax.tree_util
 import numpy as np
 import treeo as to
+from rich import inspect
 from rich.table import Table
 from rich.text import Text
 
@@ -22,18 +23,18 @@ M = tp.TypeVar("M", bound="Module")
 
 
 @dataclass
-class _InitContext(threading.local):
+class _ModuleContext(threading.local):
     key: tp.Optional[jnp.ndarray] = None
     initializing: bool = False
 
     def __enter__(self):
-        global _INIT_CONTEXT
-        self._old_context = _INIT_CONTEXT
-        _INIT_CONTEXT = self
+        global _MODULE_CONTEXT
+        self._old_context = _MODULE_CONTEXT
+        _MODULE_CONTEXT = self
 
     def __exit__(self, *args):
-        global _INIT_CONTEXT
-        _INIT_CONTEXT = self._old_context
+        global _MODULE_CONTEXT
+        _MODULE_CONTEXT = self._old_context
 
     @contextmanager
     def update(self, **kwargs):
@@ -41,11 +42,11 @@ class _InitContext(threading.local):
         fields.pop("_old_context", None)
         fields.update(kwargs)
 
-        with _InitContext(**fields):
+        with _ModuleContext(**fields):
             yield
 
 
-_INIT_CONTEXT = _InitContext()
+_MODULE_CONTEXT = _ModuleContext()
 
 # -----------------------------------------
 # Module
@@ -53,20 +54,23 @@ _INIT_CONTEXT = _InitContext()
 class ModuleMeta(to.TreeMeta):
     def construct(cls, obj: M, *args, **kwargs) -> M:
         # reset context during construction
-        with _InitContext():
+        with _ModuleContext():
             obj = super().construct(obj, *args, **kwargs)
 
         if not hasattr(obj, "name"):
             obj.name = utils._lower_snake_case(obj.__class__.__name__)
 
         if to.in_compact():
-            if _INIT_CONTEXT.key is None:
+            if _MODULE_CONTEXT.key is None:
                 raise RuntimeError(
                     f"Trying to construct new module {obj} with a compact context outside of `init` or an `rng_key` context."
                 )
 
-            if not obj.initialized:
-                obj.init(key=next_key(), inplace=True, _set_initialize=False)
+            def call_rng_init(module: Module):
+                if isinstance(module, Module) and not module._initialized:
+                    module.rng_init()
+
+            obj = to.apply(call_rng_init, obj)
 
         return obj
 
@@ -86,7 +90,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
 
     def initializing(self) -> bool:
         if not self.initialized:
-            if not _INIT_CONTEXT.initializing:
+            if not _MODULE_CONTEXT.initializing:
                 raise RuntimeError(
                     f"Trying run {self.__class__.__name__} for the first time outside of `init`"
                 )
@@ -130,12 +134,10 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
 
     def init(
         self: M,
-        key: tp.Union[int, jnp.ndarray],
-        inputs: types.InputLike = to.MISSING,
-        call_method: str = "__call__",
-        *,
-        inplace: bool = False,
-        _set_initialize: bool = True,
+        key: tp.Optional[tp.Union[int, jnp.ndarray]],
+        *args,
+        method: tp.Union[str, tp.Callable] = "__call__",
+        **kwargs,
     ) -> M:
         """
         Method version of `tx.init`, it applies `self` as first argument.
@@ -145,52 +147,68 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
 
         1. The input `key` is split and iteratively updated before passing a derived value to any
             process that requires initialization.
-        2. `Initializer`s are called and applied to the module first.
-        3. `Module.rng_init` methods are called last.
+        2. `Module.rng_init` methods are called last.
 
         Arguments:
             key: The seed to use for initialization.
         Returns:
             The new module with the fields initialized.
         """
-        module = self.copy() if not inplace else self
-        key = utils.Key(key)
+        module: M = self
+        key = utils.Key(key) if key is not None else None
 
-        with _INIT_CONTEXT.update(key=key, initializing=True):
-
-            module: M = module.map(
-                lambda initializer: (
-                    initializer(next_key())
-                    if isinstance(initializer, types.Initializer)
-                    else initializer
-                ),
-                is_leaf=lambda x: isinstance(x, types.Initializer),
-                inplace=True,
-            )
+        with _MODULE_CONTEXT.update(key=key, initializing=True):
 
             def call_rng_init(module: Module):
                 if isinstance(module, Module) and not module._initialized:
                     module.rng_init()
 
-            module = to.apply(call_rng_init, module, inplace=True)
+            module = to.apply(call_rng_init, module)
 
-            if inputs is not to.MISSING:
-                inputs = types.Inputs.from_value(inputs)
-                method = getattr(module, call_method)
-                method(*inputs.args, **inputs.kwargs)
-
-        if _set_initialize:
+            _output, module = module.apply(
+                _MODULE_CONTEXT.key, *args, method=method, **kwargs
+            )
 
             def set_initialized(module: Module):
                 if isinstance(module, Module) and not module._initialized:
                     module._initialized = True
 
-            module = to.apply(set_initialized, module, inplace=True)
+            module = to.apply(set_initialized, module)
 
         return module
 
+    def apply(
+        self: M,
+        key: tp.Optional[types.KeyLike],
+        *args,
+        method: tp.Union[str, tp.Callable] = "__call__",
+        mutable: bool = True,
+        **kwargs,
+    ) -> tp.Tuple[tp.Any, M]:
+
+        key = utils.Key(key) if key is not None else None
+        unbounded_method: tp.Callable = (
+            getattr(self.__class__, method)
+            if isinstance(method, str)
+            else method.__func__
+            if inspect.ismethod(method)
+            else method
+        )
+
+        with _MODULE_CONTEXT.update(key=key):
+
+            if mutable:
+                return self.mutable(*args, method=unbounded_method, **kwargs)
+            else:
+                output = unbounded_method(self, *args, **kwargs)
+                return output, self.copy()
+
     def rng_init(self) -> None:
         pass
+
+    @staticmethod
+    def next_key() -> jnp.ndarray:
+        return next_key()
 
     def tabulate(
         self,
@@ -441,7 +459,7 @@ def _update_first(f):
     return wrapper
 
 
-def next_key(*, axis_name: tp.Optional[tp.Any] = None) -> jnp.ndarray:
+def next_key() -> jnp.ndarray:
     """
     Returns the next key.
 
@@ -450,16 +468,12 @@ def next_key(*, axis_name: tp.Optional[tp.Any] = None) -> jnp.ndarray:
     """
     key: jnp.ndarray
 
-    if _INIT_CONTEXT.key is None:
+    if _MODULE_CONTEXT.key is None:
         raise RuntimeError(
             "RNG key not set, you are either calling an uninitialized Module outside `.init` or forgot to call `rng_key` context manager."
         )
 
-    key, _INIT_CONTEXT.key = utils.iter_split(_INIT_CONTEXT.key)
-
-    if axis_name is not None:
-        axis_index = jax.lax.axis_index(axis_name)
-        key = jax.random.fold_in(key, axis_index)
+    key, _MODULE_CONTEXT.key = utils.iter_split(_MODULE_CONTEXT.key)
 
     return key
 
@@ -468,5 +482,5 @@ def next_key(*, axis_name: tp.Optional[tp.Any] = None) -> jnp.ndarray:
 def rng_key(key: types.KeyLike):
     key = utils.Key(key)
 
-    with _INIT_CONTEXT.update(key=key):
+    with _MODULE_CONTEXT.update(key=key):
         yield
