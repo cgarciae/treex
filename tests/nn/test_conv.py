@@ -110,6 +110,14 @@ class ConvTest(unittest.TestCase):
 
         assert y.shape == (10, 8, 8, 3)
 
+    def test_apply(self):
+        x = np.random.uniform(size=(10, 8, 8, 2))
+        module = tx.Conv(3, [3, 3]).init(42, x)
+
+        y, module = module.apply(None, x)
+
+        assert y.shape == (10, 8, 8, 3)
+
     def test_tree(self):
         x = np.random.uniform(size=(10, 8, 8, 2))
         module = tx.Conv(3, [3, 3]).init(42, x)
