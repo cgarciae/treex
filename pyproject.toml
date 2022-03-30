@@ -20,7 +20,7 @@ PyYAML = "^6.0"
 rich = "^11.2.0"
 optax = "^0.1.1"
 einops = "^0.4.0"
-treeo = "^0.1.0"
+treeo = "^0.1.1"
 # treeo = { path = "../treeo", develop = true }
 certifi = "^2021.10.8"
 
