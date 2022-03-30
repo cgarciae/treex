@@ -12,6 +12,7 @@ import treeo as to
 from rich import inspect
 from rich.table import Table
 from rich.text import Text
+from treeo.utils import _get_unbound_method
 
 from treex import contexts, types, utils
 from treex.treex import Filters, Treex
@@ -187,13 +188,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
     ) -> tp.Tuple[tp.Any, M]:
 
         key = utils.Key(key) if key is not None else None
-        unbounded_method: tp.Callable = (
-            getattr(self.__class__, method)
-            if isinstance(method, str)
-            else method.__func__
-            if inspect.ismethod(method)
-            else method
-        )
+        unbounded_method = _get_unbound_method(self, method)
 
         with _MODULE_CONTEXT.update(key=key):
 

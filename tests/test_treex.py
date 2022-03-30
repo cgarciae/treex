@@ -42,6 +42,9 @@ class MLP(tx.Module):
         self.linear1 = Linear(din, dmid, name="linear1")
         self.linear2 = Linear(dmid, dout, name="linear2")
 
+    def __call__(self):
+        pass
+
 
 def _get_all_vars(cls):
     d = {}
@@ -173,23 +176,6 @@ class TestTreex:
 
         assert isinstance(m.kernel, jnp.ndarray)
 
-    def test_update_inplace(self):
-
-        mlp = MLP(2, 3, 5)
-
-        mlp_params = mlp.filter(tx.Parameter)
-        mlp_states = mlp.filter(tx.State)
-
-        mlp_params.merge(mlp_states, inplace=True)
-
-        assert not isinstance(mlp_params.linear1.w, tx.Nothing)
-        assert not isinstance(mlp_params.linear1.b, tx.Nothing)
-        assert not isinstance(mlp_params.linear1.n, tx.Nothing)
-
-        assert not isinstance(mlp_params.linear2.w, tx.Nothing)
-        assert not isinstance(mlp_params.linear2.b, tx.Nothing)
-        assert not isinstance(mlp_params.linear2.n, tx.Nothing)
-
     def test_update_not_inplace(self):
 
         mlp = MLP(2, 3, 5)
@@ -278,6 +264,9 @@ class TestTreex:
                 nonlocal n
                 n = n + 1
 
+            def __call__(self):
+                pass
+
         module = A()
 
         module = module.init(42)
@@ -290,23 +279,13 @@ class TestTreex:
             def rng_init(self):
                 self.x = 420
 
+            def __call__(self):
+                pass
+
         module = A()
         assert not module.initialized
 
         module = module.init(42)
-
-        assert module.x == 420
-        assert module.initialized
-
-    def test_initialized_inplace(self):
-        class A(tx.Module):
-            def rng_init(self):
-                self.x = 420
-
-        module = A()
-        assert not module.initialized
-
-        module.init(42, inplace=True)
 
         assert module.x == 420
         assert module.initialized
@@ -331,26 +310,6 @@ class TestTreex:
         assert mlp.linear1.training
         assert mlp.linear2.training
 
-    def test_train_inplace(self):
-
-        mlp = MLP(2, 3, 5).init(42)
-
-        assert mlp.training
-        assert mlp.linear1.training
-        assert mlp.linear2.training
-
-        mlp.eval(inplace=True)
-
-        assert not mlp.training
-        assert not mlp.linear1.training
-        assert not mlp.linear2.training
-
-        mlp.train(inplace=True)
-
-        assert mlp.training
-        assert mlp.linear1.training
-        assert mlp.linear2.training
-
     def test_multiple_initializers(self):
         class MLP(tx.Module):
             linear1: tx.Linear
@@ -370,20 +329,18 @@ class TestTreex:
     def test_repr(self):
         class MyModule(tx.Module):
             a: tp.Dict[str, tp.List[MLP]]
-            b: tp.List[tp.Union[tx.Initializer, jnp.ndarray]] = tx.Parameter.node()
+            b: tp.List[jnp.ndarray] = tx.Parameter.node()
 
             def __init__(self):
 
                 self.a = {"mlps": [MLP(2, 3, 5), MLP(2, 3, 5)]}
                 self.b = [
-                    tx.Initializer(lambda key: jnp.zeros((10, 4))),
+                    jnp.zeros((5, 13)),
                     jnp.zeros((5, 13)),
                 ]
 
         mlp = MyModule()  # .init(42)
-        mlp = jax.tree_map(
-            lambda x: jnp.asarray(x) if not isinstance(x, tx.Initializer) else x, mlp
-        )
+        mlp = jax.tree_map(lambda x: jnp.asarray(x), mlp)
         mlp = mlp.filter(tx.Parameter)
 
         rep = repr(mlp)
