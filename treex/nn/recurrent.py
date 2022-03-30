@@ -7,7 +7,7 @@ import numpy as np
 import treeo as to
 from flax.linen import recurrent as flax_module
 
-from treex import types
+from treex import types, utils
 from treex.module import Module, next_key
 from treex.nn.linear import Linear
 
@@ -123,8 +123,17 @@ class GRU(Module):
         """
         if not isinstance(batch_dim, tp.Iterable):
             batch_dim = (batch_dim,)
+
+        if (
+            self.initial_state_init is jax.nn.initializers.zeros
+            or self.initial_state_init is jax.nn.initializers.ones
+        ):
+            key = utils.Key(0)
+        else:
+            key = self.next_key()
+
         return self.module.initialize_carry(
-            self.next_key(), batch_dim, self.hidden_units, self.initial_state_init
+            key, batch_dim, self.hidden_units, self.initial_state_init
         )
 
     def __call__(

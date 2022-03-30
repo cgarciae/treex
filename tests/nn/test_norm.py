@@ -52,8 +52,6 @@ class BatchNormTest(unittest.TestCase):
 
         x = np.random.uniform(size=shape)
 
-        key = tx.Key(42)
-
         flax_module = linen.BatchNorm(
             use_running_average=use_running_average,
             axis=axis,
@@ -78,9 +76,10 @@ class BatchNormTest(unittest.TestCase):
             .freeze(frozen)
         )
 
-        flax_key, _ = tx.iter_split(key)  # emulate init split
+        treex_key = tx.Key(42)
+        flax_key, _ = tx.iter_split(treex_key)  # emulate init split
         variables = flax_module.init(flax_key, x)
-        treex_module = treex_module.init(key, x)
+        treex_module = treex_module.init(treex_key, x)
 
         if use_bias:
             assert np.allclose(variables["params"]["bias"], treex_module.bias)
@@ -94,7 +93,7 @@ class BatchNormTest(unittest.TestCase):
         y_flax, updates = flax_module.apply(variables, x, mutable=["batch_stats"])
         variables = variables.copy(updates)
 
-        y_treex = treex_module(x)
+        y_treex, treex_module = treex_module.mutable(x)
 
         assert np.allclose(y_flax, y_treex)
 
@@ -111,7 +110,15 @@ class BatchNormTest(unittest.TestCase):
         x = np.random.uniform(size=(10, 2))
         module = tx.BatchNorm().init(42, x)
 
-        y = module(x)
+        y, module = module.mutable(x)
+
+        assert y.shape == (10, 2)
+
+    def test_apply(self):
+        x = np.random.uniform(size=(10, 2))
+        module = tx.BatchNorm().init(42, x)
+
+        y, module = module.apply(None, x)
 
         assert y.shape == (10, 2)
 
@@ -143,10 +150,10 @@ class BatchNormTest(unittest.TestCase):
         module = tx.BatchNorm().init(42, x)
 
         @jax.jit
-        def f(module, x):
-            return module, module(x)
+        def f(module: tx.Module, x):
+            return module.mutable(x)
 
-        module2, y = f(module, x)
+        y, module2 = f(module, x)
 
         assert y.shape == (10, 2)
         assert all(

@@ -470,7 +470,8 @@ def next_key() -> jnp.ndarray:
 
     if _MODULE_CONTEXT.key is None:
         raise RuntimeError(
-            "RNG key not set, you are either calling an uninitialized Module outside `.init` or forgot to call `rng_key` context manager."
+            "RNG key not set, you are either calling an uninitialized Module outside `.init` / `.apply`,"
+            "or forgot to call the `rng_key` context manager."
         )
 
     key, _MODULE_CONTEXT.key = utils.iter_split(_MODULE_CONTEXT.key)
