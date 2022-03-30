@@ -16,7 +16,7 @@ class FlaxModule(Module):
 
     # static
     module: to.Hashable[flax.linen.Module]
-    mutable: tp.Tuple[str, ...]
+    mutable_collections: tp.Tuple[str, ...]
     rngs: tp.Tuple[str, ...]
     init_rngs: tp.Tuple[str, ...]
 
@@ -37,7 +37,7 @@ class FlaxModule(Module):
     ) -> None:
 
         self.module = to.Hashable(module)
-        self.mutable = tuple(mutable)
+        self.mutable_collections = tuple(mutable)
         self.rngs = tuple(rngs)
         self.init_rngs = tuple(init_rngs)
         self.params_ = None
@@ -87,7 +87,7 @@ class FlaxModule(Module):
         output, updates = self.module.value.apply(
             variables,
             *args,
-            mutable=self.mutable
+            mutable=self.mutable_collections
             if self.initialized and self.training and not self.frozen
             else [],
             rngs=rngs,

@@ -55,13 +55,13 @@ class DropoutTest(unittest.TestCase):
 
         flax_key, _ = tx.iter_split(key)  # emulate init split
         variables = flax_module.init({"dropout": flax_key}, x)
-        treex_module = treex_module.init(key)
+        treex_module = treex_module.init(key, x)
 
         # split key same way tx.Dropout does internally
         rng, _ = tx.iter_split(flax_key, 2)
 
         y_flax = flax_module.apply(variables, x, rngs={"dropout": rng})
-        y_treex = treex_module(x)
+        y_treex, _ = treex_module.apply(flax_key, x)
 
         assert np.allclose(y_flax, y_treex)
 
