@@ -27,6 +27,9 @@ class Linear(tx.Module):
         self.n = 1
         self.name = name
 
+    def __call__(self):
+        pass
+
 
 class MLP(tx.Module):
     linear1: Linear
@@ -350,20 +353,18 @@ class TestTreex:
     def test_tabulate(self):
         class MyModule(tx.Module):
             a: tp.Dict[str, tp.List[MLP]]
-            b: tp.List[tp.Union[jnp.ndarray, tx.Initializer]] = tx.Parameter.node()
+            b: tp.List[jnp.ndarray] = tx.Parameter.node()
 
             def __init__(self):
 
                 self.a = {"mlps": [MLP(256, 1024, 512), MLP(256, 1024, 512)]}
                 self.b = [
-                    tx.Initializer(lambda key: jnp.zeros((512, 256))),
+                    jnp.zeros((512, 128)),
                     jnp.zeros((512, 128)),
                 ]
 
         mlp = MyModule()  # .init(42)
-        mlp = jax.tree_map(
-            lambda x: jnp.asarray(x) if not isinstance(x, tx.Initializer) else x, mlp
-        )
+        mlp = jax.tree_map(jnp.asarray, mlp)
         # mlp = mlp.filter(tx.Parameter)
 
         rep = mlp.tabulate()
@@ -378,7 +379,7 @@ class TestTreex:
     def test_tabulate_inputs(self):
         class MyModule(tx.Module):
             a: tp.Dict[str, tp.List[tx.MLP]]
-            b: tp.List[tp.Union[jnp.ndarray]] = tx.Parameter.node()
+            b: tp.List[jnp.ndarray] = tx.Parameter.node()
 
             def __init__(self):
 
@@ -397,9 +398,7 @@ class TestTreex:
 
         x = np.random.uniform(size=(5, 1))
         mlp = MyModule().init(42, x)
-        mlp = jax.tree_map(
-            lambda x: jnp.asarray(x) if not isinstance(x, tx.Initializer) else x, mlp
-        )
+        mlp = jax.tree_map(jnp.asarray, mlp)
         # mlp = mlp.filter(tx.Parameter)
 
         x = np.random.uniform(size=(5, 1))
@@ -451,6 +450,9 @@ class TestTreex:
                 self.linear1 = Linear(din, dmid, name="linear1")
                 self.linear2 = Linear(dmid, dout, name="linear2")
 
+            def __call__(self):
+                pass
+
         mlp = MLP(2, 3, 5).init(42)
 
         assert "linear1" in mlp.field_metadata
@@ -467,11 +469,12 @@ class TestTreex:
                 self.linear1 = Linear(din, dmid, name="linear1")
                 self.linear2 = Linear(dmid, dout, name="linear2")
 
+            def __call__(self):
+                pass
+
         mlp = MLP(2, 3, 5).init(42)
 
-        mlp.linear3 = Linear(7, 8, name="linear3").init(42)
-
-        mlp.check_metadata_updates()  # find field
+        mlp = mlp.replace(linear3=Linear(7, 8, name="linear3").init(42))
 
         assert "linear3" in mlp.field_metadata
 
@@ -488,6 +491,9 @@ class TestTreex:
 
                 self.linear1 = Linear(din, dmid, name="linear1")
                 self.linear2 = Linear(dmid, dout, name="linear2")
+
+            def __call__(self):
+                pass
 
         mlp = MLP(2, 3, 5).init(42)
 
@@ -508,6 +514,9 @@ class TestTreex:
                 self.linear1 = Linear(din, dmid, name="linear1")
                 self.linear2 = Linear(dmid, dout, name="linear2")
 
+            def __call__(self):
+                pass
+
         mlp = MLP(2, 3, 5).init(42)
 
         assert "linear1" in mlp.field_metadata
@@ -518,10 +527,14 @@ class TestTreex:
             a: tx.Hashable[np.ndarray]
 
             def __init__(self):
-
                 self.a = tx.Hashable(np.ones((3, 4), dtype=np.float32))
 
-        m = M().init(42)
+            def __call__(self):
+                pass
+
+        m: M = M().init(42)
+
+        assert isinstance(m, tx.Immutable)
 
         N = 0
 
@@ -537,34 +550,13 @@ class TestTreex:
         m = f(m)
         assert N == 1
 
-        m.a = tx.Hashable(np.zeros((3, 4), dtype=np.float32))
+        m = m.replace(a=tx.Hashable(np.zeros((3, 4), dtype=np.float32)))
 
         m = f(m)
         assert N == 2
 
         m = f(m)
         assert N == 2
-
-    def test_initializer(self):
-        init = tx.Initializer(lambda k: jax.random.uniform(k, shape=[3, 5]))
-
-        @jax.jit
-        def f(x):
-            return x
-
-        init2 = f(init)
-
-    def test_uninitialized_tabulate(self):
-        class MyModule(tx.Module):
-            a: tp.Union[np.ndarray, tx.Initializer] = tx.Parameter.node()
-
-            def __init__(self):
-
-                self.a = tx.Initializer(lambda k: jax.random.uniform(k, shape=[3, 5]))
-
-        module = MyModule()
-
-        print(module.tabulate())
 
     def test_treex_filter(self):
         tree = dict(a=1, b=Linear(3, 4))
@@ -577,7 +569,9 @@ class TestTreex:
 
     def test_treex_parameter_filter(self):
         mlp = MLP(2, 3, 5)
-        mlp.linear1.freeze(inplace=True)
+
+        with tx.make_mutable(mlp):
+            mlp.linear1.freeze(inplace=True)
 
         params = mlp.trainable_parameters()
         assert isinstance(params.linear1.b, tx.Nothing)
@@ -681,7 +675,7 @@ class TestCompact:
             return x
 
         x = jnp.ones((5, 2))
-        mlp = MLP().init(42, (x, 3, 4))
+        mlp = MLP().init(42, x, dmid=3, dout=4)
 
         y = mlp(x, 3, 4)
 

@@ -70,6 +70,7 @@ __all__ = [
     "metrics",
     "nn",
     "regularizers",
+    "make_mutable",
 ]
 
 __all__.extend(treeo.__all__)

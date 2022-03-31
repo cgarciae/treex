@@ -1,14 +1,22 @@
 import jax
 import jax.numpy as jnp
 
-i = jnp.array([1, 2, 3, 4, 5])
+
+def all_pairs(f):
+    f = jax.vmap(f, in_axes=(None, 0))
+    f = jax.vmap(f, in_axes=(0, None))
+    return f
 
 
-def f(x, i):
-    print("SCAN")
-    return x, x
+def distance(a, b):
+    return jnp.linalg.norm(a - b)
 
 
-res = jax.lax.scan(f, 0, i)
+distances = all_pairs(distance)
 
-print(res)
+A = jnp.array([[0, 0], [1, 1], [2, 2]])
+B = jnp.array([[-10, -10], [-20, -20]])
+
+D = distances(A, B)
+
+print(D)
