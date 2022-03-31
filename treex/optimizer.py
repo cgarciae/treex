@@ -77,18 +77,20 @@ class Optimizer(Treex):
         """
         module = to.copy(self)
         params = jax.tree_leaves(params)
-        module.opt_state = module.optimizer.init(params)
-        module._n_params = len(params)
-        module._initialized = True
-        return module
+
+        return module.replace(
+            opt_state=module.optimizer.init(params),
+            _n_params=len(params),
+            _initialized=True,
+        )
 
     # NOTE: params are flattened because:
     # - The flat list is not a Module, thus all of its internal parameters in the list are marked as
     # OptState by a single annotation (no need to rewrite the module's annotations)
     # - It ignores the static part of Modules which if changed Optax yields an error.
     def update(
-        self, grads: A, params: tp.Optional[A] = None, apply_updates: bool = True
-    ) -> A:
+        self: O, grads: A, params: tp.Optional[A] = None, apply_updates: bool = True
+    ) -> tp.Tuple[A, O]:
         """
         Applies the parameters updates and updates the optimizers internal state inplace.
 
@@ -120,7 +122,7 @@ class Optimizer(Treex):
             )
 
         param_updates: A
-        param_updates, self.opt_state = self.optimizer.update(
+        param_updates, opt_state = self.optimizer.update(
             opt_grads,
             self.opt_state,
             opt_params,
@@ -132,7 +134,9 @@ class Optimizer(Treex):
         else:
             output = param_updates
 
-        return jax.tree_unflatten(treedef, output)
+        output = jax.tree_unflatten(treedef, output)
+
+        return output, self.replace(opt_state=opt_state)
 
     # THE FOLOWING METHODS ARE AUTOMATICALLY GENERATED
     # >>> DO NOT MODIFY <<<

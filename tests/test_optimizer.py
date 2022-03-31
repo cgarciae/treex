@@ -29,7 +29,7 @@ class TestOptreex:
         optax_params: tx.Linear
         optax_updates, opt_state = optax_optim.update(grads, opt_state, linear)
         optax_params = optax.apply_updates(optax_updates, linear)
-        treex_params = optimizer.update(grads, linear)
+        treex_params, optimizer = optimizer.update(grads, linear)
 
         assert all(
             np.allclose(a, b)
@@ -62,7 +62,7 @@ class TestOptreex:
 
         optax_updates: tx.Linear
         optax_updates, opt_state = optax_optim.update(grads, opt_state, linear)
-        treex_updates = optimizer.update(grads, linear, apply_updates=False)
+        treex_updates, optimizer = optimizer.update(grads, linear, apply_updates=False)
 
         assert all(
             np.allclose(a, b)
