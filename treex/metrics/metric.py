@@ -2,6 +2,7 @@ import functools
 import typing as tp
 from abc import abstractmethod
 
+import jax
 import jax.numpy as jnp
 import treeo as to
 from rich.text import Text
@@ -12,37 +13,15 @@ from treex.treex import Treex
 M = tp.TypeVar("M", bound="Metric")
 
 
-class MetricMeta(to.TreeMeta):
-    def __call__(cls, *args, **kwargs) -> "Metric":
-        metric = super().__call__(*args, **kwargs)
-        metric = tp.cast(Metric, metric)
-
-        # save initial state
-        metric._initial_state = to.copy(
-            {
-                field: getattr(metric, field)
-                for field, metadata in metric.field_metadata.items()
-                if metadata.node
-                and issubclass(metadata.kind, types.MetricState)
-                and field != "_initial_state"
-            }
-        )
-
-        return metric
-
-
-class Metric(Treex, metaclass=MetricMeta):
+class Metric(Treex):
     """
     Encapsulates metric logic and state. Metrics accumulate state between calls such
     that their output value reflect the metric as if calculated on the whole data
     given up to that point.
     """
 
-    _initial_state: tp.Dict[str, tp.Any] = types.MetricState.node()
-
     def __init__(
         self,
-        on: tp.Optional[types.IndexLike] = None,
         name: tp.Optional[str] = None,
         dtype: tp.Optional[jnp.dtype] = None,
     ):
@@ -57,57 +36,37 @@ class Metric(Treex, metaclass=MetricMeta):
                 check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).
         """
 
-        self._labels_filter = (on,) if isinstance(on, (str, int)) else on
         self.name = name if name is not None else utils._get_name(self)
         self.dtype = dtype if dtype is not None else jnp.float32
 
-    def __call__(self, **kwargs) -> tp.Any:
-        if self._labels_filter is not None:
-            if "target" in kwargs and kwargs["target"] is not None:
-                for index in self._labels_filter:
-                    kwargs["target"] = kwargs["target"][index]
+    def __call__(self: M, **kwargs) -> tp.Tuple[tp.Any, M]:
+        metric: M = self
 
-            if "preds" in kwargs and kwargs["preds"] is not None:
-                for index in self._labels_filter:
-                    kwargs["preds"] = kwargs["preds"][index]
+        batch_updates = metric.batch_updates(**kwargs)
+        batch_values = batch_updates.compute()
 
-        # update cumulative state
-        self.update(**kwargs)
+        metric = metric.merge(batch_updates)
 
-        # compute batch metrics
-        module = to.copy(self)
-        module.reset()
-        module.update(**kwargs)
-        return module.compute()
-
-    def reset(self):
-        def do_reset(metric):
-            if isinstance(metric, Metric):
-                metric.__dict__.update(to.copy(metric._initial_state))
-
-        self.apply(do_reset, inplace=True)
+        return batch_values, metric
 
     @abstractmethod
-    def update(self, **kwargs) -> None:
+    def reset(self: M) -> M:
+        ...
+
+    @abstractmethod
+    def update(self: M, **kwargs) -> M:
         ...
 
     @abstractmethod
     def compute(self) -> tp.Any:
         ...
 
-    def __init_subclass__(cls):
-        super().__init_subclass__()
+    def batch_updates(self: M, **kwargs) -> M:
+        return self.reset().update(**kwargs)
 
-        # add call signature
-        old_call = cls.__call__
+    def aggregate(self: M) -> M:
+        return jax.tree_map(lambda x: jnp.sum(x, axis=0), self)
 
-        @functools.wraps(cls.update)
-        def new_call(self: M, *args, **kwargs) -> M:
-            if len(args) > 0:
-                raise TypeError(
-                    f"All arguments to {cls.__name__}.__call__ should be passed as keyword arguments."
-                )
-
-            return old_call(self, *args, **kwargs)
-
-        cls.__call__ = new_call
+    def merge(self: M, other: M) -> M:
+        stacked = jax.tree_map(lambda *xs: jnp.stack(xs), self, other)
+        return stacked.aggregate()
