@@ -23,7 +23,7 @@ class TestLossAndLogs:
         @jax.jit
         def f(
             module: MyModule,
-            metrics: tx.metrics.LossAndLogs,
+            metrics: tx.metrics.LossesAndMetrics,
             target,
             preds,
             y_true_metrics,
@@ -45,7 +45,7 @@ class TestLossAndLogs:
 
         module = MyModule()
 
-        metrics = tx.metrics.LossAndLogs(
+        metrics = tx.metrics.LossesAndMetrics(
             losses=[
                 tx.losses.MeanSquaredError(),
                 tx.losses.MeanSquaredError(),
@@ -115,7 +115,7 @@ class TestLossAndLogs:
         @jax.jit
         def f(
             module: MyModule,
-            metrics: tx.metrics.LossAndLogs,
+            metrics: tx.metrics.LossesAndMetrics,
             target,
             preds,
             y_true_metrics,
@@ -138,7 +138,7 @@ class TestLossAndLogs:
 
         module = MyModule()
 
-        metrics = tx.metrics.LossAndLogs(
+        metrics = tx.metrics.LossesAndMetrics(
             losses=[
                 tx.losses.MeanSquaredError(),
                 tx.losses.MeanSquaredError(),

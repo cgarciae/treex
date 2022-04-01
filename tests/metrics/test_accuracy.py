@@ -17,10 +17,9 @@ class TestAccuracy:
         def f(m, target, preds):
             nonlocal N
             N += 1
-            m(target=target, preds=preds)
-            return m
+            return m.update(target=target, preds=preds)
 
-        metric = Accuracy(num_classes=10)
+        metric = Accuracy(num_classes=10).reset()
         target = jnp.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])[None, None, None, :]
         preds = jnp.array([0, 1, 2, 3, 0, 5, 6, 7, 0, 9])[None, None, None, :]
 
@@ -39,10 +38,9 @@ class TestAccuracy:
         def f(m, target, preds):
             nonlocal N
             N += 1
-            m(target=target, preds=preds)
-            return m
+            return m.update(target=target, preds=preds)
 
-        metric = Accuracy()
+        metric = Accuracy().reset()
         target = jnp.array([0, 0, 1, 1, 1])
         preds = jnp.array(
             [

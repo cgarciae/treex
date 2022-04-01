@@ -1,6 +1,7 @@
 import functools
 import typing as tp
 from abc import abstractmethod
+from ast import Slice
 
 import jax
 import jax.numpy as jnp
@@ -26,14 +27,8 @@ class Metric(Treex):
         dtype: tp.Optional[jnp.dtype] = None,
     ):
         """
-        Arguments:
-            on: A string or integer, or iterable of string or integers, that
-                indicate how to index/filter the `target` and `preds`
-                arguments before passing them to `call`. For example if `on = "a"` then
-                `target = target["a"]`. If `on` is an iterable
-                the structures will be indexed iteratively, for example if `on = ["a", 0, "b"]`
-                then `target = target["a"][0]["b"]`, same for `preds`. For more information
-                check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).
+        name: name of the metric
+        dtype: dtype of the metric
         """
 
         self.name = name if name is not None else utils._get_name(self)
@@ -70,3 +65,43 @@ class Metric(Treex):
     def merge(self: M, other: M) -> M:
         stacked = jax.tree_map(lambda *xs: jnp.stack(xs), self, other)
         return stacked.aggregate()
+
+    def slice(self, **kwargs: types.IndexLike):
+        return SliceParams(self, kwargs)
+
+
+Slice = tp.Tuple[tp.Union[int, str], ...]
+
+
+class SliceParams(Metric):
+    arg_slice: tp.Dict[str, Slice]
+    metric: Metric = types.MetricState.node()
+
+    def __init__(
+        self,
+        metric: Metric,
+        arg_slice: tp.Dict[str, types.IndexLike],
+    ):
+        super().__init__(name=metric.name, dtype=metric.dtype)
+        self.metric = metric
+        self.arg_slice = {
+            key: tuple([index])
+            if not isinstance(index, (list, tuple))
+            else tuple(index)
+            for key, index in arg_slice.items()
+        }
+
+    def reset(self) -> "SliceParams":
+        return self.replace(metric=self.metric.reset())
+
+    def update(self, **kwargs) -> "SliceParams":
+
+        # slice the arguments
+        for key, slices in self.arg_slice.items():
+            for index in slices:
+                kwargs[key] = kwargs[key][index]
+
+        return self.replace(metric=self.metric.update(**kwargs))
+
+    def compute(self) -> tp.Any:
+        return self.metric.compute()

@@ -1,4 +1,5 @@
 import inspect
+import typing as tp
 
 import jax
 import pytest
@@ -6,55 +7,63 @@ import pytest
 import treex as tx
 
 
+class MyMetric(tx.Metric):
+    target: tp.Optional[int] = tx.node(None)
+    preds: tp.Optional[int] = tx.node(None)
+
+    def reset(self):
+        return self.replace(
+            target=0,
+            preds=0,
+        )
+
+    def update(self, target, preds, **_):
+        return self.replace(
+            target=self.target + target,
+            preds=self.preds + preds,
+        )
+
+    def compute(self):
+        return self.target, self.preds
+
+
 class TestMetric:
     def test_basic(self):
-        class MyMetric(tx.Metric):
-            def update(self, target, preds):
-                self.target = target
-                self.preds = preds
-                return self
-
-            def compute(self):
-                return self.target, self.preds
 
         metric = MyMetric()
 
-        signature_parameters = inspect.signature(metric.update).parameters
-        assert "target" in signature_parameters
-        assert "preds" in signature_parameters
+        metric = metric.reset()
 
-        signature_parameters = inspect.signature(metric.__call__).parameters
-        assert "target" in signature_parameters
-        assert "preds" in signature_parameters
+        assert metric.target == 0
+        assert metric.preds == 0
+
+        metric = metric.update(target=10, preds=20)
+
+        assert metric.target == 10
+        assert metric.preds == 20
+
+        assert metric.compute() == (10, 20)
+
+        values, metric = metric(target=5, preds=6)
+
+        assert values == (5, 6)
+        assert metric.target == 15
+        assert metric.preds == 26
 
     def test_on(self):
-        class MyMetric(tx.Metric):
-            def update(self, target, preds):
-                self.target = target
-                self.preds = preds
-                return self
 
-            def compute(self):
-                return self.target, self.preds
-
-        metric = MyMetric(on=("a", 0))
+        metric = MyMetric().slice(target=("a", 0), preds=("a", 0)).reset()
 
         target = {"a": [10]}
         preds = {"a": [20]}
 
-        assert metric(target=target, preds=preds) == (10, 20)
+        values, metric = metric(target=target, preds=preds)
+
+        assert values == (10, 20)
 
     def test_raise_positional_arguments(self):
-        class MyMetric(tx.Metric):
-            def update(self, target, preds):
-                self.target = target
-                self.preds = preds
-                return self
 
-            def compute(self):
-                return self.target, self.preds
-
-        metric = MyMetric(on=("a", 0))
+        metric = MyMetric().slice(target=("a", 0), preds=("a", 0))
 
         target = {"a": [10]}
         preds = {"a": [20]}
@@ -64,14 +73,17 @@ class TestMetric:
 
     def test_jit(self):
         class MyMetric(tx.Metric):
-            a: int = tx.MetricState.node()
+            a: tp.Optional[int] = tx.MetricState.node()
 
             def __init__(self) -> None:
-                self.a = 0
+                self.a = None
                 super().__init__()
 
+            def reset(self):
+                return self.replace(a=0)
+
             def update(self, n):
-                self.a += n
+                return self.replace(a=self.a + n)
 
             def compute(self):
                 return self.a
@@ -82,10 +94,9 @@ class TestMetric:
         def f(m):
             nonlocal N
             N += 1
-            m(n=2)
-            return m
+            return m.update(n=2)
 
-        metric = MyMetric()
+        metric = MyMetric().reset()
 
         metric = f(metric)
         metric = f(metric)

@@ -15,15 +15,14 @@ class TestAccuracy:
         def f(m, target, preds):
             nonlocal N
             N += 1
-            m(target=target, preds=preds)
-            return m
+            return m.update(target=target, preds=preds)
 
         metrics = tx.metrics.Metrics(
             [
                 tx.metrics.Accuracy(num_classes=10),
                 tx.metrics.Accuracy(num_classes=10),
             ]
-        )
+        ).reset()
         target = jnp.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])[None, None, None, :]
         preds = jnp.array([0, 1, 2, 3, 0, 5, 6, 7, 0, 9])[None, None, None, :]
 
@@ -43,25 +42,54 @@ class TestAccuracy:
         def f(m, target, preds):
             nonlocal N
             N += 1
-            m(target=target, preds=preds)
-            return m
+            return m.update(target=target, preds=preds)
 
         metrics = tx.metrics.Metrics(
             dict(
                 a=tx.metrics.Accuracy(num_classes=10),
                 b=tx.metrics.Accuracy(num_classes=10),
             )
-        )
+        ).reset()
         target = jnp.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])[None, None, None, :]
         preds = jnp.array([0, 1, 2, 3, 0, 5, 6, 7, 0, 9])[None, None, None, :]
 
         metrics = f(metrics, target, preds)
         assert N == 1
-        assert metrics.compute() == {"a/accuracy": 0.8, "b/accuracy": 0.8}
+        assert metrics.compute() == {"a": 0.8, "b": 0.8}
 
         metrics = f(metrics, target, preds)
         assert N == 1
-        assert metrics.compute() == {"a/accuracy": 0.8, "b/accuracy": 0.8}
+        assert metrics.compute() == {"a": 0.8, "b": 0.8}
+
+    def test_dict_list(self):
+
+        N = 0
+
+        @jax.jit
+        def f(m, target, preds):
+            nonlocal N
+            N += 1
+            return m.update(target=target, preds=preds)
+
+        metrics = tx.metrics.Metrics(
+            dict(
+                a=[
+                    tx.metrics.Accuracy(num_classes=10),
+                    tx.metrics.Accuracy(num_classes=10),
+                ],
+                b=tx.metrics.Accuracy(num_classes=10),
+            )
+        ).reset()
+        target = jnp.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])[None, None, None, :]
+        preds = jnp.array([0, 1, 2, 3, 0, 5, 6, 7, 0, 9])[None, None, None, :]
+
+        metrics = f(metrics, target, preds)
+        assert N == 1
+        assert metrics.compute() == {"a/accuracy": 0.8, "a/accuracy2": 0.8, "b": 0.8}
+
+        metrics = f(metrics, target, preds)
+        assert N == 1
+        assert metrics.compute() == {"a/accuracy": 0.8, "a/accuracy2": 0.8, "b": 0.8}
 
 
 class TestAuxMetrics:

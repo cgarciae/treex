@@ -32,7 +32,7 @@ def init_step(
 
 
 @jax.jit
-def reset_step(loss_logs: tx.LossAndLogs) -> tx.LossAndLogs:
+def reset_step(loss_logs: tx.LossesAndMetrics) -> tx.LossesAndMetrics:
     loss_logs.reset()
     return loss_logs
 
@@ -41,10 +41,10 @@ def loss_fn(
     params: tp.Optional[Model],
     key: tp.Optional[jnp.ndarray],
     model: Model,
-    loss_logs: tx.LossAndLogs,
+    loss_logs: tx.LossesAndMetrics,
     x: jnp.ndarray,
     y: jnp.ndarray,
-) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, tx.LossAndLogs, Logs]]:
+) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, tx.LossesAndMetrics, Logs]]:
     if params is not None:
         model = model.merge(params)
 
@@ -62,10 +62,10 @@ def train_step(
     key: jnp.ndarray,
     model: Model,
     optimizer: tx.Optimizer,
-    loss_logs: tx.LossAndLogs,
+    loss_logs: tx.LossesAndMetrics,
     x: jnp.ndarray,
     y: jnp.ndarray,
-) -> tp.Tuple[Logs, Model, tx.Optimizer, tx.LossAndLogs]:
+) -> tp.Tuple[Logs, Model, tx.Optimizer, tx.LossesAndMetrics]:
     print("JITTTTING")
     params = model.parameters()
 
@@ -81,8 +81,8 @@ def train_step(
 
 @jax.jit
 def test_step(
-    model: Model, loss_logs: tx.LossAndLogs, x: jnp.ndarray, y: jnp.ndarray
-) -> tp.Tuple[Logs, tx.LossAndLogs]:
+    model: Model, loss_logs: tx.LossesAndMetrics, x: jnp.ndarray, y: jnp.ndarray
+) -> tp.Tuple[Logs, tx.LossesAndMetrics]:
 
     loss, (model, loss_logs, logs) = loss_fn(None, None, model, loss_logs, x, y)
 
@@ -125,7 +125,7 @@ def main(
     )
 
     optimizer = tx.Optimizer(optax.adamw(1e-3))
-    loss_logs = tx.LossAndLogs(
+    loss_logs = tx.LossesAndMetrics(
         losses=tx.losses.Crossentropy(),
         metrics=tx.metrics.Accuracy(),
     )

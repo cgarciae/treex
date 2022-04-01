@@ -146,10 +146,10 @@ class Accuracy(Metric):
         tensor(0.6667)
 
     """
-    tp: jnp.ndarray = types.MetricState.node()
-    fp: jnp.ndarray = types.MetricState.node()
-    tn: jnp.ndarray = types.MetricState.node()
-    fn: jnp.ndarray = types.MetricState.node()
+    tp: typing.Optional[jnp.ndarray] = types.MetricState.node()
+    fp: typing.Optional[jnp.ndarray] = types.MetricState.node()
+    tn: typing.Optional[jnp.ndarray] = types.MetricState.node()
+    fn: typing.Optional[jnp.ndarray] = types.MetricState.node()
 
     def __init__(
         self,
@@ -166,12 +166,11 @@ class Accuracy(Metric):
         process_group: typing.Optional[typing.Any] = None,
         dist_sync_fn: typing.Callable = None,
         mode: DataType = DataType.MULTICLASS,
-        on: typing.Optional[types.IndexLike] = None,
         name: typing.Optional[str] = None,
         dtype: typing.Optional[jnp.dtype] = None,
     ):
 
-        super().__init__(on=on, name=name, dtype=dtype)
+        super().__init__(name=name, dtype=dtype)
 
         if isinstance(average, str):
             average = AverageMethod[average.upper()]
@@ -230,22 +229,30 @@ class Accuracy(Metric):
         self.subset_accuracy = subset_accuracy
         self.mode = mode
 
+        self.tp = None
+        self.fp = None
+        self.tn = None
+        self.fn = None
+
+    def reset(self) -> "Accuracy":
         # nodes
-        if average == AverageMethod.MICRO:
+        if self.average == AverageMethod.MICRO:
             zeros_shape = []
-        elif average == AverageMethod.MACRO:
-            zeros_shape = [num_classes]
+        elif self.average == AverageMethod.MACRO:
+            zeros_shape = [self.num_classes]
         else:
-            raise ValueError(f'Wrong reduce="{average}"')
+            raise ValueError(f'Wrong reduce="{self.average}"')
 
         initial_value = jnp.zeros(zeros_shape, dtype=jnp.uint32)
 
-        self.tp = initial_value
-        self.fp = initial_value
-        self.tn = initial_value
-        self.fn = initial_value
+        return self.replace(
+            tp=initial_value,
+            fp=initial_value,
+            tn=initial_value,
+            fn=initial_value,
+        )
 
-    def update(self, preds: jnp.ndarray, target: jnp.ndarray) -> None:  # type: ignore
+    def update(self, preds: jnp.ndarray, target: jnp.ndarray, **_) -> "Accuracy":
         """Update state with predictions and targets. See
         :ref:`references/modules:input types` for more information on input
         types.
@@ -254,6 +261,10 @@ class Accuracy(Metric):
             preds: Predictions from model (logits, probabilities, or target)
             target: Ground truth target
         """
+        if self.tp is None or self.fp is None or self.tn is None or self.fn is None:
+            raise ValueError(
+                "Accuracy metric has not been initialized, call 'reset()' first."
+            )
 
         tp, fp, tn, fn = metric_utils._stat_scores_update(
             preds,
@@ -267,15 +278,21 @@ class Accuracy(Metric):
             multiclass=self.multiclass,
         )
 
-        self.tp += tp
-        self.fp += fp
-        self.tn += tn
-        self.fn += fn
+        return self.replace(
+            tp=self.tp + tp,
+            fp=self.fp + fp,
+            tn=self.tn + tn,
+            fn=self.fn + fn,
+        )
 
     def compute(self) -> jnp.ndarray:
         """Computes accuracy based on inputs passed in to ``update`` previously."""
         # if self.mode is None:
         #     raise RuntimeError("You have to have determined mode.")
+        if self.tp is None or self.fp is None or self.tn is None or self.fn is None:
+            raise ValueError(
+                "Accuracy metric has not been initialized, call 'reset()' first."
+            )
 
         return metric_utils._accuracy_compute(
             self.tp,

@@ -11,10 +11,10 @@ from treex.metrics.metric import Metric
 from treex.metrics.metrics import AuxMetrics, Metrics
 from treex.treex import Treex
 
-Logs = tp.Dict[str, jnp.ndarray]
+M = tp.TypeVar("M", bound="LossesAndMetrics")
 
 
-class LossAndLogs(Metric):
+class LossesAndMetrics(Metric):
     losses: tp.Optional[Losses]
     metrics: tp.Optional[Metrics]
     aux_losses: tp.Optional[AuxLosses]
@@ -26,11 +26,10 @@ class LossAndLogs(Metric):
         metrics: tp.Optional[tp.Union[Metrics, tp.Any]] = None,
         aux_losses: tp.Optional[tp.Union[AuxLosses, tp.Any]] = None,
         aux_metrics: tp.Optional[tp.Union[AuxMetrics, tp.Any]] = None,
-        on: tp.Optional[types.IndexLike] = None,
         name: tp.Optional[str] = None,
         dtype: tp.Optional[jnp.dtype] = None,
     ):
-        super().__init__(on=on, name=name, dtype=dtype)
+        super().__init__(name=name, dtype=dtype)
         self.losses = (
             losses
             if isinstance(losses, Losses)
@@ -61,40 +60,50 @@ class LossAndLogs(Metric):
         )
 
     def update(
-        self,
-        metrics_kwargs: tp.Optional[tp.Dict[str, tp.Any]] = None,
-        aux_losses: tp.Optional[tp.Any] = None,
-        aux_metrics: tp.Optional[tp.Any] = None,
-        **losses_kwargs,
-    ) -> None:
-
-        if metrics_kwargs is None:
-            metrics_kwargs = losses_kwargs
+        self: M,
+        aux_losses: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        aux_metrics: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        **kwargs,
+    ) -> M:
 
         if self.losses is not None:
-            self.losses.update(**losses_kwargs)
+            losses = self.losses.update(**kwargs)
+        else:
+            losses = None
 
         if self.metrics is not None:
-            self.metrics.update(**metrics_kwargs)
+            metrics = self.metrics.update(**kwargs)
+        else:
+            metrics = None
 
         if self.aux_losses is not None:
             if aux_losses is None:
                 raise ValueError("`aux_losses` are expected, got None.")
 
-            self.aux_losses.update(aux_losses)
+            aux_losses_ = self.aux_losses.update(aux_values=aux_losses)
+        else:
+            aux_losses_ = None
 
         if self.aux_metrics is not None:
             if aux_metrics is None:
                 raise ValueError("`aux_metrics` are expected, got None.")
 
-            self.aux_metrics.update(aux_metrics)
+            aux_metrics_ = self.aux_metrics.update(aux_values=aux_metrics)
+        else:
+            aux_metrics_ = None
 
-    def compute(self) -> tp.Tuple[jnp.ndarray, Logs, Logs]:
+        return self.replace(
+            losses=losses,
+            metrics=metrics,
+            aux_losses=aux_losses_,
+            aux_metrics=aux_metrics_,
+        )
+
+    def compute(self) -> tp.Dict[str, jnp.ndarray]:
 
         if self.losses is not None:
-            loss, losses_logs = self.losses.compute()
+            losses_logs = self.losses.compute()
         else:
-            loss = jnp.zeros(0.0, dtype=jnp.float32)
             losses_logs = {}
 
         if self.metrics is not None:
@@ -103,46 +112,44 @@ class LossAndLogs(Metric):
             metrics_logs = {}
 
         if self.aux_losses is not None:
-            aux_loss, aux_losses_logs = self.aux_losses.compute()
-
-            losses_logs.update(aux_losses_logs)
-            loss += aux_loss
+            aux_losses_logs = self.aux_losses.compute()
+        else:
+            aux_losses_logs = {}
 
         if self.aux_metrics is not None:
             aux_metrics_logs = self.aux_metrics.compute()
-            metrics_logs.update(aux_metrics_logs)
+        else:
+            aux_metrics_logs = {}
 
-        losses_logs = {"loss": loss, **losses_logs}
+        loss = self.total_loss()
 
-        return loss, losses_logs, metrics_logs
+        return {
+            "loss": loss,
+            **losses_logs,
+            **metrics_logs,
+            **aux_losses_logs,
+            **aux_metrics_logs,
+        }
 
     def __call__(
-        self,
-        metrics_kwargs: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        self: M,
         aux_losses: tp.Optional[tp.Any] = None,
         aux_metrics: tp.Optional[tp.Any] = None,
-        **losses_kwargs,
-    ) -> tp.Tuple[jnp.ndarray, Logs, Logs]:
+        **kwargs,
+    ) -> tp.Tuple[tp.Dict[str, jnp.ndarray], M]:
         return super().__call__(
-            metrics_kwargs=metrics_kwargs,
             aux_losses=aux_losses,
             aux_metrics=aux_metrics,
-            **losses_kwargs,
+            **kwargs,
         )
 
-    def batch_loss_epoch_logs(
-        self,
-        metrics_kwargs: tp.Optional[tp.Dict[str, tp.Any]] = None,
-        aux_losses: tp.Optional[tp.Any] = None,
-        aux_metrics: tp.Optional[tp.Any] = None,
-        **losses_kwargs,
-    ) -> tp.Tuple[jnp.ndarray, Logs, Logs]:
-        batch_loss, *_ = self(
-            metrics_kwargs=metrics_kwargs,
-            aux_losses=aux_losses,
-            aux_metrics=aux_metrics,
-            **losses_kwargs,
-        )
-        epoch_loss, losses_logs, metrics_logs = self.compute()
+    def total_loss(self) -> jnp.ndarray:
+        loss = jnp.zeros(0.0, dtype=jnp.float32)
 
-        return batch_loss, losses_logs, metrics_logs
+        if self.losses is not None:
+            loss += self.losses.total_loss()
+
+        if self.aux_losses is not None:
+            loss += self.aux_losses.total_loss()
+
+        return loss

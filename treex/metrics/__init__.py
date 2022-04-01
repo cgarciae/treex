@@ -1,6 +1,6 @@
 from .accuracy import Accuracy
-from .loss_and_logs import LossAndLogs
 from .losses import AuxLosses, Losses
+from .losses_and_metrics import LossesAndMetrics
 from .mean import Mean
 from .mean_absolute_error import MeanAbsoluteError
 from .mean_square_error import MeanSquareError
@@ -13,7 +13,7 @@ MSE = MeanSquareError
 
 __all__ = [
     "Accuracy",
-    "LossAndLogs",
+    "LossesAndMetrics",
     "Losses",
     "AuxLosses",
     "Mean",

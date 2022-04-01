@@ -33,7 +33,7 @@ class Model(tx.Module):
     ) -> None:
         self.module = module
         self.optimizer = tx.Optimizer(optimizer)
-        self.loss_and_logs = tx.LossAndLogs(
+        self.loss_and_logs = tx.LossesAndMetrics(
             losses=losses,
             metrics=metrics,
         )
