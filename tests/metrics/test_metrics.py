@@ -108,20 +108,19 @@ class TestAuxMetrics:
         def f(module: MyModule, aux_metrics: tx.metrics.AuxMetrics):
             nonlocal N
             N += 1
-            metric_logs = module.filter(tx.MetricLog)
-            aux_metrics(aux_metrics=metric_logs)
-            return aux_metrics
+            metric_logs = module.filter(tx.MetricLog).as_logs()
+            return aux_metrics.update(aux_values=metric_logs)
 
         module = MyModule()
 
-        metric_logs = module.filter(tx.MetricLog)
-        metrics = tx.metrics.AuxMetrics(metric_logs)
+        metric_logs = module.filter(tx.MetricLog).as_logs()
+        metrics = tx.metrics.AuxMetrics().reset(metric_logs)
 
         metrics = f(module, metrics)
         assert N == 1
         assert metrics.compute() == {"aux": 1.0}
 
-        module.aux = jnp.array(0.0, jnp.float32)
+        module = module.replace(aux=jnp.array(0.0, jnp.float32))
         metrics = f(module, metrics)
 
         assert N == 1
@@ -142,14 +141,13 @@ class TestAuxMetrics:
         def f(module: MyModule, aux_metrics: tx.metrics.AuxMetrics):
             nonlocal N
             N += 1
-            metric_logs = module.filter(tx.MetricLog)
-            aux_metrics(aux_metrics=metric_logs)
-            return aux_metrics
+            metric_logs = module.filter(tx.MetricLog).as_logs()
+            return aux_metrics.update(aux_values=metric_logs)
 
         module = MyModule()
 
-        metric_logs = module.filter(tx.MetricLog)
-        metrics = tx.metrics.AuxMetrics(metric_logs)
+        metric_logs = module.filter(tx.MetricLog).as_logs()
+        metrics = tx.metrics.AuxMetrics().reset(metric_logs)
 
         metrics = f(module, metrics)
         assert N == 1

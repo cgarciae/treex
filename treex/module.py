@@ -347,6 +347,57 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
 
         return utils._get_rich_repr(table)
 
+    def as_logs(self) -> tp.Dict[str, jnp.ndarray]:
+        """
+        Returns a flat dictionary with all the non-`Nothing` leafs of the module.
+        You can use it to easy gather and report intermediate values published by the module.
+
+        Example:
+
+        ```python
+        losses_logs = module.filter(tx.LossLog).as_logs()
+        metric_logs = module.filter(tx.MetricLog).as_logs()
+        logs = {**losses_logs, **metric_logs}
+        ```
+
+        Returns:
+            A flat dictionary with all the non-`Nothing` leafs of the module.
+        """
+        names: tp.Set[str] = set()
+
+        def metric_name(field_info: to.FieldInfo) -> str:
+            return (
+                field_info.value.name
+                if isinstance(field_info.value, types.Named)
+                else field_info.name
+                if field_info.name is not None
+                else "aux_metric"
+            )
+
+        with to.add_field_info():
+            fields_info: tp.List[to.FieldInfo] = jax.tree_flatten(
+                self,
+                is_leaf=lambda x: isinstance(x, types.Named)
+                and not isinstance(x.value, to.Nothing),
+            )[0]
+
+        # pretend Named values are leaves
+        for i, x in enumerate(fields_info):
+            if isinstance(x, types.Named):
+                field_info = x.value
+                field_info.value = types.Named(x.name, field_info.value)
+                fields_info[i] = field_info
+
+        logs = {
+            metric_name(field_info): field_info.value.value
+            if isinstance(field_info.value, types.Named)
+            else field_info.value
+            for field_info in fields_info
+        }
+        logs = {utils._unique_name(names, name): value for name, value in logs.items()}
+
+        return logs
+
 
 # -----------------------------------------------------------------------
 # API
