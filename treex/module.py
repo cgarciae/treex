@@ -237,7 +237,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
                 # call using self to preserve references
                 def eval_call(args, kwargs):
                     assert isinstance(self, tp.Callable)
-                    return self(*args, **kwargs)
+                    return self.apply(42, *args, **kwargs)[0]
 
                 jax.eval_shape(
                     eval_call,

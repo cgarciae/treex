@@ -32,29 +32,25 @@ def init_step(
 
 
 @jax.jit
-def reset_step(loss_logs: tx.LossesAndMetrics) -> tx.LossesAndMetrics:
-    loss_logs.reset()
-    return loss_logs
+def reset_step(losses_and_metrics: tx.LossesAndMetrics) -> tx.LossesAndMetrics:
+    return losses_and_metrics.reset()
 
 
 def loss_fn(
     params: tp.Optional[Model],
     key: tp.Optional[jnp.ndarray],
     model: Model,
-    loss_logs: tx.LossesAndMetrics,
+    losses_and_metrics: tx.LossesAndMetrics,
     x: jnp.ndarray,
     y: jnp.ndarray,
-) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, tx.LossesAndMetrics, Logs]]:
+) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, tx.LossesAndMetrics]]:
     if params is not None:
         model = model.merge(params)
 
-    preds = model.apply(key, x)
-    loss, losses_logs, metrics_logs = loss_logs.batch_loss_epoch_logs(
-        target=y, preds=preds
-    )
-    logs = {**losses_logs, **metrics_logs}
+    preds, model = model.apply(key, x)
+    loss, losses_and_metrics = losses_and_metrics.loss_and_update(target=y, preds=preds)
 
-    return loss, (model, loss_logs, logs)
+    return loss, (model, losses_and_metrics)
 
 
 @jax.jit
@@ -62,36 +58,42 @@ def train_step(
     key: jnp.ndarray,
     model: Model,
     optimizer: tx.Optimizer,
-    loss_logs: tx.LossesAndMetrics,
+    losses_and_metrics: tx.LossesAndMetrics,
     x: jnp.ndarray,
     y: jnp.ndarray,
-) -> tp.Tuple[Logs, Model, tx.Optimizer, tx.LossesAndMetrics]:
+) -> tp.Tuple[Model, tx.Optimizer, tx.LossesAndMetrics]:
     print("JITTTTING")
     params = model.parameters()
 
-    grads, (model, loss_logs, logs) = jax.grad(loss_fn, has_aux=True)(
-        params, key, model, loss_logs, x, y
+    grads, (model, losses_and_metrics) = jax.grad(loss_fn, has_aux=True)(
+        params, key, model, losses_and_metrics, x, y
     )
 
-    params = optimizer.update(grads, params)
+    params, optimizer = optimizer.update(grads, params)
     model = model.merge(params)
 
-    return logs, model, optimizer, loss_logs
+    return model, optimizer, losses_and_metrics
 
 
 @jax.jit
 def test_step(
-    model: Model, loss_logs: tx.LossesAndMetrics, x: jnp.ndarray, y: jnp.ndarray
-) -> tp.Tuple[Logs, tx.LossesAndMetrics]:
+    model: Model,
+    losses_and_metrics: tx.LossesAndMetrics,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+) -> tx.LossesAndMetrics:
 
-    loss, (model, loss_logs, logs) = loss_fn(None, None, model, loss_logs, x, y)
+    loss, (model, losses_and_metrics) = loss_fn(
+        None, None, model, losses_and_metrics, x, y
+    )
 
-    return logs, loss_logs
+    return losses_and_metrics
 
 
 @jax.jit
 def predict(model: Model, x: jnp.ndarray):
-    return model.apply(None, x)[0].argmax(axis=1)
+    model = model.eval()
+    return model(x).argmax(axis=1)
 
 
 # define parameters
@@ -125,7 +127,7 @@ def main(
     )
 
     optimizer = tx.Optimizer(optax.adamw(1e-3))
-    loss_logs = tx.LossesAndMetrics(
+    losses_and_metrics: tx.LossesAndMetrics = tx.LossesAndMetrics(
         losses=tx.losses.Crossentropy(),
         metrics=tx.metrics.Accuracy(),
     )
@@ -148,7 +150,7 @@ def main(
         # train
         # ---------------------------------------
         model = model.train()
-        loss_logs = reset_step(loss_logs)
+        losses_and_metrics = reset_step(losses_and_metrics)
         for step in tqdm(
             range(
                 len(X_train) // batch_size if steps_per_epoch < 1 else steps_per_epoch
@@ -161,9 +163,10 @@ def main(
             x = X_train[idx]
             y = y_train[idx]
             key, step_key = jax.random.split(key)
-            train_logs, model, optimizer, loss_logs = train_step(
-                step_key, model, optimizer, loss_logs, x, y
+            model, optimizer, losses_and_metrics = train_step(
+                step_key, model, optimizer, losses_and_metrics, x, y
             )
+            train_logs = losses_and_metrics.compute()
 
         history_train.append(train_logs)
 
@@ -171,7 +174,7 @@ def main(
         # test
         # ---------------------------------------
         model = model.eval()
-        loss_logs = reset_step(loss_logs)
+        losses_and_metrics = reset_step(losses_and_metrics)
         for step in tqdm(
             range(
                 len(X_test) // batch_size if steps_per_epoch < 1 else steps_per_epoch
@@ -183,7 +186,8 @@ def main(
             idx = np.random.choice(len(X_test), batch_size)
             x = X_test[idx]
             y = y_test[idx]
-            test_logs, loss_logs = test_step(model, loss_logs, x, y)
+            losses_and_metrics = test_step(model, losses_and_metrics, x, y)
+            test_logs = losses_and_metrics.compute()
 
         history_test.append(test_logs)
         test_logs = {f"{name}_valid": value for name, value in test_logs.items()}
