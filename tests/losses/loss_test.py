@@ -32,7 +32,7 @@ class LossTest(TestCase):
         target = dict(a=jnp.array([1.0, 2.0, 3.0]))
         preds = dict(a=jnp.array([2.0, 3.0, 4.0]))
 
-        mae = MAE(on="a")
+        mae = MAE().slice(target="a", preds="a")
 
         # raises because it doesn't use kwargs
         with pytest.raises(BaseException):

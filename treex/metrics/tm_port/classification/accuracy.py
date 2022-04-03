@@ -176,7 +176,6 @@ class Accuracy(StatScores):
         dist_sync_on_step: bool = False,
         process_group: Optional[Any] = None,
         dist_sync_fn: Callable = None,
-        on: Optional[types.IndexLike] = None,
         name: Optional[str] = None,
         dtype: Optional[jnp.dtype] = None,
     ) -> None:
@@ -198,7 +197,6 @@ class Accuracy(StatScores):
             dist_sync_on_step=dist_sync_on_step,
             process_group=process_group,
             dist_sync_fn=dist_sync_fn,
-            on=on,
             name=name,
             dtype=dtype,
         )

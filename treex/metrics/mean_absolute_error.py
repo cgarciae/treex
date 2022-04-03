@@ -24,7 +24,6 @@ def _mean_absolute_error(preds: jnp.ndarray, target: jnp.ndarray) -> jnp.ndarray
 class MeanAbsoluteError(Mean):
     def __init__(
         self,
-        on: tp.Optional[types.IndexLike] = None,
         name: tp.Optional[str] = None,
         dtype: tp.Optional[jnp.dtype] = None,
     ):
@@ -59,13 +58,14 @@ class MeanAbsoluteError(Mean):
         >>> mae(preds, target)
 
         """
-        super().__init__(on=on, name=name, dtype=dtype)
+        super().__init__(name=name, dtype=dtype)
 
     def update(
         self,
         target: jnp.ndarray,
         preds: jnp.ndarray,
-        sample_weight: jnp.ndarray = None,
+        sample_weight: tp.Optional[jnp.ndarray] = None,
+        **_,
     ) -> tp.Any:
         """
         Accumulates metric statistics. `target` and `preds` should have the same shape.

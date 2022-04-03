@@ -74,6 +74,12 @@ class Metrics(Metric):
     def __call__(self: M, **kwargs) -> tp.Tuple[tp.Dict[str, jnp.ndarray], M]:
         return super().__call__(**kwargs)
 
+    def slice(self, **kwargs: types.IndexLike) -> "Metrics":
+        metrics = {
+            name: metric.slice(**kwargs) for name, metric in self.metrics.items()
+        }
+        return self.replace(metrics=metrics)
+
 
 class AuxMetrics(Metric):
     totals: tp.Optional[tp.Dict[str, jnp.ndarray]] = types.MetricState.node()

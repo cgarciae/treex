@@ -133,7 +133,6 @@ class Crossentropy(Loss):
         reduction: tp.Optional[Reduction] = None,
         check_bounds: bool = True,
         weight: tp.Optional[float] = None,
-        on: tp.Optional[types.IndexLike] = None,
         name: tp.Optional[str] = None,
     ):
         """
@@ -159,7 +158,7 @@ class Crossentropy(Loss):
                 if this is the case. If `False`, the check is disabled and the loss may contain
                 incorrect values.
         """
-        super().__init__(reduction=reduction, weight=weight, on=on, name=name)
+        super().__init__(reduction=reduction, weight=weight, name=name)
 
         self._from_logits = from_logits
         self._check_bounds = check_bounds

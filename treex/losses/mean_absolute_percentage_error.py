@@ -88,7 +88,6 @@ class MeanAbsolutePercentageError(Loss):
         self,
         reduction: tp.Optional[Reduction] = None,
         weight: tp.Optional[float] = None,
-        on: tp.Optional[types.IndexLike] = None,
         **kwargs
     ):
         """
@@ -112,7 +111,7 @@ class MeanAbsolutePercentageError(Loss):
                 check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).
         """
 
-        return super().__init__(reduction=reduction, weight=weight, on=on, **kwargs)
+        return super().__init__(reduction=reduction, weight=weight, **kwargs)
 
     def call(
         self,

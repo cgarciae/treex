@@ -10,7 +10,7 @@ from treex.losses.loss import Loss
 from treex.metrics.metric import Metric
 from treex.metrics.metrics import AuxMetrics
 
-L = tp.TypeVar("L", bound="Losses")
+M = tp.TypeVar("M", bound="Losses")
 A = tp.TypeVar("A", bound="AuxLosses")
 
 
@@ -46,12 +46,12 @@ class Losses(Metric):
         self.totals = None
         self.counts = None
 
-    def reset(self: L) -> L:
+    def reset(self: M) -> M:
         totals = {name: jnp.array(0.0, dtype=jnp.float32) for name in self.losses}
         counts = {name: jnp.array(0, dtype=jnp.uint32) for name in self.losses}
         return self.replace(totals=totals, counts=counts)
 
-    def update(self: L, **kwargs) -> L:
+    def update(self: M, **kwargs) -> M:
         if self.totals is None or self.counts is None:
             raise ValueError("Losses not initialized, call 'reset()' first")
 
@@ -87,13 +87,31 @@ class Losses(Metric):
 
         return outputs
 
-    def __call__(self: L, **kwargs) -> tp.Tuple[tp.Dict[str, jnp.ndarray], L]:
+    def __call__(self: M, **kwargs) -> tp.Tuple[tp.Dict[str, jnp.ndarray], M]:
         return super().__call__(**kwargs)
 
     def total_loss(self) -> jnp.ndarray:
         return sum(self.compute().values(), jnp.array(0.0))
 
+    def slice(self, **kwargs: types.IndexLike) -> "Losses":
+        losses = {name: loss.slice(**kwargs) for name, loss in self.losses.items()}
+        return self.replace(losses=losses)
+
+    def loss_and_update(self: M, **kwargs) -> tp.Tuple[jnp.ndarray, M]:
+        batch_updates = self.batch_updates(**kwargs)
+        loss = batch_updates.total_loss()
+        metrics = self.merge(batch_updates)
+
+        return loss, metrics
+
 
 class AuxLosses(AuxMetrics):
     def total_loss(self) -> jnp.ndarray:
         return sum(self.compute().values(), jnp.array(0.0))
+
+    def loss_and_update(self: A, **kwargs) -> tp.Tuple[jnp.ndarray, A]:
+        batch_updates = self.batch_updates(**kwargs)
+        loss = batch_updates.total_loss()
+        metrics = self.merge(batch_updates)
+
+        return loss, metrics

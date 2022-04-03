@@ -140,11 +140,10 @@ class StatScores(Metric):
         dist_sync_on_step: bool = False,
         process_group: Optional[Any] = None,
         dist_sync_fn: Callable = None,
-        on: Optional[types.IndexLike] = None,
         name: Optional[str] = None,
         dtype: Optional[jnp.dtype] = None,
     ) -> None:
-        super().__init__(on=on, name=name, dtype=dtype)
+        super().__init__(name=name, dtype=dtype)
 
         self.reduce = reduce
         self.mdmc_reduce = mdmc_reduce

@@ -136,7 +136,6 @@ class Huber(Loss):
         delta: float = 1.0,
         reduction: tp.Optional[Reduction] = None,
         weight: tp.Optional[float] = None,
-        on: tp.Optional[types.IndexLike] = None,
         **kwargs
     ):
         """
@@ -157,7 +156,7 @@ class Huber(Loss):
                 check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).
         """
         self.delta = delta
-        return super().__init__(reduction=reduction, weight=weight, on=on, **kwargs)
+        return super().__init__(reduction=reduction, weight=weight, **kwargs)
 
     def call(
         self,

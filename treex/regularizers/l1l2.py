@@ -29,10 +29,9 @@ class L1L2(Loss):
         l2=0.0,
         reduction: tp.Optional[Reduction] = None,
         weight: tp.Optional[float] = None,
-        on: tp.Optional[types.IndexLike] = None,
         name: tp.Optional[str] = None,
     ):  # pylint: disable=redefined-outer-name
-        super().__init__(reduction=reduction, weight=weight, on=on, name=name)
+        super().__init__(reduction=reduction, weight=weight, name=name)
 
         self.l1 = l1
         self.l2 = l2
@@ -74,10 +73,9 @@ class L1(L1L2):
         l: float = 0.01,
         reduction: tp.Optional[Reduction] = None,
         weight: tp.Optional[float] = None,
-        on: tp.Optional[types.IndexLike] = None,
         name: tp.Optional[str] = None,
     ):
-        super().__init__(l1=l, reduction=reduction, weight=weight, on=on, name=name)
+        super().__init__(l1=l, reduction=reduction, weight=weight, name=name)
 
 
 class L2(L1L2):
@@ -95,7 +93,6 @@ class L2(L1L2):
         l: float = 0.01,
         reduction: tp.Optional[Reduction] = None,
         weight: tp.Optional[float] = None,
-        on: tp.Optional[types.IndexLike] = None,
         name: tp.Optional[str] = None,
     ):
-        super().__init__(l2=l, reduction=reduction, weight=weight, on=on, name=name)
+        super().__init__(l2=l, reduction=reduction, weight=weight, name=name)

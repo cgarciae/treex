@@ -5,6 +5,8 @@ import jax.numpy as jnp
 from treex import types
 from treex.metrics.mean import Mean
 
+M = tp.TypeVar("M", bound="MeanSquareError")
+
 
 def _mean_square_error(preds: jnp.ndarray, target: jnp.ndarray) -> jnp.ndarray:
     """Calculates values required to update/compute Mean Square Error. Cast preds to have the same type as target.
@@ -24,7 +26,6 @@ def _mean_square_error(preds: jnp.ndarray, target: jnp.ndarray) -> jnp.ndarray:
 class MeanSquareError(Mean):
     def __init__(
         self,
-        on: tp.Optional[types.IndexLike] = None,
         name: tp.Optional[str] = None,
         dtype: tp.Optional[jnp.dtype] = None,
     ):
@@ -59,14 +60,15 @@ class MeanSquareError(Mean):
         >>> mse(preds, target)
 
         """
-        super().__init__(on=on, name=name, dtype=dtype)
+        super().__init__(name=name, dtype=dtype)
 
     def update(
-        self,
+        self: M,
         target: jnp.ndarray,
         preds: jnp.ndarray,
-        sample_weight: jnp.ndarray = None,
-    ) -> tp.Any:
+        sample_weight: tp.Optional[jnp.ndarray] = None,
+        **_,
+    ) -> M:
         """
         Accumulates metric statistics. `target` and `preds` should have the same shape.
 

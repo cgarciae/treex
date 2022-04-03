@@ -1,5 +1,6 @@
 import jax
 import jax.numpy as jnp
+import numpy as np
 import pytest
 
 import treex as tx
@@ -12,51 +13,45 @@ class TestLosses:
         N = 0
 
         @jax.jit
-        def f(m, target, preds):
+        def f(m: tx.metrics.Losses, target, preds):
             nonlocal N
             N += 1
-            m(target=target, preds=preds)
-            return m
+            return m.loss_and_update(target=target, preds=preds)
 
         losses = tx.metrics.Losses(
             [
                 tx.losses.MeanSquaredError(),
                 tx.losses.MeanSquaredError(),
             ]
-        )
+        ).reset()
         target = jnp.array([0.0, 0.0, 0.0, 0.0])[None, None, None, :]
         preds = jnp.array([1.0, 1.0, 1.0, 1.0])[None, None, None, :]
 
-        losses = f(losses, target, preds)
+        loss, losses = f(losses, target, preds)
         assert N == 1
-        assert losses.compute() == (
-            2.0,
-            {
-                "mean_squared_error_loss": 1.0,
-                "mean_squared_error_loss2": 1.0,
-            },
-        )
+        loss = 2.0
+        assert losses.compute() == {
+            "mean_squared_error": 1.0,
+            "mean_squared_error2": 1.0,
+        }
 
-        losses = f(losses, target, preds)
+        loss, losses = f(losses, target, preds)
         assert N == 1
-        assert losses.compute() == (
-            2.0,
-            {
-                "mean_squared_error_loss": 1.0,
-                "mean_squared_error_loss2": 1.0,
-            },
-        )
+        loss = 2.0
+        assert losses.compute() == {
+            "mean_squared_error": 1.0,
+            "mean_squared_error2": 1.0,
+        }
 
     def test_dict(self):
 
         N = 0
 
         @jax.jit
-        def f(m, target, preds):
+        def f(m: tx.metrics.Losses, target, preds):
             nonlocal N
             N += 1
-            m(target=target, preds=preds)
-            return m
+            return m.loss_and_update(target=target, preds=preds)
 
         losses = tx.metrics.Losses(
             dict(
@@ -67,9 +62,9 @@ class TestLosses:
         target = jnp.array([0.0, 0.0, 0.0, 0.0])[None, None, None, :]
         preds = jnp.array([1.0, 1.0, 1.0, 1.0])[None, None, None, :]
 
-        losses = f(losses, target, preds)
+        loss, losses = f(losses, target, preds)
         assert N == 1
-        assert losses.compute() == (
+        assert loss, losses.compute() == (
             2.0,
             {
                 "a/mean_squared_error_loss": 1.0,
@@ -77,9 +72,9 @@ class TestLosses:
             },
         )
 
-        losses = f(losses, target, preds)
+        loss, losses = f(losses, target, preds)
         assert N == 1
-        assert losses.compute() == (
+        assert loss, losses.compute() == (
             2.0,
             {
                 "a/mean_squared_error_loss": 1.0,
@@ -104,24 +99,25 @@ class TestAuxLosses:
         def f(module: MyModule, aux_losses: tx.metrics.AuxLosses):
             nonlocal N
             N += 1
-            loss_logs = module.filter(tx.LossLog)
-            aux_losses(aux_losses=loss_logs)
-            return aux_losses
+            loss_logs = module.filter(tx.LossLog).as_logs()
+            return aux_losses.loss_and_update(aux_values=loss_logs)
 
         module = MyModule()
 
-        loss_logs = module.filter(tx.LossLog)
-        losses = tx.metrics.AuxLosses(loss_logs)
+        loss_logs = module.filter(tx.LossLog).as_logs()
+        losses = tx.metrics.AuxLosses().reset(loss_logs)
 
-        losses = f(module, losses)
+        loss, losses = f(module, losses)
         assert N == 1
-        assert losses.compute() == (1.0, {"aux_loss": 1.0})
+        assert np.isclose(loss, 1.0)
+        assert np.isclose(losses.compute()["aux"], 1.0)
 
-        module.aux = jnp.array(0.0, jnp.float32)
-        losses = f(module, losses)
+        module = module.replace(aux=jnp.array(0.0, jnp.float32))
+        loss, losses = f(module, losses)
 
         assert N == 1
-        assert losses.compute() == (0.5, {"aux_loss": 0.5})
+        assert np.isclose(loss, 0.0)
+        assert np.isclose(losses.compute()["aux"], 0.5)
 
     def test_named(self):
         class MyModule(tx.Module):
@@ -138,21 +134,22 @@ class TestAuxLosses:
         def f(module: MyModule, aux_losses: tx.metrics.AuxLosses):
             nonlocal N
             N += 1
-            loss_logs = module.filter(tx.LossLog)
-            aux_losses(aux_losses=loss_logs)
-            return aux_losses
+            loss_logs = module.filter(tx.LossLog).as_logs()
+            return aux_losses.loss_and_update(aux_values=loss_logs)
 
         module = MyModule()
 
-        loss_logs = module.filter(tx.LossLog)
-        losses = tx.metrics.AuxLosses(loss_logs)
+        loss_logs = module.filter(tx.LossLog).as_logs()
+        losses = tx.metrics.AuxLosses().reset(loss_logs)
 
-        losses = f(module, losses)
+        loss, losses = f(module, losses)
         assert N == 1
-        assert losses.compute() == (1.0, {"my_loss": 1.0})
+        assert np.isclose(loss, 1.0)
+        assert np.isclose(losses.compute()["my_loss"], 1.0)
 
         module.aux.value = jnp.array(0.0, jnp.float32)
-        losses = f(module, losses)
+        loss, losses = f(module, losses)
 
         assert N == 1
-        assert losses.compute() == (0.5, {"my_loss": 0.5})
+        assert np.isclose(loss, 0.0)
+        assert np.isclose(losses.compute()["my_loss"], 0.5)

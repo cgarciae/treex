@@ -59,13 +59,12 @@ class Accuracy(Mean):
         self,
         argmax_preds: bool = False,
         argmax_labels: bool = False,
-        on: tp.Optional[types.IndexLike] = None,
         name: tp.Optional[str] = None,
         dtype: tp.Optional[jnp.dtype] = None,
     ):
         self.argmax_preds = argmax_preds
         self.argmax_labels = argmax_labels
-        super().__init__(on=on, name=name, dtype=dtype)
+        super().__init__(name=name, dtype=dtype)
 
     def update(
         self,

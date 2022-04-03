@@ -5,6 +5,8 @@ import jax.numpy as jnp
 from treex import types
 from treex.metrics.reduce import Reduce, Reduction
 
+M = tp.TypeVar("M", bound="Mean")
+
 
 class Mean(Reduce):
     """
@@ -43,7 +45,6 @@ class Mean(Reduce):
 
     def __init__(
         self,
-        on: tp.Optional[types.IndexLike] = None,
         name: tp.Optional[str] = None,
         dtype: tp.Optional[jnp.dtype] = None,
     ):
@@ -60,16 +61,16 @@ class Mean(Reduce):
         """
         super().__init__(
             reduction=Reduction.weighted_mean,
-            on=on,
             name=name,
             dtype=dtype,
         )
 
     def update(
-        self,
+        self: M,
         values: jnp.ndarray,
         sample_weight: tp.Optional[jnp.ndarray] = None,
-    ):
+        **_,
+    ) -> M:
         """
         Accumulates the mean statistic over various batches.
 
@@ -81,7 +82,7 @@ class Mean(Reduce):
             Array with the cumulative mean.
         """
 
-        super().update(
+        return super().update(
             values=values,
             sample_weight=sample_weight,
         )

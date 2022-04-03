@@ -99,7 +99,6 @@ class CosineSimilarity(Loss):
         axis: int = -1,
         reduction: tp.Optional[Reduction] = None,
         weight: tp.Optional[float] = None,
-        on: tp.Optional[types.IndexLike] = None,
         **kwargs
     ):
         """
@@ -112,16 +111,9 @@ class CosineSimilarity(Loss):
                 loss. Default value is `SUM_OVER_BATCH_SIZE`. For almost all cases
                 this defaults to `SUM_OVER_BATCH_SIZE`.
             weight: Optional weight contribution for the total loss. Defaults to `1`.
-            on: A string or integer, or iterable of string or integers, that
-                indicate how to index/filter the `target` and `preds`
-                arguments before passing them to `call`. For example if `on = "a"` then
-                `target = target["a"]`. If `on` is an iterable
-                the structures will be indexed iteratively, for example if `on = ["a", 0, "b"]`
-                then `target = target["a"][0]["b"]`, same for `preds`. For more information
-                check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).
         """
         self.axis = axis
-        return super().__init__(reduction=reduction, weight=weight, on=on, **kwargs)
+        return super().__init__(reduction=reduction, weight=weight, **kwargs)
 
     def call(
         self,

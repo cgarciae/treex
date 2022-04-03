@@ -2,7 +2,7 @@
 # https://github.com/tensorflow/tensorflow/blob/v2.2.0/tensorflow/python/keras/losses.py#L44-L201
 
 import typing as tp
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from enum import Enum
 
 import jax.numpy as jnp
@@ -45,7 +45,7 @@ class Reduction(Enum):
             raise ValueError("Invalid Reduction Key %s." % key)
 
 
-class Loss:
+class Loss(ABC):
     """
     Loss base class.
 
@@ -70,7 +70,6 @@ class Loss:
         self,
         reduction: tp.Optional[Reduction] = None,
         weight: tp.Optional[types.ScalarLike] = None,
-        on: tp.Optional[types.IndexLike] = None,
         name: tp.Optional[str] = None,
     ):
         """
@@ -81,13 +80,6 @@ class Loss:
                 loss. Default value is `SUM_OVER_BATCH_SIZE`. For almost all cases
                 this defaults to `SUM_OVER_BATCH_SIZE`.
             weight: Optional weight contribution for the total loss. Defaults to `1`.
-            on: A string or integer, or iterable of string or integers, that
-                indicate how to index/filter the `target` and `preds`
-                arguments before passing them to `call`. For example if `on = "a"` then
-                `target = target["a"]`. If `on` is an iterable
-                the structures will be indexed iteratively, for example if `on = ["a", 0, "b"]`
-                then `target = target["a"][0]["b"]`, same for `preds`. For more information
-                check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).
             name: Optional name for the instance, if not provided lower snake_case version
                 of the name of the class is used instead.
         """
@@ -97,35 +89,27 @@ class Loss:
             if weight is not None
             else jnp.array(1.0, dtype=jnp.float32)
         )
-        self._reduction = (
+        self.reduction = (
             reduction if reduction is not None else Reduction.SUM_OVER_BATCH_SIZE
         )
-        self._labels_filter = (on,) if isinstance(on, (str, int)) else on
-        self._signature_f = self.call
 
     def __call__(
         self,
         **kwargs,
     ) -> jnp.ndarray:
 
-        if self._labels_filter is not None:
-            if "target" in kwargs and kwargs["target"] is not None:
-                for index in self._labels_filter:
-                    kwargs["target"] = kwargs["target"][index]
-
-            if "preds" in kwargs and kwargs["preds"] is not None:
-                for index in self._labels_filter:
-                    kwargs["preds"] = kwargs["preds"][index]
-
         sample_weight: tp.Optional[jnp.ndarray] = kwargs.pop("sample_weight", None)
 
         values = self.call(**kwargs)
 
-        return reduce_loss(values, sample_weight, self.weight, self._reduction)
+        return reduce_loss(values, sample_weight, self.weight, self.reduction)
 
     @abstractmethod
-    def call(self, *args, **kwargs) -> jnp.ndarray:
+    def call(self, **kwargs) -> jnp.ndarray:
         ...
+
+    def slice(self, **kwargs: types.IndexLike) -> "SliceParamsLoss":
+        return SliceParamsLoss(self, kwargs)
 
 
 def reduce_loss(
@@ -151,3 +135,40 @@ def reduce_loss(
         raise ValueError(f"Invalid reduction '{reduction}'")
 
     return loss * weight
+
+
+Slice = tp.Tuple[tp.Union[int, str], ...]
+
+
+class SliceParamsLoss(Loss):
+    arg_slice: tp.Dict[str, Slice]
+    loss: Loss
+
+    def __init__(
+        self,
+        loss: Loss,
+        arg_slice: tp.Dict[str, types.IndexLike],
+    ):
+        super().__init__(name=loss.name, weight=None, reduction=Reduction.NONE)
+        self.loss = loss
+        self.arg_slice = {
+            key: tuple([index])
+            if not isinstance(index, (list, tuple))
+            else tuple(index)
+            for key, index in arg_slice.items()
+        }
+
+    def __call__(
+        self,
+        **kwargs,
+    ) -> jnp.ndarray:
+
+        # slice the arguments
+        for key, slices in self.arg_slice.items():
+            for index in slices:
+                kwargs[key] = kwargs[key][index]
+
+        return self.loss(**kwargs)
+
+    def call(self, **kwargs) -> jnp.ndarray:
+        return self.loss.call(**kwargs)

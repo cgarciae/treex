@@ -66,8 +66,13 @@ class Metric(Treex):
         stacked = jax.tree_map(lambda *xs: jnp.stack(xs), self, other)
         return stacked.aggregate()
 
-    def slice(self, **kwargs: types.IndexLike):
+    def slice(self, **kwargs: types.IndexLike) -> "SliceParams":
         return SliceParams(self, kwargs)
+
+    def _not_initialized_error(self):
+        return ValueError(
+            f"Metric '{self.name}' has not been initialized, call 'reset()' first"
+        )
 
 
 Slice = tp.Tuple[tp.Union[int, str], ...]

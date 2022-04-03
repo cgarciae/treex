@@ -59,10 +59,41 @@ class LossesAndMetrics(Metric):
             else None
         )
 
+    def reset(
+        self: M,
+        aux_losses: tp.Optional[tp.Dict[str, jnp.ndarray]] = None,
+        aux_metrics: tp.Optional[tp.Dict[str, jnp.ndarray]] = None,
+    ) -> M:
+        if self.losses is not None:
+            losses = self.losses.reset()
+        else:
+            losses = None
+        if self.metrics is not None:
+            metrics = self.metrics.reset()
+        else:
+            metrics = None
+
+        if self.aux_losses is not None:
+            aux_losses_ = self.aux_losses.reset(aux_losses)
+        else:
+            aux_losses_ = None
+
+        if self.aux_metrics is not None:
+            aux_metrics_ = self.aux_metrics.reset(aux_metrics)
+        else:
+            aux_metrics_ = None
+
+        return self.replace(
+            losses=losses,
+            metrics=metrics,
+            aux_losses=aux_losses_,
+            aux_metrics=aux_metrics_,
+        )
+
     def update(
         self: M,
-        aux_losses: tp.Optional[tp.Dict[str, tp.Any]] = None,
-        aux_metrics: tp.Optional[tp.Dict[str, tp.Any]] = None,
+        aux_losses: tp.Optional[tp.Dict[str, jnp.ndarray]] = None,
+        aux_metrics: tp.Optional[tp.Dict[str, jnp.ndarray]] = None,
         **kwargs,
     ) -> M:
 
@@ -144,7 +175,7 @@ class LossesAndMetrics(Metric):
         )
 
     def total_loss(self) -> jnp.ndarray:
-        loss = jnp.zeros(0.0, dtype=jnp.float32)
+        loss = jnp.array(0.0, dtype=jnp.float32)
 
         if self.losses is not None:
             loss += self.losses.total_loss()
@@ -153,3 +184,10 @@ class LossesAndMetrics(Metric):
             loss += self.aux_losses.total_loss()
 
         return loss
+
+    def loss_and_update(self: M, **kwargs) -> tp.Tuple[jnp.ndarray, M]:
+        batch_updates = self.batch_updates(**kwargs)
+        loss = batch_updates.total_loss()
+        metrics = self.merge(batch_updates)
+
+        return loss, metrics
