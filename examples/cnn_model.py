@@ -24,16 +24,20 @@ M = tp.TypeVar("M", bound="Model")
 
 
 class Model(tx.Module):
+    key: jnp.ndarray = tx.node()
+
     def __init__(
         self,
+        key: tp.Union[jnp.ndarray, int],
         module: Module,
         optimizer: optax.GradientTransformation,
         losses: tp.Any,
         metrics: tp.Any,
     ) -> None:
+        self.key = tx.Key(key)
         self.module = module
         self.optimizer = tx.Optimizer(optimizer)
-        self.loss_and_logs = tx.LossesAndMetrics(
+        self.losses_and_metrics = tx.LossesAndMetrics(
             losses=losses,
             metrics=metrics,
         )
@@ -41,69 +45,92 @@ class Model(tx.Module):
     def __call__(self, *args, **kwargs) -> tp.Any:
         return self.module(*args, **kwargs)
 
-    @partial(jax.jit, static_argnums=(1,))
-    def init_step(self: M, seed: int, inputs: tp.Any) -> M:
-        self.module = self.module.init(seed, inputs=inputs)
-        self.optimizer = self.optimizer.init(self.module.parameters())
-
-        return self
+    @jax.jit
+    def init_step(self: M, x: tp.Any) -> M:
+        key, module_key = jax.random.split(self.key)
+        module = self.module.init(module_key, x)
+        optimizer = self.optimizer.init(module.parameters())
+        losses_and_metrics = self.losses_and_metrics.reset()
+        return self.replace(
+            module=module,
+            optimizer=optimizer,
+            losses_and_metrics=losses_and_metrics,
+            key=key,
+        )
 
     @jax.jit
     def reset_step(self: M) -> M:
-        self.loss_and_logs.reset()
-        return self
+        return self.replace(
+            losses_and_metrics=self.losses_and_metrics.reset(),
+        )
 
-    @staticmethod
     def loss_fn(
-        params: Module,
-        model: "Model",
+        self: "Model",
+        params: tp.Optional[Module],
+        key: tp.Optional[jnp.ndarray],
         x: jnp.ndarray,
         y: jnp.ndarray,
-    ) -> tp.Tuple[jnp.ndarray, tp.Tuple["Model", Logs]]:
-        model.module = model.module.merge(params)
-        preds = model.module(x)
+    ) -> tp.Tuple[jnp.ndarray, "Model"]:
 
-        loss, losses_logs, metrics_logs = model.loss_and_logs.batch_loss_epoch_logs(
+        model = self
+        module = self.module
+
+        if params is not None:
+            module = module.merge(params)
+
+        preds, module = module.apply(key, x)
+
+        loss, losses_and_metrics = model.losses_and_metrics.loss_and_update(
             target=y,
             preds=preds,
         )
-        logs = {**losses_logs, **metrics_logs}
 
-        return loss, (model, logs)
+        model = model.replace(
+            module=module,
+            losses_and_metrics=losses_and_metrics,
+        )
+
+        return loss, model
 
     @jax.jit
     def train_step(
         self: M,
         x: jnp.ndarray,
         y: jnp.ndarray,
-    ) -> tp.Tuple[M, Logs]:
+    ) -> M:
         print("JITTTTING")
-        model = self
+        model: M = self
         params = model.module.parameters()
+        key, loss_key = jax.random.split(model.key)
 
-        grads, (model, logs) = jax.grad(model.loss_fn, has_aux=True)(
-            params, model, x, y
+        grads, model = jax.grad(model.loss_fn, has_aux=True)(params, loss_key, x, y)
+
+        params, optimizer = model.optimizer.update(grads, params)
+        module = model.module.merge(params)
+
+        model = model.replace(
+            module=module,
+            optimizer=optimizer,
+            key=key,
         )
 
-        params = model.optimizer.update(grads, params)
-        model.module = model.module.merge(params)
-
-        return model, logs
+        return model
 
     @jax.jit
     def test_step(
         self: M,
         x: jnp.ndarray,
         y: jnp.ndarray,
-    ) -> tp.Tuple[M, Logs]:
+    ) -> M:
 
-        loss, (model, logs) = self.loss_fn(self.module, self, x, y)
+        loss, model = self.loss_fn(None, None, x, y)
 
-        return model, logs
+        return model
 
     @jax.jit
     def predict(self, x: jnp.ndarray) -> jnp.ndarray:
-        return self.module(x).argmax(axis=1)
+        module = self.module.eval()
+        return module(x).argmax(axis=1)
 
 
 # define parameters
@@ -111,6 +138,7 @@ def main(
     epochs: int = 5,
     batch_size: int = 32,
     steps_per_epoch: int = -1,
+    seed: int = 420,
 ):
 
     # load data
@@ -123,6 +151,7 @@ def main(
 
     # define model
     model = Model(
+        key=seed,
         module=tx.Sequential(
             tx.Conv(32, [3, 3], strides=[2, 2]),
             tx.BatchNorm(),
@@ -141,7 +170,7 @@ def main(
         metrics=tx.metrics.Accuracy(),
     )
 
-    model: Model = model.init_step(seed=42, inputs=X_train[:batch_size])
+    model: Model = model.init_step(X_train[:batch_size])
 
     print(model.module.tabulate(X_train[:batch_size], signature=True))
 
@@ -170,7 +199,8 @@ def main(
             idx = np.random.choice(len(X_train), batch_size)
             x = X_train[idx]
             y = y_train[idx]
-            model, train_logs = model.train_step(x, y)
+            model = model.train_step(x, y)
+            train_logs = model.losses_and_metrics.compute()
 
         history_train.append(train_logs)
 
@@ -190,7 +220,8 @@ def main(
             idx = np.random.choice(len(X_test), batch_size)
             x = X_test[idx]
             y = y_test[idx]
-            model, test_logs = model.test_step(x, y)
+            model = model.test_step(x, y)
+            test_logs = model.losses_and_metrics.compute()
 
         history_test.append(test_logs)
         test_logs = {f"{name}_valid": value for name, value in test_logs.items()}
