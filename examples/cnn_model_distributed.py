@@ -15,125 +15,159 @@ from tqdm import tqdm
 
 import treex as tx
 from treex import metrics
+from treex.metrics import losses_and_metrics
 from treex.utils import _check_rejit
 
 Batch = tp.Mapping[str, np.ndarray]
 Module = tx.Sequential
-Metric = tx.metrics.Accuracy
+LossesAndMetrics = tx.metrics.LossesAndMetrics
 np.random.seed(420)
 
 M = tp.TypeVar("M", bound="Model")
+A = tp.TypeVar("A")
 
 
 class Model(tx.Module):
+    key: jnp.ndarray = tx.node()
     module: Module
     optimizer: tx.Optimizer
-    metric: Metric
+    losses_and_metrics: LossesAndMetrics
 
     def __init__(
         self,
+        key: tp.Union[jnp.ndarray, int],
         module: Module,
         optimizer: optax.GradientTransformation,
-        metric: Metric,
+        losses_and_metrics: LossesAndMetrics,
     ) -> None:
+        self.key = tx.Key(key)
         self.module = module
         self.optimizer = tx.Optimizer(optimizer)
-        self.metric = metric
+        self.losses_and_metrics = losses_and_metrics
 
     def __call__(self, *args, **kwargs) -> tp.Any:
         return self.module(*args, **kwargs)
 
     @partial(
         jax.pmap,
-        in_axes=(None, None, None, 0),
+        in_axes=(None, None, 0),
         out_axes=0,
-        static_broadcasted_argnums=(1,),
         axis_name="device",
     )
-    def init_step(self: M, seed: int, inputs: tp.Any, device_idx: jnp.ndarray) -> M:
-        self.module = self.module.init(seed, inputs=inputs)
-        self.optimizer = self.optimizer.init(self.module.parameters())
+    def init_step(
+        self: M,
+        x: tp.Any,
+        device_idx: jnp.ndarray,
+    ) -> M:
+        key, module_key = jax.random.split(self.key)
+        module = self.module.init(module_key, x)
+        optimizer = self.optimizer.init(module.parameters())
+        losses_and_metrics = self.losses_and_metrics.reset()
 
         # assign unique rng keys
-        axis_index = jax.lax.axis_index("device")
-        self.map(lambda k: jax.random.fold_in(k, axis_index), tx.Rng, inplace=True)
+        key = jax.random.fold_in(key, jax.lax.axis_index("device"))
 
-        return self
+        return self.replace(
+            key=key,
+            module=module,
+            optimizer=optimizer,
+            losses_and_metrics=losses_and_metrics,
+        )
 
     @partial(jax.pmap, axis_name="device")
     def reset_step(self: M) -> M:
-        self.metric.reset()
-        return self
+        return self.replace(losses_and_metrics=self.losses_and_metrics.reset())
 
-    @staticmethod
     def loss_fn(
-        params: Module,
-        module: Module,
+        self: "Model",
+        params: tp.Optional[Module],
+        key: tp.Optional[jnp.ndarray],
         x: jnp.ndarray,
         y: jnp.ndarray,
-    ) -> tp.Tuple[jnp.ndarray, tp.Tuple[Module, jnp.ndarray]]:
-        module = module.merge(params)
-        preds = module(x)
+    ) -> tp.Tuple[jnp.ndarray, tp.Tuple["Model", LossesAndMetrics]]:
+        module = self.module
 
-        loss = jnp.mean(
-            optax.softmax_cross_entropy(
-                preds,
-                jax.nn.one_hot(y, 10),
-            )
+        if params is not None:
+            module = module.merge(params)
+
+        preds, module = module.apply(key, x)
+
+        batch_updates = self.losses_and_metrics.batch_updates(
+            target=y,
+            preds=preds,
         )
+        loss = batch_updates.total_loss()
 
-        return loss, (module, preds)
+        model = self.replace(
+            module=module,
+        )
+        return loss, (model, batch_updates)
 
     @partial(jax.pmap, axis_name="device")
     def train_step(
         self: M,
         x: jnp.ndarray,
         y: jnp.ndarray,
-    ) -> tp.Tuple[jnp.ndarray, M]:
+    ) -> M:
         print("JITTTTING")
-        params = self.module.parameters()
+        model: M = self
+        params = model.module.parameters()
+        loss_key, key = jax.random.split(model.key)
 
-        (loss, (self.module, preds)), grads = jax.value_and_grad(
-            self.loss_fn, has_aux=True
-        )(params, self.module, x, y)
+        batch_updates: LossesAndMetrics
+        grads, (model, batch_updates) = jax.grad(model.loss_fn, has_aux=True)(
+            params, loss_key, x, y
+        )
 
         grads = jax.lax.pmean(grads, axis_name="device")
 
-        assert isinstance(self.module, Module)
+        assert isinstance(model.module, Module)
 
-        params = self.optimizer.update(grads, params)
-        self.module = self.module.merge(params)
+        params, optimizer = model.optimizer.update(grads, params)
+        module = model.module.merge(params)
 
         # sync batch statistics
-        self.module = self.module.map(
-            partial(jax.lax.pmean, axis_name="device"), tx.BatchStat
+        module = module.map(
+            partial(jax.lax.pmean, axis_name="device"),
+            tx.BatchStat,
         )
 
         # update metric
-        y, preds = jax.lax.all_gather((y, preds), axis_name="device")
-        y, preds = y.reshape(-1), preds.reshape(-1, preds.shape[-1])
-        self.metric.update(target=y, preds=preds)
+        batch_updates = jax.lax.all_gather(batch_updates, axis_name="device")
+        batch_updates = batch_updates.aggregate()
+        losses_and_metrics = model.losses_and_metrics.merge(batch_updates)
 
-        return loss, self
+        return model.replace(
+            key=key,
+            module=module,
+            optimizer=optimizer,
+            losses_and_metrics=losses_and_metrics,
+        )
 
     @partial(jax.pmap, axis_name="device")
     def test_step(
         self: M,
         x: jnp.ndarray,
         y: jnp.ndarray,
-    ) -> tp.Tuple[jnp.ndarray, M]:
+    ) -> M:
+        model: M = self
 
-        loss, (self.module, preds) = self.loss_fn(self.module, self.module, x, y)
+        batch_updates: LossesAndMetrics
+        loss, (model, batch_updates) = model.loss_fn(None, None, x, y)
 
-        y, preds = jax.lax.all_gather((y, preds), axis_name="device")
-        y, preds = y.reshape(-1), preds.reshape(-1, preds.shape[-1])
-        _batch_metric = self.metric(target=y, preds=preds)
+        batch_updates = jax.lax.all_gather(batch_updates, axis_name="device")
+        batch_updates = batch_updates.aggregate()
+        losses_and_metrics = model.losses_and_metrics.merge(batch_updates)
 
-        return loss, self
+        return model.replace(losses_and_metrics=losses_and_metrics)
 
     @jax.jit
     def predict(self, x: jnp.ndarray) -> jnp.ndarray:
         return self.module(x).argmax(axis=1)
+
+
+def to_local(x: A) -> A:
+    return x[0]
 
 
 # define parameters
@@ -142,6 +176,8 @@ def main(
     batch_size: int = 32,
     steps_per_epoch: int = -1,
     use_tpu: bool = False,
+    seed: int = 42,
+    lr: float = 1e-3,
 ):
 
     if use_tpu:
@@ -161,6 +197,7 @@ def main(
 
     # define model
     model = Model(
+        key=seed,
         module=tx.Sequential(
             tx.Conv(32, [3, 3], strides=[2, 2]),
             tx.BatchNorm(),
@@ -174,27 +211,29 @@ def main(
             partial(jnp.mean, axis=(1, 2)),
             tx.Linear(10),
         ),
-        optimizer=optax.adamw(1e-3),
-        metric=tx.metrics.Accuracy(),
+        optimizer=optax.adamw(lr),
+        losses_and_metrics=tx.LossesAndMetrics(
+            metrics=tx.metrics.Accuracy(),
+            losses=tx.losses.Crossentropy(),
+        ),
     )
 
-    model: Model = model.init_step(42, X_train[:batch_size], device_idx)
+    model: Model = model.init_step(X_train[:batch_size], device_idx)
 
     print(model.module.tabulate(signature=True))
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)
 
-    epoch_train_losses = []
-    epoch_train_accs = []
-    epoch_test_losses = []
-    epoch_test_accs = []
+    train_logs = {}
+    test_logs = {}
+    history_train = []
+    history_test = []
 
     for epoch in range(epochs):
         # ---------------------------------------
         # train
         # ---------------------------------------
-        train_losses = []
         model = model.train()
         model = model.reset_step()
         for step in tqdm(
@@ -214,22 +253,21 @@ def main(
             y = einops.rearrange(
                 y_train[idx], "(device batch) ... -> device batch ...", device=n_devices
             )
-            loss, model = model.train_step(x, y)
-            train_losses.append(loss)
+            model = model.train_step(x, y)
 
-        epoch_train_loss = jnp.mean(jnp.stack(train_losses))
-        epoch_train_losses.append(epoch_train_loss)
-        epoch_train_accs.append(model.metric.compute())
+        train_logs = model.losses_and_metrics.map(to_local).compute()
+        history_train.append(train_logs)
 
         # ---------------------------------------
         # test
         # ---------------------------------------
-        test_losses = []
         model = model.eval()
         model = model.reset_step()
         for step in tqdm(
             range(
-                len(X_test) // batch_size if steps_per_epoch < 1 else steps_per_epoch
+                len(X_test) // (batch_size * n_devices)
+                if steps_per_epoch < 1
+                else steps_per_epoch
             ),
             desc="testing",
             unit="batch",
@@ -243,31 +281,26 @@ def main(
                 y_test[idx], "(device batch) ... -> device batch ...", device=n_devices
             )
 
-            loss, model = model.test_step(x, y)
-            test_losses.append(loss)
+            model = model.test_step(x, y)
 
-        epoch_test_loss = jnp.mean(jnp.stack(test_losses))
-        epoch_test_losses.append(epoch_test_loss)
-        epoch_test_accs.append(model.metric.compute())
+        test_logs = model.losses_and_metrics.map(to_local).compute()
+        history_test.append(test_logs)
 
-        print(
-            f"[{epoch}] loss_train={epoch_train_loss}, acc_train={epoch_train_accs[-1]}, loss_test={epoch_test_loss}, acc_test={epoch_test_accs[-1]}"
-        )
+        test_logs = {f"{name}_valid": value for name, value in test_logs.items()}
+        logs = {**train_logs, **test_logs}
+        logs = {name: float(value) for name, value in logs.items()}
+
+        print(f"[{epoch}] {logs}")
 
     # pass params from the first device to host
-    model = model.map(lambda x: x[0])
+    model = model.map(to_local).eval()
 
-    model = model.eval()
-
-    # plot loss curve
-    plt.figure()
-    plt.plot(epoch_train_losses)
-    plt.plot(epoch_test_losses)
-
-    # plot acc curve
-    plt.figure()
-    plt.plot(epoch_train_accs)
-    plt.plot(epoch_test_accs)
+    # plot logs
+    for name in history_train[0]:
+        plt.figure()
+        plt.title(name)
+        plt.plot([logs[name] for logs in history_train])
+        plt.plot([logs[name] for logs in history_test])
 
     # visualize reconstructions
     idxs = np.random.choice(len(X_test), 10)

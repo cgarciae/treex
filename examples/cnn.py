@@ -166,8 +166,8 @@ def main(
             model, optimizer, losses_and_metrics = train_step(
                 step_key, model, optimizer, losses_and_metrics, x, y
             )
-            train_logs = losses_and_metrics.compute()
 
+        train_logs = losses_and_metrics.compute()
         history_train.append(train_logs)
 
         # ---------------------------------------
@@ -187,11 +187,11 @@ def main(
             x = X_test[idx]
             y = y_test[idx]
             losses_and_metrics = test_step(model, losses_and_metrics, x, y)
-            test_logs = losses_and_metrics.compute()
 
+        test_logs = losses_and_metrics.compute()
         history_test.append(test_logs)
-        test_logs = {f"{name}_valid": value for name, value in test_logs.items()}
 
+        test_logs = {f"{name}_valid": value for name, value in test_logs.items()}
         logs = {**train_logs, **test_logs}
         logs = {name: float(value) for name, value in logs.items()}
 

@@ -221,11 +221,11 @@ def main(
             x = X_test[idx]
             y = y_test[idx]
             model = model.test_step(x, y)
-            test_logs = model.losses_and_metrics.compute()
 
+        test_logs = model.losses_and_metrics.compute()
         history_test.append(test_logs)
-        test_logs = {f"{name}_valid": value for name, value in test_logs.items()}
 
+        test_logs = {f"{name}_valid": value for name, value in test_logs.items()}
         logs = {**train_logs, **test_logs}
         logs = {name: float(value) for name, value in logs.items()}
 
