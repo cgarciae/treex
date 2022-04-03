@@ -78,15 +78,20 @@ class Dropout(Module):
             else self.training and not self.frozen
         )
 
-        if rng is None:
-            rng = self.next_key()
+        if training:
+            if rng is None:
+                rng = self.next_key()
+
+            rngs = {"dropout": rng}
+        else:
+            rngs = {}
 
         # call apply
         output = self.module.apply(
             variables,
             x,
             deterministic=not training,
-            rngs={"dropout": rng},
+            rngs=rngs,
         )
 
         return tp.cast(jnp.ndarray, output)
