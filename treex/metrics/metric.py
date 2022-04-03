@@ -12,6 +12,8 @@ from treex import types, utils
 from treex.treex import Treex
 
 M = tp.TypeVar("M", bound="Metric")
+MA = tp.TypeVar("MA", bound="MapArgsMetric")
+Slice = tp.Tuple[tp.Union[int, str], ...]
 
 
 class Metric(Treex):
@@ -66,8 +68,8 @@ class Metric(Treex):
         stacked = jax.tree_map(lambda *xs: jnp.stack(xs), self, other)
         return stacked.aggregate()
 
-    def slice(self, **kwargs: types.IndexLike) -> "SliceParams":
-        return SliceParams(self, kwargs)
+    def slice(self, **kwargs: types.IndexLike) -> "SliceParamsMetric":
+        return SliceParamsMetric(self, kwargs)
 
     def _not_initialized_error(self):
         return ValueError(
@@ -75,10 +77,7 @@ class Metric(Treex):
         )
 
 
-Slice = tp.Tuple[tp.Union[int, str], ...]
-
-
-class SliceParams(Metric):
+class SliceParamsMetric(Metric):
     arg_slice: tp.Dict[str, Slice]
     metric: Metric = types.MetricState.node()
 
@@ -96,15 +95,73 @@ class SliceParams(Metric):
             for key, index in arg_slice.items()
         }
 
-    def reset(self) -> "SliceParams":
+    def reset(self) -> "SliceParamsMetric":
         return self.replace(metric=self.metric.reset())
 
-    def update(self, **kwargs) -> "SliceParams":
+    def update(self, **kwargs) -> "SliceParamsMetric":
 
         # slice the arguments
         for key, slices in self.arg_slice.items():
             for index in slices:
                 kwargs[key] = kwargs[key][index]
+
+        return self.replace(metric=self.metric.update(**kwargs))
+
+    def compute(self) -> tp.Any:
+        return self.metric.compute()
+
+    def map_arg(self, **kwargs: str) -> "MapArgsMetric":
+        """
+        Returns a metric  that renames the keyword arguments expected by `.update()`.
+
+        Example:
+
+        ```python
+        mean = tx.metrics.Mean().map_arg(values="loss").reset()
+        ...
+        loss = loss_fn(x, y)
+        mean = mean.update(loss=loss)
+        ```
+
+        Arguments:
+            **kwargs: keyword arguments to be renamed
+
+        Returns:
+            A MapArgsMetric instance
+        """
+        return MapArgsMetric(self, kwargs)
+
+
+class MapArgsMetric(Metric):
+    metric: Metric = to.node()
+    args_map: tp.Dict[str, str] = to.static()
+
+    def __init__(self, metric: Metric, args_map: tp.Dict[str, str]):
+        super().__init__(
+            name=metric.name,
+        )
+        self.metric = metric
+        self.args_map = args_map
+
+    def reset(self: MA) -> MA:
+        return self.replace(metric=self.metric.reset())
+
+    def update(self: MA, **kwargs) -> MA:
+
+        for arg in self.args_map:
+            if arg not in kwargs:
+                raise KeyError(f"'{arg}' expected but not given")
+
+        kwarg_updates = {
+            next_arg: kwargs[prev_arg] for prev_arg, next_arg in self.args_map.items()
+        }
+
+        # delete previous kwargs
+        for arg in self.args_map:
+            del kwargs[arg]
+
+        # add new kwargs
+        kwargs.update(kwarg_updates)
 
         return self.replace(metric=self.metric.update(**kwargs))
 

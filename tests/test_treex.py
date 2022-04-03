@@ -350,7 +350,7 @@ class TestTreex:
 
         rep
 
-    def test_tabulate(self):
+    def test_tabulate_simple(self):
         class MyModule(tx.Module):
             a: tp.Dict[str, tp.List[MLP]]
             b: tp.List[jnp.ndarray] = tx.Parameter.node()
@@ -363,6 +363,9 @@ class TestTreex:
                     jnp.zeros((512, 128)),
                 ]
 
+            def __call__(self):
+                pass
+
         mlp = MyModule()  # .init(42)
         mlp = jax.tree_map(jnp.asarray, mlp)
         # mlp = mlp.filter(tx.Parameter)
@@ -371,7 +374,7 @@ class TestTreex:
 
         print(rep)
 
-        assert '.a["mlps"]' in rep
+        assert '.a["mlps"' in rep
         assert "b:" in rep
 
         print(mlp.a["mlps"][1].linear2)
@@ -397,7 +400,7 @@ class TestTreex:
                 return dict(y1=y1, y2=y2)
 
         x = np.random.uniform(size=(5, 1))
-        mlp = MyModule().init(42, x)
+        mlp: MyModule = MyModule().init(42, x)
         mlp = jax.tree_map(jnp.asarray, mlp)
         # mlp = mlp.filter(tx.Parameter)
 

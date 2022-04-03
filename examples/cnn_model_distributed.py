@@ -14,9 +14,6 @@ from numpy.core.fromnumeric import reshape
 from tqdm import tqdm
 
 import treex as tx
-from treex import metrics
-from treex.metrics import losses_and_metrics
-from treex.utils import _check_rejit
 
 Batch = tp.Mapping[str, np.ndarray]
 Module = tx.Sequential
@@ -76,7 +73,9 @@ class Model(tx.Module):
 
     @partial(jax.pmap, axis_name="device")
     def reset_step(self: M) -> M:
-        return self.replace(losses_and_metrics=self.losses_and_metrics.reset())
+        return self.replace(
+            losses_and_metrics=self.losses_and_metrics.reset(),
+        )
 
     def loss_fn(
         self: "Model",
@@ -84,7 +83,7 @@ class Model(tx.Module):
         key: tp.Optional[jnp.ndarray],
         x: jnp.ndarray,
         y: jnp.ndarray,
-    ) -> tp.Tuple[jnp.ndarray, tp.Tuple["Model", LossesAndMetrics]]:
+    ) -> tp.Tuple[jnp.ndarray, "Model"]:
         module = self.module
 
         if params is not None:
@@ -92,16 +91,23 @@ class Model(tx.Module):
 
         preds, module = module.apply(key, x)
 
-        batch_updates = self.losses_and_metrics.batch_updates(
+        batch_updates: LossesAndMetrics = self.losses_and_metrics.batch_updates(
             target=y,
             preds=preds,
         )
         loss = batch_updates.total_loss()
 
-        model = self.replace(
+        # sync updates between devices
+        batch_updates = jax.lax.all_gather(batch_updates, axis_name="device")
+        batch_updates = batch_updates.aggregate()
+
+        # update metrics
+        losses_and_metrics = self.losses_and_metrics.merge(batch_updates)
+
+        return loss, self.replace(
             module=module,
+            losses_and_metrics=losses_and_metrics,
         )
-        return loss, (model, batch_updates)
 
     @partial(jax.pmap, axis_name="device")
     def train_step(
@@ -114,34 +120,21 @@ class Model(tx.Module):
         params = model.module.parameters()
         loss_key, key = jax.random.split(model.key)
 
-        batch_updates: LossesAndMetrics
-        grads, (model, batch_updates) = jax.grad(model.loss_fn, has_aux=True)(
-            params, loss_key, x, y
-        )
+        grads, model = jax.grad(model.loss_fn, has_aux=True)(params, loss_key, x, y)
 
         grads = jax.lax.pmean(grads, axis_name="device")
-
-        assert isinstance(model.module, Module)
 
         params, optimizer = model.optimizer.update(grads, params)
         module = model.module.merge(params)
 
         # sync batch statistics
-        module = module.map(
-            partial(jax.lax.pmean, axis_name="device"),
-            tx.BatchStat,
-        )
-
-        # update metric
-        batch_updates = jax.lax.all_gather(batch_updates, axis_name="device")
-        batch_updates = batch_updates.aggregate()
-        losses_and_metrics = model.losses_and_metrics.merge(batch_updates)
+        pmean = partial(jax.lax.pmean, axis_name="device")
+        module = module.map(pmean, tx.BatchStat)
 
         return model.replace(
             key=key,
             module=module,
             optimizer=optimizer,
-            losses_and_metrics=losses_and_metrics,
         )
 
     @partial(jax.pmap, axis_name="device")
@@ -152,14 +145,9 @@ class Model(tx.Module):
     ) -> M:
         model: M = self
 
-        batch_updates: LossesAndMetrics
-        loss, (model, batch_updates) = model.loss_fn(None, None, x, y)
+        loss, model = model.loss_fn(None, None, x, y)
 
-        batch_updates = jax.lax.all_gather(batch_updates, axis_name="device")
-        batch_updates = batch_updates.aggregate()
-        losses_and_metrics = model.losses_and_metrics.merge(batch_updates)
-
-        return model.replace(losses_and_metrics=losses_and_metrics)
+        return model
 
     @jax.jit
     def predict(self, x: jnp.ndarray) -> jnp.ndarray:

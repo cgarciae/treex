@@ -14,7 +14,7 @@ from rich.table import Table
 from rich.text import Text
 from treeo.utils import _get_unbound_method
 
-from treex import contexts, types, utils
+from treex import types, utils
 from treex.treex import Filters, Treex
 
 A = tp.TypeVar("A")
@@ -47,6 +47,30 @@ class _ModuleContext(threading.local):
             yield
 
 
+@dataclass
+class _CallContext(threading.local):
+    call_info: tp.Optional[tp.Dict["Module", tp.Tuple[types.Inputs, tp.Any]]] = None
+
+    def __enter__(self):
+        global _CALL_CONTEXT
+        self._old_context = _CALL_CONTEXT
+        _CALL_CONTEXT = self
+
+    def __exit__(self, *args):
+        global _CALL_CONTEXT
+        _CALL_CONTEXT = self._old_context
+
+    @contextmanager
+    def update(self, **kwargs):
+        fields = vars(self).copy()
+        fields.pop("_old_context", None)
+        fields.update(kwargs)
+
+        with _CallContext(**fields):
+            yield
+
+
+_CALL_CONTEXT = _CallContext()
 _MODULE_CONTEXT = _ModuleContext()
 
 # -----------------------------------------
@@ -121,11 +145,11 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
                 outputs = orig_call(self, *args, **kwargs)
 
                 if (
-                    contexts._CONTEXT.call_info is not None
-                    and self not in contexts._CONTEXT.call_info
+                    _CALL_CONTEXT.call_info is not None
+                    and self not in _CALL_CONTEXT.call_info
                 ):
                     inputs = types.Inputs(*args, **kwargs)
-                    contexts._CONTEXT.call_info[self] = (inputs, outputs)
+                    _CALL_CONTEXT.call_info[self] = (inputs, outputs)
 
                 return outputs
 
@@ -207,7 +231,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
 
     def tabulate(
         self,
-        inputs: tp.Union[types.InputLike, to.Missing] = to.MISSING,
+        inputs: types.InputLike = (),
         depth: int = -1,
         signature: bool = False,
         param_types: bool = True,
@@ -224,30 +248,29 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
         """
         self = to.copy(self)
 
-        if inputs is not to.MISSING:
-            inputs = types.Inputs.from_value(inputs)
+        inputs = types.Inputs.from_value(inputs)
 
-            if not isinstance(self, tp.Callable):
-                raise TypeError(
-                    "`inputs` can only be specified if the module is a callable."
-                )
+        if not isinstance(self, tp.Callable):
+            raise TypeError(
+                "`inputs` can only be specified if the module is a callable."
+            )
 
-            with contexts._Context(call_info={}):
+        with _CallContext(call_info={}):
+            assert _CALL_CONTEXT.call_info is not None
+            # call using self to preserve references
+            def eval_call(args, kwargs):
+                with to.make_mutable(self), _ModuleContext(
+                    key=utils.Key(42),
+                    initializing=True,
+                ):
+                    return self(*args, **kwargs)
 
-                # call using self to preserve references
-                def eval_call(args, kwargs):
-                    assert isinstance(self, tp.Callable)
-                    return self.apply(42, *args, **kwargs)[0]
-
-                jax.eval_shape(
-                    eval_call,
-                    inputs.args,
-                    inputs.kwargs,
-                )
-                call_info = contexts._CONTEXT.call_info
-
-        else:
-            call_info = None
+            jax.eval_shape(
+                eval_call,
+                inputs.args,
+                inputs.kwargs,
+            )
+            call_info = _CALL_CONTEXT.call_info
 
         with to.add_field_info():
             flat: tp.List[to.FieldInfo]
@@ -270,28 +293,27 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
         modules = [row[0] for row in rows]
         rows = [row[1:] for row in rows]
 
-        if call_info is not None:
-            for module, row in zip(modules, rows):
-                if module in call_info:
-                    inputs, outputs = call_info[module]
-                    simplified_inputs = (
-                        inputs.args[0]
-                        if len(inputs.kwargs) == 0 and len(inputs.args) == 1
-                        else inputs.kwargs
-                        if len(inputs.kwargs) == 0
-                        else inputs.kwargs
-                        if len(inputs.args) == 0
-                        else (inputs.args, inputs.kwargs)
-                    )
+        for module, row in zip(modules, rows):
+            if module in call_info:
+                inputs, outputs = call_info[module]
+                simplified_inputs = (
+                    inputs.args[0]
+                    if len(inputs.kwargs) == 0 and len(inputs.args) == 1
+                    else inputs.kwargs
+                    if len(inputs.kwargs) == 0
+                    else inputs.kwargs
+                    if len(inputs.args) == 0
+                    else (inputs.args, inputs.kwargs)
+                )
 
-                    inputs_repr = utils._format_param_tree(simplified_inputs)
-                    outputs_repr = utils._format_param_tree(outputs)
-                else:
-                    inputs_repr = ""
-                    outputs_repr = ""
+                inputs_repr = utils._format_param_tree(simplified_inputs)
+                outputs_repr = utils._format_param_tree(outputs)
+            else:
+                inputs_repr = ""
+                outputs_repr = ""
 
-                row.insert(3, outputs_repr)
-                row.insert(3, inputs_repr)
+            row.insert(3, outputs_repr)
+            row.insert(3, inputs_repr)
 
         n_non_treepart_cols = 2 if call_info is None else 4
 

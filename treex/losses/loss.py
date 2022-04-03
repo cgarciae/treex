@@ -11,6 +11,9 @@ from numpy.lib.arraysetops import isin
 
 from treex import types, utils
 
+Slice = tp.Tuple[tp.Union[int, str], ...]
+MA = tp.TypeVar("MA", bound="MapArgsLoss")
+
 
 class Reduction(Enum):
     """
@@ -43,6 +46,31 @@ class Reduction(Enum):
     def validate(cls, key):
         if key not in cls.all():
             raise ValueError("Invalid Reduction Key %s." % key)
+
+
+def reduce_loss(
+    values: jnp.ndarray, sample_weight: tp.Optional[jnp.ndarray], weight, reduction
+) -> jnp.ndarray:
+
+    values = jnp.asarray(values)
+
+    if sample_weight is not None:
+        # expand `sample_weight` dimensions until it has the same rank as `values`
+        while sample_weight.ndim < values.ndim:
+            sample_weight = sample_weight[..., jnp.newaxis]
+
+        values *= sample_weight
+
+    if reduction == Reduction.NONE:
+        loss = values
+    elif reduction == Reduction.SUM:
+        loss = jnp.sum(values)
+    elif reduction == Reduction.SUM_OVER_BATCH_SIZE:
+        loss = jnp.sum(values) / jnp.prod(jnp.array(values.shape))
+    else:
+        raise ValueError(f"Invalid reduction '{reduction}'")
+
+    return loss * weight
 
 
 class Loss(ABC):
@@ -111,33 +139,25 @@ class Loss(ABC):
     def slice(self, **kwargs: types.IndexLike) -> "SliceParamsLoss":
         return SliceParamsLoss(self, kwargs)
 
+    def map_arg(self, **kwargs: str) -> "MapArgsLoss":
+        """
+        Returns a loss  that renames the keyword arguments expected by `__call__`.
 
-def reduce_loss(
-    values: jnp.ndarray, sample_weight: tp.Optional[jnp.ndarray], weight, reduction
-) -> jnp.ndarray:
+        Example:
 
-    values = jnp.asarray(values)
+        ```python
+        crossentropy_loss = tx.losses.Crossentropy().map_arg(target="y_true", preds="y_pred")
+        ...
+        loss = crossentropy_loss(y_true=y, y_pred=logits)
+        ```
 
-    if sample_weight is not None:
-        # expand `sample_weight` dimensions until it has the same rank as `values`
-        while sample_weight.ndim < values.ndim:
-            sample_weight = sample_weight[..., jnp.newaxis]
+        Arguments:
+            **kwargs: keyword arguments to be renamed
 
-        values *= sample_weight
-
-    if reduction == Reduction.NONE:
-        loss = values
-    elif reduction == Reduction.SUM:
-        loss = jnp.sum(values)
-    elif reduction == Reduction.SUM_OVER_BATCH_SIZE:
-        loss = jnp.sum(values) / jnp.prod(jnp.array(values.shape))
-    else:
-        raise ValueError(f"Invalid reduction '{reduction}'")
-
-    return loss * weight
-
-
-Slice = tp.Tuple[tp.Union[int, str], ...]
+        Returns:
+            A MapArgsLoss instance
+        """
+        return MapArgsLoss(self, kwargs)
 
 
 class SliceParamsLoss(Loss):
@@ -162,13 +182,57 @@ class SliceParamsLoss(Loss):
         self,
         **kwargs,
     ) -> jnp.ndarray:
+        kwargs = self._slice_kwargs(kwargs)
+        return self.loss(**kwargs)
 
+    def call(self, **kwargs) -> jnp.ndarray:
+        kwargs = self._slice_kwargs(kwargs)
+        return self.loss.call(**kwargs)
+
+    def _slice_kwargs(self, kwargs: tp.Dict[str, tp.Any]) -> tp.Dict[str, tp.Any]:
         # slice the arguments
         for key, slices in self.arg_slice.items():
             for index in slices:
                 kwargs[key] = kwargs[key][index]
 
-        return self.loss(**kwargs)
+        return kwargs
+
+
+class MapArgsLoss(Loss):
+    loss: Loss
+    args_map: tp.Dict[str, str]
+
+    def __init__(self, loss: Loss, args_map: tp.Dict[str, str]):
+        super().__init__(
+            name=loss.name,
+            weight=None,
+            reduction=Reduction.NONE,
+        )
+        self.loss = loss
+        self.args_map = args_map
+
+    def __call__(self, **kwargs) -> jnp.ndarray:
+        kwargs = self._map_kwargs(kwargs)
+        return super().__call__(**kwargs)
 
     def call(self, **kwargs) -> jnp.ndarray:
+        kwargs = self._map_kwargs(kwargs)
         return self.loss.call(**kwargs)
+
+    def _map_kwargs(self, kwargs: tp.Dict[str, tp.Any]) -> tp.Dict[str, tp.Any]:
+        for arg in self.args_map:
+            if arg not in kwargs:
+                raise KeyError(f"'{arg}' expected but not given")
+
+        kwarg_updates = {
+            next_arg: kwargs[prev_arg] for prev_arg, next_arg in self.args_map.items()
+        }
+
+        # delete previous kwargs
+        for arg in self.args_map:
+            del kwargs[arg]
+
+        # add new kwargs
+        kwargs.update(kwarg_updates)
+
+        return kwargs

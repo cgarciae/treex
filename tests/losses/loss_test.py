@@ -38,10 +38,10 @@ class LossTest(TestCase):
         with pytest.raises(BaseException):
             sample_loss = mae(target, preds)
 
-        # raises because it doesn't use __call__ which filters
-        with pytest.raises(BaseException):
-            sample_loss = mae.call(target=target, preds=preds)
-
         loss = mae(target=target, preds=preds)
 
         assert loss == 1
+
+        # test using call, no reduction is performed
+        sample_loss = mae.call(target=target, preds=preds)
+        assert sample_loss.shape == (3,)
