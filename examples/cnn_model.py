@@ -1,3 +1,4 @@
+import functools
 import typing as tp
 from functools import partial
 
@@ -21,6 +22,7 @@ Logs = tp.Mapping[str, jnp.ndarray]
 np.random.seed(420)
 
 M = tp.TypeVar("M", bound="Model")
+C = tp.TypeVar("C", bound="tp.Callable")
 
 
 class Model(tx.Module):
@@ -46,28 +48,23 @@ class Model(tx.Module):
         return self.module(*args, **kwargs)
 
     @jax.jit
+    @tx.toplevel_mutable
     def init_step(self: M, x: tp.Any) -> M:
-        key, module = self.key, self.module
-        optimizer, losses_and_metrics = self.optimizer, self.losses_and_metrics
 
-        init_key, key = jax.random.split(key)
-        module = module.init(init_key, x)
-        optimizer = optimizer.init(module.parameters())
-        losses_and_metrics = losses_and_metrics.reset()
+        init_key, self.key = jax.random.split(self.key)
+        self.module = self.module.init(init_key, x)
+        self.optimizer = self.optimizer.init(self.module.parameters())
+        self.losses_and_metrics = self.losses_and_metrics.reset()
 
-        return self.replace(
-            module=module,
-            optimizer=optimizer,
-            losses_and_metrics=losses_and_metrics,
-            key=key,
-        )
+        return self
 
     @jax.jit
+    @tx.toplevel_mutable
     def reset_step(self: M) -> M:
-        return self.replace(
-            losses_and_metrics=self.losses_and_metrics.reset(),
-        )
+        self.losses_and_metrics = self.losses_and_metrics.reset()
+        return self
 
+    @tx.toplevel_mutable
     def loss_fn(
         self: "Model",
         params: tp.Optional[Module],
@@ -76,25 +73,20 @@ class Model(tx.Module):
         y: jnp.ndarray,
     ) -> tp.Tuple[jnp.ndarray, "Model"]:
 
-        module = self.module
-        losses_and_metrics = self.losses_and_metrics
-
         if params is not None:
-            module = module.merge(params)
+            self.module = self.module.merge(params)
 
-        preds, module = module.apply(key, x)
+        preds, self.module = self.module.apply(key, x)
 
-        loss, losses_and_metrics = losses_and_metrics.loss_and_update(
+        loss, self.losses_and_metrics = self.losses_and_metrics.loss_and_update(
             target=y,
             preds=preds,
         )
 
-        return loss, self.replace(
-            module=module,
-            losses_and_metrics=losses_and_metrics,
-        )
+        return loss, self
 
     @jax.jit
+    @tx.toplevel_mutable
     def train_step(
         self: M,
         x: jnp.ndarray,
@@ -103,22 +95,17 @@ class Model(tx.Module):
         print("JITTTTING")
 
         params = self.module.parameters()
-        loss_key, key = jax.random.split(self.key)
+        loss_key, self.key = jax.random.split(self.key)
 
         grads, self = jax.grad(self.loss_fn, has_aux=True)(params, loss_key, x, y)
 
-        module, optimizer = self.module, self.optimizer
+        params, self.optimizer = self.optimizer.update(grads, params)
+        self.module = self.module.merge(params)
 
-        params, optimizer = optimizer.update(grads, params)
-        module = module.merge(params)
-
-        return self.replace(
-            module=module,
-            optimizer=optimizer,
-            key=key,
-        )
+        return self
 
     @jax.jit
+    @tx.toplevel_mutable
     def test_step(
         self: M,
         x: jnp.ndarray,
@@ -201,6 +188,9 @@ def main(
             x = X_train[idx]
             y = y_train[idx]
             model = model.train_step(x, y)
+
+            # jax.tree_map(lambda a, b: a, model, model2)
+
             train_logs = model.losses_and_metrics.compute()
 
         history_train.append(train_logs)

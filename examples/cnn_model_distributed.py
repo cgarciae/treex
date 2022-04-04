@@ -51,28 +51,22 @@ class Model(tx.Module):
         out_axes=0,
         axis_name="device",
     )
+    @tx.toplevel_mutable
     def init_step(
         self: M,
         x: tp.Any,
         device_idx: jnp.ndarray,
     ) -> M:
-        key, module = self.key, self.module
-        optimizer, losses_and_metrics = self.optimizer, self.losses_and_metrics
 
-        init_key, key = jax.random.split(key)
-        module = module.init(init_key, x)
-        optimizer = optimizer.init(module.parameters())
-        losses_and_metrics = losses_and_metrics.reset()
+        init_key, self.key = jax.random.split(self.key)
+        self.module = self.module.init(init_key, x)
+        self.optimizer = self.optimizer.init(self.module.parameters())
+        self.losses_and_metrics = self.losses_and_metrics.reset()
 
         # assign unique rng keys
-        key = jax.random.fold_in(key, jax.lax.axis_index("device"))
+        self.key = jax.random.fold_in(self.key, jax.lax.axis_index("device"))
 
-        return self.replace(
-            key=key,
-            module=module,
-            optimizer=optimizer,
-            losses_and_metrics=losses_and_metrics,
-        )
+        return self
 
     @partial(jax.pmap, axis_name="device")
     def reset_step(self: M) -> M:
@@ -80,6 +74,7 @@ class Model(tx.Module):
             losses_and_metrics=self.losses_and_metrics.reset(),
         )
 
+    @tx.toplevel_mutable
     def loss_fn(
         self: "Model",
         params: tp.Optional[Module],
@@ -87,14 +82,13 @@ class Model(tx.Module):
         x: jnp.ndarray,
         y: jnp.ndarray,
     ) -> tp.Tuple[jnp.ndarray, "Model"]:
-        module, losses_and_metrics = self.module, self.losses_and_metrics
 
         if params is not None:
-            module = module.merge(params)
+            self.module = self.module.merge(params)
 
-        preds, module = module.apply(key, x)
+        preds, self.module = self.module.apply(key, x)
 
-        batch_updates: LossesAndMetrics = losses_and_metrics.batch_updates(
+        batch_updates: LossesAndMetrics = self.losses_and_metrics.batch_updates(
             target=y,
             preds=preds,
         )
@@ -103,14 +97,12 @@ class Model(tx.Module):
         # sync updates between devices
         batch_updates = jax.lax.all_gather(batch_updates, axis_name="device")
         batch_updates = batch_updates.aggregate()
-        losses_and_metrics = losses_and_metrics.merge(batch_updates)
+        self.losses_and_metrics = self.losses_and_metrics.merge(batch_updates)
 
-        return loss, self.replace(
-            module=module,
-            losses_and_metrics=losses_and_metrics,
-        )
+        return loss, self
 
     @partial(jax.pmap, axis_name="device")
+    @tx.toplevel_mutable
     def train_step(
         self: M,
         x: jnp.ndarray,
@@ -118,36 +110,31 @@ class Model(tx.Module):
     ) -> M:
         print("JITTTTING")
         params = self.module.parameters()
-        loss_key, key = jax.random.split(self.key)
+        loss_key, self.key = jax.random.split(self.key)
 
         grads, self = jax.grad(self.loss_fn, has_aux=True)(params, loss_key, x, y)
 
         grads = jax.lax.pmean(grads, axis_name="device")
 
-        params, optimizer = self.optimizer.update(grads, params)
-        module = self.module.merge(params)
+        params, self.optimizer = self.optimizer.update(grads, params)
+        self.module = self.module.merge(params)
 
         # sync batch statistics
         pmean = partial(jax.lax.pmean, axis_name="device")
-        module = module.map(pmean, tx.BatchStat)
+        self.module = self.module.map(pmean, tx.BatchStat)
 
-        return self.replace(
-            key=key,
-            module=module,
-            optimizer=optimizer,
-        )
+        return self
 
     @partial(jax.pmap, axis_name="device")
+    @tx.toplevel_mutable
     def test_step(
         self: M,
         x: jnp.ndarray,
         y: jnp.ndarray,
     ) -> M:
-        model: M = self
+        loss, self = self.loss_fn(None, None, x, y)
 
-        loss, model = model.loss_fn(None, None, x, y)
-
-        return model
+        return self
 
     @jax.jit
     def predict(self, x: jnp.ndarray) -> jnp.ndarray:
