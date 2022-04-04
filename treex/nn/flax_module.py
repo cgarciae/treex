@@ -11,11 +11,13 @@ from flax.core.scope import FrozenVariableDict
 from treex import types, utils
 from treex.module import Module
 
+M = tp.TypeVar("M", bound="flax.linen.module.Module")
 
-class FlaxModule(Module):
+
+class FlaxModule(tp.Generic[M], Module):
 
     # static
-    module: to.Hashable[flax.linen.Module]
+    module: to.Hashable[M]
     mutable_collections: tp.Tuple[str, ...]
     rngs: tp.Tuple[str, ...]
     init_rngs: tp.Tuple[str, ...]
@@ -28,7 +30,7 @@ class FlaxModule(Module):
 
     def __init__(
         self,
-        module: flax.linen.Module,
+        module: M,
         mutable: tp.Sequence[str] = ("batch_stats", "cache"),
         rngs: tp.Sequence[str] = ("dropout",),
         init_rngs: tp.Sequence[str] = ("params",),

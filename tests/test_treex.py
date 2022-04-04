@@ -263,7 +263,7 @@ class TestTreex:
         n = 0
 
         class A(tx.Module):
-            def rng_init(self):
+            def setup(self):
                 nonlocal n
                 n = n + 1
 
@@ -279,7 +279,7 @@ class TestTreex:
 
     def test_initialized(self):
         class A(tx.Module):
-            def rng_init(self):
+            def setup(self):
                 self.x = 420
 
             def __call__(self):
@@ -406,7 +406,7 @@ class TestTreex:
 
         x = np.random.uniform(size=(5, 1))
 
-        rep = mlp.tabulate(inputs=tx.Inputs(x))
+        rep = mlp.tabulate(x)
 
         print(rep)
 

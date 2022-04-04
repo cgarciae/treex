@@ -47,10 +47,14 @@ class Model(tx.Module):
 
     @jax.jit
     def init_step(self: M, x: tp.Any) -> M:
-        key, module_key = jax.random.split(self.key)
-        module = self.module.init(module_key, x)
-        optimizer = self.optimizer.init(module.parameters())
-        losses_and_metrics = self.losses_and_metrics.reset()
+        key, module = self.key, self.module
+        optimizer, losses_and_metrics = self.optimizer, self.losses_and_metrics
+
+        init_key, key = jax.random.split(key)
+        module = module.init(init_key, x)
+        optimizer = optimizer.init(module.parameters())
+        losses_and_metrics = losses_and_metrics.reset()
+
         return self.replace(
             module=module,
             optimizer=optimizer,
@@ -72,25 +76,23 @@ class Model(tx.Module):
         y: jnp.ndarray,
     ) -> tp.Tuple[jnp.ndarray, "Model"]:
 
-        model = self
         module = self.module
+        losses_and_metrics = self.losses_and_metrics
 
         if params is not None:
             module = module.merge(params)
 
         preds, module = module.apply(key, x)
 
-        loss, losses_and_metrics = model.losses_and_metrics.loss_and_update(
+        loss, losses_and_metrics = losses_and_metrics.loss_and_update(
             target=y,
             preds=preds,
         )
 
-        model = model.replace(
+        return loss, self.replace(
             module=module,
             losses_and_metrics=losses_and_metrics,
         )
-
-        return loss, model
 
     @jax.jit
     def train_step(
@@ -99,22 +101,22 @@ class Model(tx.Module):
         y: jnp.ndarray,
     ) -> M:
         print("JITTTTING")
-        model: M = self
-        params = model.module.parameters()
-        key, loss_key = jax.random.split(model.key)
 
-        grads, model = jax.grad(model.loss_fn, has_aux=True)(params, loss_key, x, y)
+        params = self.module.parameters()
+        loss_key, key = jax.random.split(self.key)
 
-        params, optimizer = model.optimizer.update(grads, params)
-        module = model.module.merge(params)
+        grads, self = jax.grad(self.loss_fn, has_aux=True)(params, loss_key, x, y)
 
-        model = model.replace(
+        module, optimizer = self.module, self.optimizer
+
+        params, optimizer = optimizer.update(grads, params)
+        module = module.merge(params)
+
+        return self.replace(
             module=module,
             optimizer=optimizer,
             key=key,
         )
-
-        return model
 
     @jax.jit
     def test_step(
@@ -123,14 +125,13 @@ class Model(tx.Module):
         y: jnp.ndarray,
     ) -> M:
 
-        loss, model = self.loss_fn(None, None, x, y)
+        loss, self = self.loss_fn(None, None, x, y)
 
-        return model
+        return self
 
     @jax.jit
     def predict(self, x: jnp.ndarray) -> jnp.ndarray:
-        module = self.module.eval()
-        return module(x).argmax(axis=1)
+        return self.module(x).argmax(axis=1)
 
 
 # define parameters
@@ -172,7 +173,7 @@ def main(
 
     model: Model = model.init_step(X_train[:batch_size])
 
-    print(model.module.tabulate(X_train[:batch_size], signature=True))
+    print(model.module.tabulate(X_train[:batch_size], show_signatures=True))
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)

@@ -30,24 +30,38 @@ class MLP(tx.Module):
         return x
 
 
-@partial(jax.value_and_grad, has_aux=True)
-def loss_fn(params, model, x, y):
+Model = MLP
+
+
+def loss_fn(params: Model, key: jnp.ndarray, model: Model, x, y):
     model = model.merge(params)
-    preds = model(x)
+
+    preds, model = model.apply(key, x)
+
     loss = jnp.mean((preds - y) ** 2)
 
     return loss, model
 
 
 @jax.jit
-def train_step(model, x, y, optimizer):
-    params = model.filter(tx.Parameter)
-    (loss, model), grads = loss_fn(params, model, x, y)
+def train_step(
+    key: jnp.ndarray,
+    model: Model,
+    optimizer: tx.Optimizer,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+):
+    params = model.trainable_parameters()
+    loss_key, key = jax.random.split(key)
 
-    new_params = optimizer.update(grads, params)
-    model = model.merge(new_params)
+    (loss, model), grads = jax.value_and_grad(loss_fn, has_aux=True)(
+        params, key, model, x, y
+    )
 
-    return loss, model, optimizer
+    params, optimizer = optimizer.update(grads, params)
+    model = model.merge(params)
+
+    return loss, key, model, optimizer
 
 
 np.random.seed(69)
@@ -55,12 +69,12 @@ x = np.random.uniform(-1, 1, size=(500, 1))
 y = 1.4 * x ** 2 - 0.3 + np.random.normal(scale=0.1, size=(500, 1))
 
 model = MLP(32, 1, dropout=0.1).init(42, x)
-optimizer = tx.Optimizer(optax.adam(0.001))
-optimizer = optimizer.init(model.filter(tx.Parameter))
+optimizer = tx.Optimizer(optax.adam(0.001)).init(model.trainable_parameters())
+key = tx.Key(42)
 
 for step in range(20_000):
     idx = np.random.choice(len(x), size=64, replace=False)
-    loss, model, optimizer = train_step(model, x[idx], y[idx], optimizer)
+    loss, key, model, optimizer = train_step(key, model, optimizer, x[idx], y[idx])
     if step % 2000 == 0:
         print(f"[{step}] loss: {loss:.4f}")
 

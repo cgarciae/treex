@@ -93,7 +93,7 @@ class ModuleMeta(to.TreeMeta):
 
             def call_rng_init(module: Module):
                 if isinstance(module, Module) and not module._initialized:
-                    module.rng_init()
+                    module.setup()
 
             obj = to.apply(call_rng_init, obj)
 
@@ -172,7 +172,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
 
         1. The input `key` is split and iteratively updated before passing a derived value to any
             process that requires initialization.
-        2. `Module.rng_init` methods are called last.
+        2. `Module.setup` methods are called last.
 
         Arguments:
             key: The seed to use for initialization.
@@ -186,7 +186,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
 
             def call_rng_init(module: Module):
                 if isinstance(module, Module) and not module._initialized:
-                    module.rng_init()
+                    module.setup()
 
             module = to.apply(call_rng_init, module)
 
@@ -222,7 +222,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
                 output = unbounded_method(self, *args, **kwargs)
                 return output, self.copy()
 
-    def rng_init(self) -> None:
+    def setup(self) -> None:
         pass
 
     @staticmethod
@@ -231,10 +231,11 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
 
     def tabulate(
         self,
-        inputs: types.InputLike = (),
-        depth: int = -1,
-        signature: bool = False,
-        param_types: bool = True,
+        *args,
+        summary_depth: int = -1,
+        show_signatures: bool = False,
+        show_param_types: bool = True,
+        **kwargs,
     ) -> str:
         """
         Returns a tabular representation of the module.
@@ -248,8 +249,6 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
         """
         self = to.copy(self)
 
-        inputs = types.Inputs.from_value(inputs)
-
         if not isinstance(self, tp.Callable):
             raise TypeError(
                 "`inputs` can only be specified if the module is a callable."
@@ -259,17 +258,11 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
             assert _CALL_CONTEXT.call_info is not None
             # call using self to preserve references
             def eval_call(args, kwargs):
-                with to.make_mutable(self), _ModuleContext(
-                    key=utils.Key(42),
-                    initializing=True,
-                ):
+                with to.make_mutable(self), _ModuleContext(key=utils.Key(42)):
                     return self(*args, **kwargs)
 
-            jax.eval_shape(
-                eval_call,
-                inputs.args,
-                inputs.kwargs,
-            )
+            jax.eval_shape(eval_call, args, kwargs)
+
             call_info = _CALL_CONTEXT.call_info
 
         with to.add_field_info():
@@ -286,7 +279,12 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
         path = ()
         rows = list(
             utils._get_tabulate_rows(
-                path, self, depth, tree_part_types, signature, param_types
+                path,
+                self,
+                summary_depth,
+                tree_part_types,
+                show_signatures,
+                show_param_types,
             )
         )
 
@@ -338,10 +336,8 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
         table.add_column("path")
         table.add_column("module")
         table.add_column("params")
-
-        if call_info is not None:
-            table.add_column("inputs")
-            table.add_column("outputs")
+        table.add_column("inputs")
+        table.add_column("outputs")
 
         for tree_part_type in tree_part_types:
             type_name = tree_part_type.__name__

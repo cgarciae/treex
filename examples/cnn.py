@@ -134,7 +134,7 @@ def main(
 
     model, optimizer = init_step(model, optimizer, seed=42, inputs=X_train[:batch_size])
 
-    print(model.tabulate(X_train[:batch_size], signature=True))
+    print(model.tabulate(X_train[:batch_size], show_signatures=True))
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)

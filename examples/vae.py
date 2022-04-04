@@ -27,7 +27,6 @@ class Encoder(tx.Module):
     linear1: tx.Linear
     linear_mean: tx.Linear
     linear_std: tx.Linear
-    next_key: tx.KeySeq
     kl_loss: jnp.ndarray = tx.LossLog.node()
 
     def __init__(
@@ -39,7 +38,6 @@ class Encoder(tx.Module):
         self.linear1 = tx.Linear(hidden_size)
         self.linear_mean = tx.Linear(latent_size)
         self.linear_std = tx.Linear(latent_size)
-        self.next_key = tx.KeySeq()
         self.kl_loss = jnp.array(0.0)
 
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
@@ -111,10 +109,12 @@ class VAE(tx.Module):
         return jax.nn.sigmoid(self(x))
 
 
-@partial(jax.value_and_grad, has_aux=True)
-def loss_fn(params: VAE, model: VAE, x: np.ndarray) -> tp.Tuple[jnp.ndarray, VAE]:
+def loss_fn(
+    params: VAE, key: jnp.ndarray, model: VAE, x: np.ndarray
+) -> tp.Tuple[jnp.ndarray, VAE]:
     model = model.merge(params)
-    x_pred = model(x)
+
+    x_pred, model = model.apply(key, x)
 
     crossentropy_loss = jnp.mean(optax.sigmoid_binary_cross_entropy(x_pred, x))
     aux_losses = jax.tree_leaves(model.filter(tx.LossLog))
@@ -126,15 +126,19 @@ def loss_fn(params: VAE, model: VAE, x: np.ndarray) -> tp.Tuple[jnp.ndarray, VAE
 
 @jax.jit
 def train_step(
-    model: VAE, optimizer: tx.Optimizer, x: np.ndarray
+    key: jnp.ndarray, model: VAE, optimizer: tx.Optimizer, x: np.ndarray
 ) -> tp.Tuple[jnp.ndarray, VAE, tx.Optimizer]:
-    params = model.filter(tx.Parameter)
-    (loss, model), grads = loss_fn(params, model, x)
+    params = model.trainable_parameters()
+    loss_key, key = jax.random.split(key)
 
-    params = optimizer.update(grads, params)
+    (loss, model), grads = jax.value_and_grad(loss_fn, has_aux=True)(
+        params, loss_key, model, x
+    )
+
+    params, optimizer = optimizer.update(grads, params)
     model = model.merge(params)
 
-    return loss, model, optimizer
+    return loss, key, model, optimizer
 
 
 # define parameters
@@ -162,8 +166,8 @@ def main(
         latent_size=latent_size,
     ).init(42, X_train[:4])
 
-    optimizer = tx.Optimizer(optax.adam(1e-3))
-    optimizer = optimizer.init(model.filter(tx.Parameter))
+    optimizer = tx.Optimizer(optax.adam(1e-3)).init(model.trainable_parameters())
+    key = tx.Key(42)
 
     print(model.tabulate(X_train[:batch_size]))
 
@@ -179,7 +183,7 @@ def main(
         ):
             idx = np.random.choice(len(X_train), batch_size)
             x = X_train[idx]
-            loss, model, optimizer = train_step(model, optimizer, x)
+            loss, key, model, optimizer = train_step(key, model, optimizer, x)
             losses.append(loss)
 
         epoch_loss = jnp.mean(jnp.stack(losses))
@@ -195,7 +199,7 @@ def main(
     # visualize reconstructions
     idxs = np.random.choice(len(X_test), 10)
     x_sample = X_test[idxs]
-    x_pred = model.reconstruct(x_sample)
+    x_pred, model = model.apply(key, x_sample, method=model.reconstruct)
 
     plt.figure()
     for i in range(5):

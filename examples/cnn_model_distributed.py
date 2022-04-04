@@ -56,10 +56,13 @@ class Model(tx.Module):
         x: tp.Any,
         device_idx: jnp.ndarray,
     ) -> M:
-        key, module_key = jax.random.split(self.key)
-        module = self.module.init(module_key, x)
-        optimizer = self.optimizer.init(module.parameters())
-        losses_and_metrics = self.losses_and_metrics.reset()
+        key, module = self.key, self.module
+        optimizer, losses_and_metrics = self.optimizer, self.losses_and_metrics
+
+        init_key, key = jax.random.split(key)
+        module = module.init(init_key, x)
+        optimizer = optimizer.init(module.parameters())
+        losses_and_metrics = losses_and_metrics.reset()
 
         # assign unique rng keys
         key = jax.random.fold_in(key, jax.lax.axis_index("device"))
@@ -84,14 +87,14 @@ class Model(tx.Module):
         x: jnp.ndarray,
         y: jnp.ndarray,
     ) -> tp.Tuple[jnp.ndarray, "Model"]:
-        module = self.module
+        module, losses_and_metrics = self.module, self.losses_and_metrics
 
         if params is not None:
             module = module.merge(params)
 
         preds, module = module.apply(key, x)
 
-        batch_updates: LossesAndMetrics = self.losses_and_metrics.batch_updates(
+        batch_updates: LossesAndMetrics = losses_and_metrics.batch_updates(
             target=y,
             preds=preds,
         )
@@ -100,9 +103,7 @@ class Model(tx.Module):
         # sync updates between devices
         batch_updates = jax.lax.all_gather(batch_updates, axis_name="device")
         batch_updates = batch_updates.aggregate()
-
-        # update metrics
-        losses_and_metrics = self.losses_and_metrics.merge(batch_updates)
+        losses_and_metrics = losses_and_metrics.merge(batch_updates)
 
         return loss, self.replace(
             module=module,
@@ -116,22 +117,21 @@ class Model(tx.Module):
         y: jnp.ndarray,
     ) -> M:
         print("JITTTTING")
-        model: M = self
-        params = model.module.parameters()
-        loss_key, key = jax.random.split(model.key)
+        params = self.module.parameters()
+        loss_key, key = jax.random.split(self.key)
 
-        grads, model = jax.grad(model.loss_fn, has_aux=True)(params, loss_key, x, y)
+        grads, self = jax.grad(self.loss_fn, has_aux=True)(params, loss_key, x, y)
 
         grads = jax.lax.pmean(grads, axis_name="device")
 
-        params, optimizer = model.optimizer.update(grads, params)
-        module = model.module.merge(params)
+        params, optimizer = self.optimizer.update(grads, params)
+        module = self.module.merge(params)
 
         # sync batch statistics
         pmean = partial(jax.lax.pmean, axis_name="device")
         module = module.map(pmean, tx.BatchStat)
 
-        return model.replace(
+        return self.replace(
             key=key,
             module=module,
             optimizer=optimizer,
@@ -208,7 +208,9 @@ def main(
 
     model: Model = model.init_step(X_train[:batch_size], device_idx)
 
-    print(model.module.tabulate(signature=True))
+    print(
+        model.module.map(to_local).tabulate(X_train[:batch_size], show_signatures=True)
+    )
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)
