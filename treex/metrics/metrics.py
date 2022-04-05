@@ -76,7 +76,7 @@ class Metrics(Metric):
 
     def slice(self, **kwargs: types.IndexLike) -> "Metrics":
         metrics = {
-            name: metric.slice(**kwargs) for name, metric in self.metrics.items()
+            name: metric.index_into(**kwargs) for name, metric in self.metrics.items()
         }
         return self.replace(metrics=metrics)
 
@@ -132,6 +132,9 @@ class AuxMetrics(Metric):
             raise ValueError("AuxMetrics not initialized, call `reset()` first")
 
         return {name: self.totals[name] / self.counts[name] for name in self.totals}
+
+    def compute_logs(self) -> tp.Dict[str, jnp.ndarray]:
+        return self.compute()
 
     def __call__(self: A, aux_values: tp.Any) -> tp.Tuple[tp.Dict[str, jnp.ndarray], A]:
         return super().__call__(aux_values=aux_values)

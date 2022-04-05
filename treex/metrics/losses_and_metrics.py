@@ -162,6 +162,9 @@ class LossesAndMetrics(Metric):
             **aux_metrics_logs,
         }
 
+    def compute_logs(self) -> tp.Dict[str, jnp.ndarray]:
+        return self.compute()
+
     def __call__(
         self: M,
         aux_losses: tp.Optional[tp.Any] = None,

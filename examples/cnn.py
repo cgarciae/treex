@@ -48,7 +48,11 @@ def loss_fn(
         model = model.merge(params)
 
     preds, model = model.apply(key, x)
-    loss, losses_and_metrics = losses_and_metrics.loss_and_update(target=y, preds=preds)
+    loss, losses_and_metrics = losses_and_metrics.loss_and_update(
+        target=y,
+        preds=preds,
+        parameters=model.trainable_parameters(),
+    )
 
     return loss, (model, losses_and_metrics)
 
@@ -128,7 +132,10 @@ def main(
 
     optimizer = tx.Optimizer(optax.adamw(1e-3))
     losses_and_metrics: tx.LossesAndMetrics = tx.LossesAndMetrics(
-        losses=tx.losses.Crossentropy(),
+        losses=[
+            tx.losses.Crossentropy(),
+            tx.regularizers.L2(1e-4),
+        ],
         metrics=tx.metrics.Accuracy(),
     )
 

@@ -131,7 +131,6 @@ class Crossentropy(Loss):
         binary: bool = False,
         label_smoothing: tp.Optional[float] = None,
         reduction: tp.Optional[Reduction] = None,
-        check_bounds: bool = True,
         weight: tp.Optional[float] = None,
         name: tp.Optional[str] = None,
     ):
@@ -146,27 +145,19 @@ class Crossentropy(Loss):
                 loss. Default value is `SUM_OVER_BATCH_SIZE`. For almost all cases
                 this defaults to `SUM_OVER_BATCH_SIZE`.
             weight: Optional weight contribution for the total loss. Defaults to `1`.
-            on: A string or integer, or iterable of string or integers, that
-                indicate how to index/filter the `target` and `preds`
-                arguments before passing them to `call`. For example if `on = "a"` then
-                `target = target["a"]`. If `on` is an iterable
-                the structures will be indexed iteratively, for example if `on = ["a", 0, "b"]`
-                then `target = target["a"][0]["b"]`, same for `preds`. For more information
-                check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).
-            check_bounds: If `True` (default), checks `target` for negative values and values
-                larger or equal than the number of channels in `preds`. Sets loss to NaN
-                if this is the case. If `False`, the check is disabled and the loss may contain
-                incorrect values.
         """
         super().__init__(reduction=reduction, weight=weight, name=name)
 
         self._from_logits = from_logits
-        self._check_bounds = check_bounds
         self._binary = binary
         self._label_smoothing = label_smoothing
 
     def call(
-        self, target, preds, sample_weight: tp.Optional[jnp.ndarray] = None
+        self,
+        target,
+        preds,
+        sample_weight: tp.Optional[jnp.ndarray] = None,
+        **_,
     ) -> jnp.ndarray:
         """
         Invokes the `SparseCategoricalCrossentropy` instance.
@@ -194,5 +185,4 @@ class Crossentropy(Loss):
             binary=self._binary,
             from_logits=self._from_logits,
             label_smoothing=self._label_smoothing,
-            check_bounds=self._check_bounds,
         )

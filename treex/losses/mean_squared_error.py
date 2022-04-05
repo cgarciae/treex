@@ -111,6 +111,7 @@ class MeanSquaredError(Loss):
         sample_weight: tp.Optional[
             jnp.ndarray
         ] = None,  # not used, __call__ handles it, left for documentation purposes.
+        **_,
     ) -> jnp.ndarray:
         """
         Invokes the `MeanSquaredError` instance.

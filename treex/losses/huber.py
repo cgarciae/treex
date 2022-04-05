@@ -136,7 +136,7 @@ class Huber(Loss):
         delta: float = 1.0,
         reduction: tp.Optional[Reduction] = None,
         weight: tp.Optional[float] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initializes `Mean` class.
@@ -147,13 +147,7 @@ class Huber(Loss):
                 loss. Default value is `SUM_OVER_BATCH_SIZE`. For almost all cases
                 this defaults to `SUM_OVER_BATCH_SIZE`.
             weight: Optional weight contribution for the total loss. Defaults to `1`.
-            on: A string or integer, or iterable of string or integers, that
-                indicate how to index/filter the `target` and `preds`
-                arguments before passing them to `call`. For example if `on = "a"` then
-                `target = target["a"]`. If `on` is an iterable
-                the structures will be indexed iteratively, for example if `on = ["a", 0, "b"]`
-                then `target = target["a"][0]["b"]`, same for `preds`. For more information
-                check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).
+
         """
         self.delta = delta
         return super().__init__(reduction=reduction, weight=weight, **kwargs)
@@ -165,6 +159,7 @@ class Huber(Loss):
         sample_weight: tp.Optional[
             jnp.ndarray
         ] = None,  # not used, __call__ handles it, left for documentation purposes.
+        **_,
     ) -> jnp.ndarray:
         """
         Invokes the `Huber` instance.

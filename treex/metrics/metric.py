@@ -58,61 +58,92 @@ class Metric(Treex):
     def compute(self) -> tp.Any:
         ...
 
+    def compute_logs(self) -> tp.Dict[str, jnp.ndarray]:
+        return {self.name: self.compute()}
+
     def batch_updates(self: M, **kwargs) -> M:
+        """
+        Compute metric updates for a batch of data. Equivalent to `.reset().update(**kwargs)`.
+
+        Arguments:
+            kwargs: data to update the metric with
+
+        Returns:
+            Metric with updated state
+        """
         return self.reset().update(**kwargs)
 
     def aggregate(self: M) -> M:
+        """
+        Aggregate metric state. It assumes the metric's internal state has an additional
+        'device' dimension on the 0th axis.
+
+        Example:
+
+        ```python
+        batch_updates = metric.batch_updates(**kwargs)
+        batch_updates = jax.lax.all_gather(batch_updates, axis_name="device")
+        batch_updates = batch_updates.aggregate()
+
+        metric = metric.merge(batch_updates)
+        ```
+
+        Returns:
+            Metric with aggregated state
+        """
         return jax.tree_map(lambda x: jnp.sum(x, axis=0), self)
 
     def merge(self: M, other: M) -> M:
+        """
+        Merge the state of two metrics of the same type. Usually used to merge
+        a metric with its batch_updates.
+
+        Example:
+
+        ```python
+        batch_updates = metric.batch_updates(**kwargs)
+        metric = metric.merge(batch_updates)
+        ```
+        """
         stacked = jax.tree_map(lambda *xs: jnp.stack(xs), self, other)
         return stacked.aggregate()
 
-    def slice(self, **kwargs: types.IndexLike) -> "SliceParamsMetric":
-        return SliceParamsMetric(self, kwargs)
+    def index_into(self, **kwargs: types.IndexLike) -> "IndexedMetric":
+        """
+        Returns a metric that "indexes" the specified keyword arguments expected by `.update()`.
+        You can index into nested structures such as combinations of lists, tuples, dicts, or
+        any other structure that supports indexing (`__getitem__`).
 
-    def _not_initialized_error(self):
-        return ValueError(
-            f"Metric '{self.name}' has not been initialized, call 'reset()' first"
-        )
+        Example:
+
+        ```python
+        metrics = tx.Metrics([
+            tx.metrics.Mean().index_into(values=["a"]),
+            tx.metrics.Mean().index_into(values=["b"]),
+        ]).reset()
 
 
-class SliceParamsMetric(Metric):
-    arg_slice: tp.Dict[str, Slice]
-    metric: Metric = types.MetricState.node()
+        metrics = metrics.update(values={
+            "a": loss0,
+            "b": loss1,
+        })
+        ```
 
-    def __init__(
-        self,
-        metric: Metric,
-        arg_slice: tp.Dict[str, types.IndexLike],
-    ):
-        super().__init__(name=metric.name, dtype=metric.dtype)
-        self.metric = metric
-        self.arg_slice = {
-            key: tuple([index])
-            if not isinstance(index, (list, tuple))
-            else tuple(index)
-            for key, index in arg_slice.items()
-        }
+        Here `values` is set to a dict of arrays, but thanks to `.index_into()`
+        each loss can index into its correspoding array. This also works with
 
-    def reset(self) -> "SliceParamsMetric":
-        return self.replace(metric=self.metric.reset())
 
-    def update(self, **kwargs) -> "SliceParamsMetric":
+        Arguments:
+            **kwargs: keyword arguments to be indexed
 
-        # slice the arguments
-        for key, slices in self.arg_slice.items():
-            for index in slices:
-                kwargs[key] = kwargs[key][index]
-
-        return self.replace(metric=self.metric.update(**kwargs))
-
-    def compute(self) -> tp.Any:
-        return self.metric.compute()
+        Returns:
+            A IndexedMetric instance
+        """
+        return IndexedMetric(self, kwargs)
 
     def map_arg(self, **kwargs: str) -> "MapArgsMetric":
         """
-        Returns a metric  that renames the keyword arguments expected by `.update()`.
+        Returns a metric that renames the keyword arguments expected by `.update()`.
 
         Example:
 
@@ -130,6 +161,45 @@ class SliceParamsMetric(Metric):
             A MapArgsMetric instance
         """
         return MapArgsMetric(self, kwargs)
+
+    def _not_initialized_error(self):
+        return ValueError(
+            f"Metric '{self.name}' has not been initialized, call 'reset()' first"
+        )
+
+
+class IndexedMetric(Metric):
+    arg_slice: tp.Dict[str, Slice]
+    metric: Metric = types.MetricState.node()
+
+    def __init__(
+        self,
+        metric: Metric,
+        arg_slice: tp.Dict[str, types.IndexLike],
+    ):
+        super().__init__(name=metric.name, dtype=metric.dtype)
+        self.metric = metric
+        self.arg_slice = {
+            key: tuple([index])
+            if not isinstance(index, (list, tuple))
+            else tuple(index)
+            for key, index in arg_slice.items()
+        }
+
+    def reset(self) -> "IndexedMetric":
+        return self.replace(metric=self.metric.reset())
+
+    def update(self, **kwargs) -> "IndexedMetric":
+
+        # slice the arguments
+        for key, slices in self.arg_slice.items():
+            for index in slices:
+                kwargs[key] = kwargs[key][index]
+
+        return self.replace(metric=self.metric.update(**kwargs))
+
+    def compute(self) -> tp.Any:
+        return self.metric.compute()
 
 
 class MapArgsMetric(Metric):

@@ -52,7 +52,7 @@ class TestMetric:
 
     def test_on(self):
 
-        metric = MyMetric().slice(target=("a", 0), preds=("a", 0)).reset()
+        metric = MyMetric().index_into(target=("a", 0), preds=("a", 0)).reset()
 
         target = {"a": [10]}
         preds = {"a": [20]}
@@ -63,7 +63,7 @@ class TestMetric:
 
     def test_raise_positional_arguments(self):
 
-        metric = MyMetric().slice(target=("a", 0), preds=("a", 0))
+        metric = MyMetric().index_into(target=("a", 0), preds=("a", 0))
 
         target = {"a": [10]}
         preds = {"a": [20]}

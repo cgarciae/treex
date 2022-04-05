@@ -87,6 +87,9 @@ class Losses(Metric):
 
         return outputs
 
+    def compute_logs(self) -> tp.Dict[str, jnp.ndarray]:
+        return self.compute()
+
     def __call__(self: M, **kwargs) -> tp.Tuple[tp.Dict[str, jnp.ndarray], M]:
         return super().__call__(**kwargs)
 
@@ -94,7 +97,7 @@ class Losses(Metric):
         return sum(self.compute().values(), jnp.array(0.0))
 
     def slice(self, **kwargs: types.IndexLike) -> "Losses":
-        losses = {name: loss.slice(**kwargs) for name, loss in self.losses.items()}
+        losses = {name: loss.index_into(**kwargs) for name, loss in self.losses.items()}
         return self.replace(losses=losses)
 
     def loss_and_update(self: M, **kwargs) -> tp.Tuple[jnp.ndarray, M]:

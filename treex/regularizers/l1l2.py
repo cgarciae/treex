@@ -36,7 +36,7 @@ class L1L2(Loss):
         self.l1 = l1
         self.l2 = l2
 
-    def call(self, parameters: tp.Any) -> jnp.ndarray:
+    def call(self, parameters: tp.Any, **_) -> jnp.ndarray:
         """
         Computes the L1 and L2 regularization penalty simultaneously.
 

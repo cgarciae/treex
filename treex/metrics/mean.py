@@ -50,13 +50,7 @@ class Mean(Reduce):
     ):
         """Creates a `Mean` instance.
         Arguments:
-            on: A string or integer, or iterable of string or integers, that
-                indicate how to index/filter the `target` and `preds`
-                arguments before passing them to `call`. For example if `on = "a"` then
-                `target = target["a"]`. If `on` is an iterable
-                the structures will be indexed iteratively, for example if `on = ["a", 0, "b"]`
-                then `target = target["a"][0]["b"]`, same for `preds`. For more information
-                check out [Keras-like behavior](https://poets-ai.github.io/elegy/guides/modules-losses-metrics/#keras-like-behavior).
+
             kwargs: Additional keyword arguments passed to Module.
         """
         super().__init__(

@@ -136,8 +136,40 @@ class Loss(ABC):
     def call(self, **kwargs) -> jnp.ndarray:
         ...
 
-    def slice(self, **kwargs: types.IndexLike) -> "SliceParamsLoss":
-        return SliceParamsLoss(self, kwargs)
+    def index_into(self, **kwargs: types.IndexLike) -> "IndexedLoss":
+        """
+        Returns a metric that "indexes" the specified keyword arguments expected by `.update()`.
+        You can index into nested structures such as combinations of lists, tuples, dicts, or
+        any other structure that supports indexing (`__getitem__`).
+
+        Example:
+
+        ```python
+        losses = tx.Losses([
+            tx.losses.Crossentropy().index_into(target=["a"]),
+            tx.losses.Crossentropy().index_into(target=["b"]),
+        ]).reset()
+
+
+        losses = losses.update(
+            target={
+                "a": y0,
+                "b": y1,
+            },
+            preds=logits,
+        )
+        ```
+
+        Here `values` is set to a dict of arrays, but thanks to `.index_into()`
+        each loss can index into its correspoding array.
+
+        Arguments:
+            **kwargs: keyword arguments to be indexed
+
+        Returns:
+            A IndexedLoss instance
+        """
+        return IndexedLoss(self, kwargs)
 
     def map_arg(self, **kwargs: str) -> "MapArgsLoss":
         """
@@ -160,7 +192,7 @@ class Loss(ABC):
         return MapArgsLoss(self, kwargs)
 
 
-class SliceParamsLoss(Loss):
+class IndexedLoss(Loss):
     arg_slice: tp.Dict[str, Slice]
     loss: Loss
 

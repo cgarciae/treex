@@ -99,7 +99,7 @@ class CosineSimilarity(Loss):
         axis: int = -1,
         reduction: tp.Optional[Reduction] = None,
         weight: tp.Optional[float] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initializes `Mean` class.
@@ -122,6 +122,7 @@ class CosineSimilarity(Loss):
         sample_weight: tp.Optional[
             jnp.ndarray
         ] = None,  # not used, __call__ handles it, left for documentation purposes.
+        **_,
     ) -> jnp.ndarray:
         """
         Invokes the `CosineSimilarity` instance.

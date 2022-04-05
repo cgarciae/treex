@@ -6,7 +6,7 @@ from treeo import *
 
 from treex.key_seq import KeySeq
 from treex.losses import Loss
-from treex.metrics import LossesAndMetrics, Metric
+from treex.metrics import Losses, LossesAndMetrics, Metric, Metrics
 from treex.module import (
     Module,
     ModuleMeta,
@@ -42,6 +42,8 @@ __all__ = [
     "KeySeq",
     "Loss",
     "LossesAndMetrics",
+    "Losses",
+    "Metrics",
     "Metric",
     "Module",
     "ModuleMeta",

@@ -100,7 +100,8 @@ class Optimizer(Treex):
             apply_updates: if `False` then the updates are returned instead of being applied.
 
         Returns:
-            The updated parameters. If `apply_updates` is `False` then the updates are returned instead.
+            A (params, optimizer) tuple. If `apply_updates` is `False` then the updates
+            to the params are returned instead of being applied.
         """
         if not self.initialized:
             raise RuntimeError("Optimizer is not initialized")
