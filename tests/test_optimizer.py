@@ -21,7 +21,7 @@ class TestOptreex:
         @jax.grad
         def loss_fn(linear: tx.Linear):
             return sum(
-                jax.tree_leaves(jax.tree_map(lambda x: jnp.mean(x ** 2), linear)), 0.0
+                jax.tree_leaves(jax.tree_map(lambda x: jnp.mean(x**2), linear)), 0.0
             )
 
         grads = loss_fn(linear)
@@ -55,7 +55,7 @@ class TestOptreex:
         @jax.grad
         def loss_fn(linear: tx.Linear):
             return sum(
-                jax.tree_leaves(jax.tree_map(lambda x: jnp.mean(x ** 2), linear)), 0.0
+                jax.tree_leaves(jax.tree_map(lambda x: jnp.mean(x**2), linear)), 0.0
             )
 
         grads = loss_fn(linear)

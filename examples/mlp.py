@@ -66,7 +66,7 @@ def train_step(
 
 np.random.seed(69)
 x = np.random.uniform(-1, 1, size=(500, 1))
-y = 1.4 * x ** 2 - 0.3 + np.random.normal(scale=0.1, size=(500, 1))
+y = 1.4 * x**2 - 0.3 + np.random.normal(scale=0.1, size=(500, 1))
 
 model = MLP(32, 1, dropout=0.1).init(42, x)
 optimizer = tx.Optimizer(optax.adam(0.001)).init(model.trainable_parameters())
