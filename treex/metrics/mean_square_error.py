@@ -71,8 +71,9 @@ class MeanSquareError(Mean):
                 The predicted values. shape = `[batch_size, d0, .. dN]`
             sample_weight:
                 Optional weighting of each example. Defaults to 1. shape = `[batch_size, d0, .. dN]`
+
         Returns:
-            Array with the cumulative mean absolute error.
+            MeanSquareError instance with updated state
         """
         values = _mean_square_error(preds, target)
         return super().update(values, sample_weight)

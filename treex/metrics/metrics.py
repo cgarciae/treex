@@ -45,6 +45,17 @@ class Metrics(Metric):
         return self.replace(metrics=metrics)
 
     def update(self: M, **kwargs) -> M:
+        """
+        Update all metrics with the given values. Each metric will receive the
+        same keyword arguments but each can internally select the values to use.
+        If a required value is not provided, the metric will raise a TypeError.
+
+        Arguments:
+            **kwargs: Keyword arguments to pass to each metric.
+
+        Returns:
+            Metrics instance with updated state.
+        """
         metrics = {
             name: metric.update(**kwargs) for name, metric in self.metrics.items()
         }
@@ -111,6 +122,7 @@ class AuxMetrics(Metric):
         return self.replace(totals=totals, counts=counts)
 
     def update(self: A, aux_values: tp.Dict[str, jnp.ndarray], **_) -> A:
+
         if self.totals is None or self.counts is None:
             raise ValueError("AuxMetrics not initialized, call 'reset()' first")
 

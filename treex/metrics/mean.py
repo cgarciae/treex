@@ -73,7 +73,7 @@ class Mean(Reduce):
             sample_weight: Optional weighting of each example.
 
         Returns:
-            Array with the cumulative mean.
+            Mean instance with updated state.
         """
 
         return super().update(

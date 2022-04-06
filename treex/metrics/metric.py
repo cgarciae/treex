@@ -48,17 +48,44 @@ class Metric(Treex):
 
     @abstractmethod
     def reset(self: M) -> M:
+        """
+        Resets the metric state.
+
+        Returns:
+            Metric with the initial state
+        """
         ...
 
     @abstractmethod
     def update(self: M, **kwargs) -> M:
+        """
+        Update the metric with the given data. Each metric accepts a different set of
+        keyword arguments and must accept other keyword arguments, even if they not used by
+        as remaining `**kwargs`.
+
+        Arguments:
+            **kwargs: data to update the metric with
+
+        Returns:
+            Metric with updated state
+        """
         ...
 
     @abstractmethod
     def compute(self) -> tp.Any:
+        """
+        Compute the current metric value.
+        """
         ...
 
     def compute_logs(self) -> tp.Dict[str, jnp.ndarray]:
+        """
+        Compute the current metric value(s) and returns it/them
+        in a `{metric_name: metric_value}` dictionary.
+
+        Returns:
+            A dictionary of metric values
+        """
         return {self.name: self.compute()}
 
     def batch_updates(self: M, **kwargs) -> M:
