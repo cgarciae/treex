@@ -39,7 +39,8 @@ nav:
     GroupNorm: api/GroupNorm.md
     HaikuModule: api/HaikuModule.md
     Hashable: api/Hashable.md
-    Initializer: api/Initializer.md
+    Immutable: api/Immutable.md
+    ImmutableTree: api/ImmutableTree.md
     Inputs: api/Inputs.md
     KeySeq: api/KeySeq.md
     KindMixin: api/KindMixin.md
@@ -48,8 +49,9 @@ nav:
     Linear: api/Linear.md
     Log: api/Log.md
     Loss: api/Loss.md
-    LossAndLogs: api/LossAndLogs.md
     LossLog: api/LossLog.md
+    Losses: api/Losses.md
+    LossesAndMetrics: api/LossesAndMetrics.md
     MISSING: api/MISSING.md
     MLP: api/MLP.md
     Map: api/Map.md
@@ -57,6 +59,7 @@ nav:
     Metric: api/Metric.md
     MetricLog: api/MetricLog.md
     MetricState: api/MetricState.md
+    Metrics: api/Metrics.md
     Missing: api/Missing.md
     ModelState: api/ModelState.md
     Module: api/Module.md
@@ -105,14 +108,15 @@ nav:
       mean_absolute_percentage_error: api/losses/mean_absolute_percentage_error.md
       mean_squared_error: api/losses/mean_squared_error.md
       mean_squared_logarithmic_error: api/losses/mean_squared_logarithmic_error.md
+    make_mutable: api/make_mutable.md
     map: api/map.md
     merge: api/merge.md
     metrics:
       Accuracy: api/metrics/Accuracy.md
       AuxLosses: api/metrics/AuxLosses.md
       AuxMetrics: api/metrics/AuxMetrics.md
-      LossAndLogs: api/metrics/LossAndLogs.md
       Losses: api/metrics/Losses.md
+      LossesAndMetrics: api/metrics/LossesAndMetrics.md
       MAE: api/metrics/MAE.md
       MSE: api/metrics/MSE.md
       Mean: api/metrics/Mean.md
@@ -122,6 +126,7 @@ nav:
       Metrics: api/metrics/Metrics.md
       Reduce: api/metrics/Reduce.md
       Reduction: api/metrics/Reduction.md
+    mutable: api/mutable.md
     next_key: api/next_key.md
     nn:
       BatchNorm: api/nn/BatchNorm.md
@@ -150,6 +155,7 @@ nav:
     static: api/static.md
     to_dict: api/to_dict.md
     to_string: api/to_string.md
+    toplevel_mutable: api/toplevel_mutable.md
 extra:
   search:
     language: en

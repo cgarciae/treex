@@ -11,7 +11,7 @@ import yaml
 import treex as MODULE
 
 MODULE_NAME = "treex"
-INCLUDED_MODULES = {"treex", "treeo"}
+INCLUDED_MODULES = {"treex", "treeo", "jax_metrics"}
 
 
 class MemberInfo:

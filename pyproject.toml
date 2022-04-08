@@ -23,6 +23,7 @@ einops = "^0.4.0"
 treeo = "^0.1.2"
 # treeo = { path = "../treeo", develop = true }
 certifi = "^2021.10.8"
+jax_metrics = { path = "../jax-metrics", develop = true }
 
 
 [tool.poetry.dev-dependencies]
