@@ -16,7 +16,7 @@ O = tp.TypeVar("O", bound="Optimizer")
 A = tp.TypeVar("A", bound="tp.Any")
 
 
-class Optimizer(Treex):
+class Optimizer(to.Tree, to.Immutable):
     """Wraps an optax optimizer and turn it into a Pytree while maintaining a similar API.
 
     The main difference with optax is that tx.Optimizer contains its own state, thus, there is
@@ -55,15 +55,12 @@ class Optimizer(Treex):
     opt_state: tp.Optional[tp.Any] = types.OptState.node(None, init=False)
     _n_params: tp.Optional[int] = to.static(None, init=False)
 
-    # use to.field to copy class vars to instance
-    _initialized: bool = to.static(False)
-
     def __init__(self, optimizer: optax.GradientTransformation) -> None:
         self.optimizer = optimizer
 
     @property
     def initialized(self) -> bool:
-        return self._initialized
+        return self._n_params is not None
 
     def init(self: O, params: tp.Any) -> O:
         """
@@ -81,7 +78,6 @@ class Optimizer(Treex):
         return module.replace(
             opt_state=module.optimizer.init(params),
             _n_params=len(params),
-            _initialized=True,
         )
 
     # NOTE: params are flattened because:
