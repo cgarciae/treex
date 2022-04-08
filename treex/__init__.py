@@ -5,8 +5,6 @@ from flax.linen import initializers
 from treeo import *
 
 from treex.key_seq import KeySeq
-from treex.losses import Loss
-from treex.metrics import Losses, LossesAndMetrics, Metric, Metrics
 from treex.module import (
     Module,
     ModuleMeta,
@@ -36,15 +34,10 @@ from treex.types import (
 )
 from treex.utils import Key, iter_split
 
-from . import losses, metrics, nn, regularizers
+from . import nn
 
 __all__ = [
     "KeySeq",
-    "Loss",
-    "LossesAndMetrics",
-    "Losses",
-    "Metrics",
-    "Metric",
     "Module",
     "ModuleMeta",
     "compact_module",
@@ -68,10 +61,7 @@ __all__ = [
     "TreePart",
     "Inputs",
     "Named",
-    "losses",
-    "metrics",
     "nn",
-    "regularizers",
     "make_mutable",
 ]
 
