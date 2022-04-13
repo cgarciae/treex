@@ -258,7 +258,10 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
             assert _CALL_CONTEXT.call_info is not None
             # call using self to preserve references
             def eval_call(args, kwargs):
-                with to.make_mutable(self), _ModuleContext(key=utils.Key(42)):
+                initialize = not self.initialized
+                with to.make_mutable(self), _ModuleContext(
+                    key=utils.Key(42), initializing=initialize
+                ):
                     return self(*args, **kwargs)
 
             jax.eval_shape(eval_call, args, kwargs)
