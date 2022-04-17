@@ -4,7 +4,6 @@ import jax
 import jax_metrics
 import treeo
 from flax.linen import initializers
-from jax_metrics import *
 from treeo import *
 
 from treex.key_seq import KeySeq
@@ -70,4 +69,3 @@ __all__ = [
 
 __all__.extend(treeo.__all__)
 __all__.extend(nn.__all__)
-__all__.extend(jax_metrics.__all__)

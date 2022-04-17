@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "treex"
-version = "0.6.10"
+version = "0.7.0.a0"
 description = ""
 authors = ["Cristian Garcia <cgarcia.e88@gmail.com>"]
 license = "MIT"
@@ -24,7 +24,7 @@ treeo = "^0.1.2"
 # treeo = { path = "../treeo", develop = true }
 certifi = "^2021.10.8"
 # jax_metrics = { path = "../jax-metrics", develop = true }
-jax_metrics = "0.1.0.a0"
+jax_metrics = "^0.1.0.a0"
 
 
 [tool.poetry.dev-dependencies]

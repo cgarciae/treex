@@ -4,6 +4,7 @@ from functools import partial
 
 import jax
 import jax.numpy as jnp
+import jax_metrics as jm
 import matplotlib.pyplot as plt
 import numpy as np
 import optax
@@ -12,12 +13,10 @@ from datasets.load import load_dataset
 from tqdm import tqdm
 
 import treex as tx
-from treex import metrics
-from treex.utils import _check_rejit
 
 Batch = tp.Mapping[str, np.ndarray]
 Module = tx.Sequential
-Metric = tx.metrics.Accuracy
+Metric = jm.metrics.Accuracy
 Logs = tp.Mapping[str, jnp.ndarray]
 np.random.seed(420)
 
@@ -39,7 +38,7 @@ class Model(tx.Module):
         self.key = tx.Key(key)
         self.module = module
         self.optimizer = tx.Optimizer(optimizer)
-        self.losses_and_metrics = tx.LossesAndMetrics(
+        self.losses_and_metrics = jm.LossesAndMetrics(
             losses=losses,
             metrics=metrics,
         )
@@ -154,8 +153,8 @@ def main(
             tx.Linear(10),
         ),
         optimizer=optax.adamw(1e-3),
-        losses=tx.losses.Crossentropy(),
-        metrics=tx.metrics.Accuracy(),
+        losses=jm.losses.Crossentropy(),
+        metrics=jm.metrics.Accuracy(),
     )
 
     model: Model = model.init_step(X_train[:batch_size])

@@ -7,7 +7,6 @@ import numpy as np
 import optax
 
 import treex as tx
-from treex.nn import dropout
 
 
 class MLP(tx.Module):

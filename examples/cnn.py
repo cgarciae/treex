@@ -3,6 +3,7 @@ from functools import partial
 
 import jax
 import jax.numpy as jnp
+import jax_metrics as jm
 import matplotlib.pyplot as plt
 import numpy as np
 import optax
@@ -32,7 +33,7 @@ def init_step(
 
 
 @jax.jit
-def reset_step(losses_and_metrics: tx.LossesAndMetrics) -> tx.LossesAndMetrics:
+def reset_step(losses_and_metrics: jm.LossesAndMetrics) -> jm.LossesAndMetrics:
     return losses_and_metrics.reset()
 
 
@@ -40,10 +41,10 @@ def loss_fn(
     params: tp.Optional[Model],
     key: tp.Optional[jnp.ndarray],
     model: Model,
-    losses_and_metrics: tx.LossesAndMetrics,
+    losses_and_metrics: jm.LossesAndMetrics,
     x: jnp.ndarray,
     y: jnp.ndarray,
-) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, tx.LossesAndMetrics]]:
+) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, jm.LossesAndMetrics]]:
     if params is not None:
         model = model.merge(params)
 
@@ -62,10 +63,10 @@ def train_step(
     key: jnp.ndarray,
     model: Model,
     optimizer: tx.Optimizer,
-    losses_and_metrics: tx.LossesAndMetrics,
+    losses_and_metrics: jm.LossesAndMetrics,
     x: jnp.ndarray,
     y: jnp.ndarray,
-) -> tp.Tuple[Model, tx.Optimizer, tx.LossesAndMetrics]:
+) -> tp.Tuple[Model, tx.Optimizer, jm.LossesAndMetrics]:
     print("JITTTTING")
     params = model.parameters()
 
@@ -82,10 +83,10 @@ def train_step(
 @jax.jit
 def test_step(
     model: Model,
-    losses_and_metrics: tx.LossesAndMetrics,
+    losses_and_metrics: jm.LossesAndMetrics,
     x: jnp.ndarray,
     y: jnp.ndarray,
-) -> tx.LossesAndMetrics:
+) -> jm.LossesAndMetrics:
 
     loss, (model, losses_and_metrics) = loss_fn(
         None, None, model, losses_and_metrics, x, y
@@ -131,12 +132,12 @@ def main(
     )
 
     optimizer = tx.Optimizer(optax.adamw(1e-3))
-    losses_and_metrics: tx.LossesAndMetrics = tx.LossesAndMetrics(
+    losses_and_metrics: jm.LossesAndMetrics = jm.LossesAndMetrics(
         losses=[
-            tx.losses.Crossentropy(),
+            jm.losses.Crossentropy(),
             tx.regularizers.L2(1e-4),
         ],
-        metrics=tx.metrics.Accuracy(),
+        metrics=jm.metrics.Accuracy(),
     )
 
     model, optimizer = init_step(model, optimizer, seed=42, inputs=X_train[:batch_size])

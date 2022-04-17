@@ -5,6 +5,7 @@ import einops
 import jax
 import jax.numpy as jnp
 import jax.tools.colab_tpu
+import jax_metrics as jm
 import matplotlib.pyplot as plt
 import numpy as np
 import optax
@@ -17,7 +18,7 @@ import treex as tx
 
 Batch = tp.Mapping[str, np.ndarray]
 Module = tx.Sequential
-LossesAndMetrics = tx.metrics.LossesAndMetrics
+LossesAndMetrics = jm.LossesAndMetrics
 np.random.seed(420)
 
 M = tp.TypeVar("M", bound="Model")
@@ -187,9 +188,9 @@ def main(
             tx.Linear(10),
         ),
         optimizer=optax.adamw(lr),
-        losses_and_metrics=tx.LossesAndMetrics(
-            metrics=tx.metrics.Accuracy(),
-            losses=tx.losses.Crossentropy(),
+        losses_and_metrics=jm.LossesAndMetrics(
+            metrics=jm.metrics.Accuracy(),
+            losses=jm.losses.Crossentropy(),
         ),
     )
 
