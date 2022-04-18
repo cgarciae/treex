@@ -391,13 +391,15 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
         """
         names: tp.Set[str] = set()
 
-        def metric_name(field_info: to.FieldInfo) -> str:
+        def _get_name(field_info: to.FieldInfo) -> str:
             return (
                 field_info.value.name
                 if isinstance(field_info.value, types.Named)
                 else field_info.name
                 if field_info.name is not None
-                else "aux_metric"
+                else field_info.module.__class__.__name__
+                if field_info.module is not None
+                else "unknown"
             )
 
         with to.add_field_info():
@@ -415,7 +417,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
                 fields_info[i] = field_info
 
         logs = {
-            metric_name(field_info): field_info.value.value
+            _get_name(field_info): field_info.value.value
             if isinstance(field_info.value, types.Named)
             else field_info.value
             for field_info in fields_info
