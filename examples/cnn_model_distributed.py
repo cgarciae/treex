@@ -60,7 +60,7 @@ class Model(tx.Module):
     ) -> M:
 
         init_key, self.key = jax.random.split(self.key)
-        self.module = self.module.init(init_key, x)
+        self.module = self.module.init(key=init_key)(x)
         self.optimizer = self.optimizer.init(self.module.parameters())
         self.losses_and_metrics = self.losses_and_metrics.reset()
 
@@ -87,7 +87,7 @@ class Model(tx.Module):
         if params is not None:
             self.module = self.module.merge(params)
 
-        preds, self.module = self.module.apply(key, x)
+        preds, self.module = self.module.apply(key=key)(x)
 
         batch_updates: LossesAndMetrics = self.losses_and_metrics.batch_updates(
             target=y,

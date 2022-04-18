@@ -46,7 +46,7 @@ def train_step(model: Model, optimizer: tx.Optimizer, x: jnp.ndarray, y: jnp.nda
     return loss, model, optimizer
 
 
-model = tx.Linear(1).init(42, x)
+model = tx.Linear(1).init(key=42)(x)
 optimizer = tx.Optimizer(optax.adam(0.01)).init(model)
 
 for step in range(300):

@@ -173,7 +173,7 @@ class TestTreex:
     def test_update_initializers(self):
         x = np.random.uniform(size=(5, 2))
         m = tx.Linear(3)
-        m2 = m.init(42, x)
+        m2 = m.init(key=42)(x)
 
         m = m.merge(m2)
 
@@ -272,8 +272,8 @@ class TestTreex:
 
         module = A()
 
-        module = module.init(42)
-        module = module.init(42)
+        module = module.init(key=42)()
+        module = module.init(key=42)()
 
         assert n == 1
 
@@ -288,14 +288,14 @@ class TestTreex:
         module = A()
         assert not module.initialized
 
-        module = module.init(42)
+        module = module.init(key=42)()
 
         assert module.x == 420
         assert module.initialized
 
     def test_train(self):
 
-        mlp = MLP(2, 3, 5).init(42)
+        mlp = MLP(2, 3, 5).init(key=42)()
 
         assert mlp.training
         assert mlp.linear1.training
@@ -327,7 +327,7 @@ class TestTreex:
                 return self.linear2(self.linear1(x))
 
         x = np.random.uniform(size=(2, 3))
-        mlp = MLP(2, 3, 5).init(42, x)
+        mlp = MLP(2, 3, 5).init(key=42)(x)
 
     def test_repr(self):
         class MyModule(tx.Module):
@@ -342,7 +342,7 @@ class TestTreex:
                     jnp.zeros((5, 13)),
                 ]
 
-        mlp = MyModule()  # .init(42)
+        mlp = MyModule()  # .init(key=42)()
         mlp = jax.tree_map(lambda x: jnp.asarray(x), mlp)
         mlp = mlp.filter(tx.Parameter)
 
@@ -366,7 +366,7 @@ class TestTreex:
             def __call__(self):
                 pass
 
-        mlp = MyModule()  # .init(42)
+        mlp = MyModule()  # .init(key=42)()
         mlp = jax.tree_map(jnp.asarray, mlp)
         # mlp = mlp.filter(tx.Parameter)
 
@@ -400,7 +400,7 @@ class TestTreex:
                 return dict(y1=y1, y2=y2)
 
         x = np.random.uniform(size=(5, 1))
-        mlp: MyModule = MyModule().init(42, x)
+        mlp: MyModule = MyModule().init(key=42)(x)
         mlp = jax.tree_map(jnp.asarray, mlp)
         # mlp = mlp.filter(tx.Parameter)
 
@@ -429,7 +429,7 @@ class TestTreex:
                 return x
 
         x = np.random.uniform(size=(5, 4))
-        mod = Mod().init(42, x)
+        mod = Mod().init(key=42)(x)
 
         assert len(jax.tree_leaves(mod)) == 2
 
@@ -456,7 +456,7 @@ class TestTreex:
             def __call__(self):
                 pass
 
-        mlp = MLP(2, 3, 5).init(42)
+        mlp = MLP(2, 3, 5).init(key=42)()
 
         assert "linear1" in mlp.field_metadata
 
@@ -475,9 +475,9 @@ class TestTreex:
             def __call__(self):
                 pass
 
-        mlp = MLP(2, 3, 5).init(42)
+        mlp = MLP(2, 3, 5).init(key=42)()
 
-        mlp = mlp.replace(linear3=Linear(7, 8, name="linear3").init(42))
+        mlp = mlp.replace(linear3=Linear(7, 8, name="linear3").init(key=42)())
 
         assert "linear3" in mlp.field_metadata
 
@@ -498,7 +498,7 @@ class TestTreex:
             def __call__(self):
                 pass
 
-        mlp = MLP(2, 3, 5).init(42)
+        mlp = MLP(2, 3, 5).init(key=42)()
 
         assert "linear1" in mlp.field_metadata
         assert not mlp.field_metadata["linear2"].node
@@ -520,7 +520,7 @@ class TestTreex:
             def __call__(self):
                 pass
 
-        mlp = MLP(2, 3, 5).init(42)
+        mlp = MLP(2, 3, 5).init(key=42)()
 
         assert "linear1" in mlp.field_metadata
         assert "linear2" in mlp.field_metadata
@@ -535,7 +535,7 @@ class TestTreex:
             def __call__(self):
                 pass
 
-        m: M = M().init(42)
+        m: M = M().init(key=42)()
 
         assert isinstance(m, tx.Immutable)
 
@@ -573,8 +573,7 @@ class TestTreex:
     def test_treex_parameter_filter(self):
         mlp = MLP(2, 3, 5)
 
-        with tx.make_mutable(mlp):
-            mlp.linear1.freeze(inplace=True)
+        mlp = mlp.replace(linear1=mlp.linear1.freeze())
 
         params = mlp.trainable_parameters()
         assert isinstance(params.linear1.b, tx.Nothing)
@@ -633,7 +632,7 @@ class TestCompact:
     def test_shape_inference(self):
 
         x = jnp.ones((5, 2))
-        module = LazyLinear(1).init(42, x)
+        module = LazyLinear(1).init(key=42)(x)
 
         y = module(x)
 
@@ -661,7 +660,7 @@ class TestCompact:
                 return x
 
         x = jnp.ones((5, 2))
-        mlp = MLP(3, 4).init(42, x)
+        mlp = MLP(3, 4).init(key=42)(x)
 
         y = mlp(x)
 
@@ -678,7 +677,7 @@ class TestCompact:
             return x
 
         x = jnp.ones((5, 2))
-        mlp = MLP().init(42, x, dmid=3, dout=4)
+        mlp = MLP().init(key=42)(x, dmid=3, dout=4)
 
         y = mlp(x, 3, 4)
 
@@ -706,7 +705,7 @@ class TestCompact:
                 return x
 
         x = jnp.ones((5, 2))
-        mlp = MLP(3, 4).init(42, x)
+        mlp = MLP(3, 4).init(key=42)(x)
 
         y = mlp(x)
         y = mlp(x)

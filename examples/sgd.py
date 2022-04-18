@@ -24,7 +24,7 @@ class MLP(tx.Module):
 x = np.random.uniform(-1, 1, size=(100, 1))
 y = 1.4 * x**2 - 0.3 + np.random.normal(scale=0.1, size=(100, 1))
 
-model = MLP([12, 8, 1]).init(42, x)
+model = MLP([12, 8, 1]).init(key=42)(x)
 
 
 @jax.jit

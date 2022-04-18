@@ -114,7 +114,7 @@ def loss_fn(
 ) -> tp.Tuple[jnp.ndarray, VAE]:
     model = model.merge(params)
 
-    x_pred, model = model.apply(key, x)
+    x_pred, model = model.apply(key=key)(x)
 
     crossentropy_loss = jnp.mean(optax.sigmoid_binary_cross_entropy(x_pred, x))
     aux_losses = jax.tree_leaves(model.filter(tx.LossLog))
@@ -164,7 +164,7 @@ def main(
         image_shape=image_shape,
         hidden_size=hidden_size,
         latent_size=latent_size,
-    ).init(42, X_train[:4])
+    ).init(key=42)(X_train[:4])
 
     optimizer = tx.Optimizer(optax.adam(1e-3)).init(model.trainable_parameters())
     key = tx.Key(42)
@@ -199,7 +199,7 @@ def main(
     # visualize reconstructions
     idxs = np.random.choice(len(X_test), 10)
     x_sample = X_test[idxs]
-    x_pred, model = model.apply(key, x_sample, method=model.reconstruct)
+    x_pred, model = model.apply(key=key, method=model.reconstruct)(x_sample)
 
     plt.figure()
     for i in range(5):

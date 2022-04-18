@@ -43,7 +43,7 @@ class CustomMLP(tx.Module):
         return x
 
 
-model = CustomMLP(2, 16, 1).init(42, x)
+model = CustomMLP(2, 16, 1).init(key=42)(x)
 optimizer = tx.Optimizer(optax.adam(0.01)).init(model.trainable_parameters())
 
 

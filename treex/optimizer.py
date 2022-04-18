@@ -43,7 +43,7 @@ class Optimizer(to.Tree, to.Immutable):
     ### Differences with Optax
     * `init` return a new optimizer instance, there is no `opt_state`.
     * `update` doesn't get `opt_state` as an argument, instead it performs updates
-        to its internal state inplace.
+        to its internal state.
     * `update` applies the updates to the params and returns them by default, use `update=False` to
         to get the param updates instead.
 
@@ -88,7 +88,7 @@ class Optimizer(to.Tree, to.Immutable):
         self: O, grads: A, params: tp.Optional[A] = None, apply_updates: bool = True
     ) -> tp.Tuple[A, O]:
         """
-        Applies the parameters updates and updates the optimizers internal state inplace.
+        Applies the parameters updates and updates the optimizers internal state.
 
         Arguments:
             grads: the gradients to perform the update.

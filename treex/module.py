@@ -159,11 +159,10 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
 
     def init(
         self: M,
+        *,
         key: tp.Optional[tp.Union[int, jnp.ndarray]],
-        *args,
         method: tp.Union[str, tp.Callable] = "__call__",
-        **kwargs,
-    ) -> M:
+    ) -> tp.Callable[..., M]:
         """
         Method version of `tx.init`, it applies `self` as first argument.
 
@@ -179,48 +178,54 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
         Returns:
             The new module with the fields initialized.
         """
-        module: M = self
         key = utils.Key(key) if key is not None else None
 
-        with _MODULE_CONTEXT.update(key=key, initializing=True):
+        def init_fn(*args, **kwargs) -> M:
+            module: M = self
 
-            def call_rng_init(module: Module):
-                if isinstance(module, Module) and not module._initialized:
-                    module.setup()
+            with _MODULE_CONTEXT.update(key=key, initializing=True):
 
-            module = to.apply(call_rng_init, module)
+                def call_rng_init(module: Module):
+                    if isinstance(module, Module) and not module._initialized:
+                        module.setup()
 
-            _output, module = module.apply(
-                _MODULE_CONTEXT.key, *args, method=method, **kwargs
-            )
+                module = to.apply(call_rng_init, module)
 
-            def set_initialized(module: Module):
-                if isinstance(module, Module) and not module._initialized:
-                    module._initialized = True
+                _output, module = module.apply(key=_MODULE_CONTEXT.key, method=method)(
+                    *args, **kwargs
+                )
 
-            module = to.apply(set_initialized, module)
+                def set_initialized(module: Module):
+                    if isinstance(module, Module) and not module._initialized:
+                        module._initialized = True
 
-        return module
+                module = to.apply(set_initialized, module)
+
+            return module
+
+        return init_fn
 
     def apply(
         self: M,
-        key: tp.Optional[types.KeyLike],
-        *args,
+        *,
+        key: tp.Optional[types.KeyLike] = None,
         method: tp.Union[str, tp.Callable] = "__call__",
         mutable: bool = True,
-        **kwargs,
-    ) -> tp.Tuple[tp.Any, M]:
+    ) -> tp.Callable[..., tp.Tuple[tp.Any, M]]:
 
         key = utils.Key(key) if key is not None else None
         unbounded_method = _get_unbound_method(self, method)
 
-        with _MODULE_CONTEXT.update(key=key):
+        def apply_fn(*args, **kwargs) -> tp.Tuple[tp.Any, M]:
+            with _MODULE_CONTEXT.update(key=key):
 
-            if mutable:
-                return self.mutable(*args, method=unbounded_method, **kwargs)
-            else:
-                output = unbounded_method(self, *args, **kwargs)
-                return output, self.copy()
+                if mutable:
+                    return self.mutable(method=unbounded_method)(*args, **kwargs)
+                else:
+                    output = unbounded_method(self, *args, **kwargs)
+                    return output, self.copy()
+
+        return apply_fn
 
     def setup(self) -> None:
         pass

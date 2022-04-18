@@ -79,7 +79,7 @@ class BatchNormTest(unittest.TestCase):
         treex_key = tx.Key(42)
         flax_key, _ = tx.iter_split(treex_key)  # emulate init split
         variables = flax_module.init(flax_key, x)
-        treex_module = treex_module.init(treex_key, x)
+        treex_module = treex_module.init(key=treex_key)(x)
 
         if use_bias:
             assert np.allclose(variables["params"]["bias"], treex_module.bias)
@@ -93,7 +93,7 @@ class BatchNormTest(unittest.TestCase):
         y_flax, updates = flax_module.apply(variables, x, mutable=["batch_stats"])
         variables = variables.copy(updates)
 
-        y_treex, treex_module = treex_module.mutable(x)
+        y_treex, treex_module = treex_module.mutable()(x)
 
         assert np.allclose(y_flax, y_treex)
 
@@ -108,23 +108,23 @@ class BatchNormTest(unittest.TestCase):
 
     def test_call(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.BatchNorm().init(42, x)
+        module = tx.BatchNorm().init(key=42)(x)
 
-        y, module = module.mutable(x)
+        y, module = module.mutable()(x)
 
         assert y.shape == (10, 2)
 
     def test_apply(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.BatchNorm().init(42, x)
+        module = tx.BatchNorm().init(key=42)(x)
 
-        y, module = module.apply(None, x)
+        y, module = module.apply(key=None)(x)
 
         assert y.shape == (10, 2)
 
     def test_tree(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.BatchNorm().init(42, x)
+        module = tx.BatchNorm().init(key=42)(x)
 
         flat = jax.tree_leaves(module)
 
@@ -132,7 +132,7 @@ class BatchNormTest(unittest.TestCase):
 
     def test_slice(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.BatchNorm().init(42, x)
+        module = tx.BatchNorm().init(key=42)(x)
 
         flat = jax.tree_leaves(module.filter(tx.Parameter))
         assert len(flat) == 2
@@ -147,11 +147,11 @@ class BatchNormTest(unittest.TestCase):
 
     def test_jit(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.BatchNorm().init(42, x)
+        module = tx.BatchNorm().init(key=42)(x)
 
         @jax.jit
         def f(module: tx.Module, x):
-            return module.mutable(x)
+            return module.mutable()(x)
 
         y, module2 = f(module, x)
 
@@ -173,7 +173,7 @@ class BatchNormTest(unittest.TestCase):
 
     def test_eval(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.BatchNorm().init(42, x)
+        module = tx.BatchNorm().init(key=42)(x)
 
         @jax.jit
         def f(module, x):
@@ -246,7 +246,7 @@ class LayerNormTest(unittest.TestCase):
 
         flax_key, _ = tx.iter_split(key)  # emulate init split
         variables = flax_module.init(flax_key, x)
-        treex_module = treex_module.init(key, x)
+        treex_module = treex_module.init(key=key)(x)
 
         if use_bias:
             assert np.allclose(variables["params"]["bias"], treex_module.bias)
@@ -268,7 +268,7 @@ class LayerNormTest(unittest.TestCase):
 
     def test_call(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.LayerNorm().init(42, x)
+        module = tx.LayerNorm().init(key=42)(x)
 
         y = module(x)
 
@@ -276,7 +276,7 @@ class LayerNormTest(unittest.TestCase):
 
     def test_tree(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.LayerNorm().init(42, x)
+        module = tx.LayerNorm().init(key=42)(x)
 
         flat = jax.tree_leaves(module)
 
@@ -284,7 +284,7 @@ class LayerNormTest(unittest.TestCase):
 
     def test_slice(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.LayerNorm().init(42, x)
+        module = tx.LayerNorm().init(key=42)(x)
 
         flat = jax.tree_leaves(module.filter(tx.Parameter))
         assert len(flat) == 2
@@ -299,7 +299,7 @@ class LayerNormTest(unittest.TestCase):
 
     def test_jit(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.LayerNorm().init(42, x)
+        module = tx.LayerNorm().init(key=42)(x)
 
         @jax.jit
         def f(module, x):
@@ -318,7 +318,7 @@ class LayerNormTest(unittest.TestCase):
 
     def test_eval(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.LayerNorm().init(42, x)
+        module = tx.LayerNorm().init(key=42)(x)
 
         @jax.jit
         def f(module, x):
@@ -379,7 +379,7 @@ class GroupNormTest(unittest.TestCase):
 
         flax_key, _ = tx.iter_split(key)  # emulate init split
         variables = flax_module.init(flax_key, x)
-        treex_module = treex_module.init(key, x)
+        treex_module = treex_module.init(key=key)(x)
 
         if use_bias:
             assert np.allclose(variables["params"]["bias"], treex_module.bias)
@@ -449,7 +449,7 @@ class GroupNormTest(unittest.TestCase):
 
     def test_call(self):
         x = np.random.uniform(size=(10, 32))
-        module = tx.GroupNorm().init(42, x)
+        module = tx.GroupNorm().init(key=42)(x)
 
         y = module(x)
 
@@ -457,7 +457,7 @@ class GroupNormTest(unittest.TestCase):
 
     def test_tree(self):
         x = np.random.uniform(size=(10, 32))
-        module = tx.GroupNorm().init(42, x)
+        module = tx.GroupNorm().init(key=42)(x)
 
         flat = jax.tree_leaves(module)
 
@@ -465,7 +465,7 @@ class GroupNormTest(unittest.TestCase):
 
     def test_slice(self):
         x = np.random.uniform(size=(10, 32))
-        module = tx.GroupNorm().init(42, x)
+        module = tx.GroupNorm().init(key=42)(x)
 
         flat = jax.tree_leaves(module.filter(tx.Parameter))
         assert len(flat) == 2
@@ -480,7 +480,7 @@ class GroupNormTest(unittest.TestCase):
 
     def test_jit(self):
         x = np.random.uniform(size=(10, 32))
-        module = tx.GroupNorm().init(42, x)
+        module = tx.GroupNorm().init(key=42)(x)
 
         @jax.jit
         def f(module, x):
@@ -499,7 +499,7 @@ class GroupNormTest(unittest.TestCase):
 
     def test_eval(self):
         x = np.random.uniform(size=(10, 32))
-        module = tx.GroupNorm().init(42, x)
+        module = tx.GroupNorm().init(key=42)(x)
 
         @jax.jit
         def f(module, x):

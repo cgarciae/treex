@@ -871,17 +871,22 @@ tpu = ["jaxlib (==0.3.0)", "libtpu-nightly (==0.1.dev20220128)", "requests"]
 
 [[package]]
 name = "jax-metrics"
-version = "0.1.0a1"
+version = "0.1.0.a1"
 description = ""
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7,<3.11"
+develop = true
 
 [package.dependencies]
-certifi = ">=2021.10.8,<2022.0.0"
-einops = ">=0.4.0,<0.5.0"
-optax = ">=0.1.1,<0.2.0"
-treeo = ">=0.1.2,<0.2.0"
+certifi = "^2021.10.8"
+einops = "^0.4.0"
+optax = "^0.1.1"
+treeo = {path = "../treeo", develop = true}
+
+[package.source]
+type = "directory"
+url = "../jax-metrics"
 
 [[package]]
 name = "jaxlib"
@@ -2310,14 +2315,19 @@ test = ["pytest"]
 
 [[package]]
 name = "treeo"
-version = "0.1.2"
+version = "0.2.0.a0"
 description = ""
 category = "main"
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = "^3.7"
+develop = true
 
 [package.dependencies]
 typing-extensions = ">=3.7.0"
+
+[package.source]
+type = "directory"
+url = "../treeo"
 
 [[package]]
 name = "typed-ast"
@@ -2479,7 +2489,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.11"
-content-hash = "4fbd59c1853b84b7e85eba50ae8da5e8d6db1ba87e327abf7fd35e2ad55e0c22"
+content-hash = "eb3e50508a161abadbafd61ae4d1563b991a05c08956003d9d498a703ab9779e"
 
 [metadata.files]
 absl-py = [
@@ -3082,10 +3092,7 @@ isort = [
 jax = [
     {file = "jax-0.3.1.tar.gz", hash = "sha256:bf8f36140a231ddd12d3f4c3a2e1f5aa029722cfcde9e24f99687483063f138e"},
 ]
-jax-metrics = [
-    {file = "jax_metrics-0.1.0a1-py3-none-any.whl", hash = "sha256:78d36f254806bb38c84d4e7557dce32a8ee1e180622c37afa01ba25b7db6cb5b"},
-    {file = "jax_metrics-0.1.0a1.tar.gz", hash = "sha256:c89e1b5b2a1a411ef66abdecd31c09da4d0941ec17e2bdb99725b15f449765fa"},
-]
+jax-metrics = []
 jaxlib = [
     {file = "jaxlib-0.3.0-cp310-none-macosx_10_9_x86_64.whl", hash = "sha256:172cae69926762c5664202afcbbb4700200ac982a9e8a04cd597db66bd28ae88"},
     {file = "jaxlib-0.3.0-cp310-none-macosx_11_0_arm64.whl", hash = "sha256:8cd10ff7635d1f77b704648acbed314a71cb4cb931986f1df1627f315abb921f"},
@@ -4077,10 +4084,7 @@ traitlets = [
     {file = "traitlets-5.1.1-py3-none-any.whl", hash = "sha256:2d313cc50a42cd6c277e7d7dc8d4d7fedd06a2c215f78766ae7b1a66277e0033"},
     {file = "traitlets-5.1.1.tar.gz", hash = "sha256:059f456c5a7c1c82b98c2e8c799f39c9b8128f6d0d46941ee118daace9eb70c7"},
 ]
-treeo = [
-    {file = "treeo-0.1.2-py3-none-any.whl", hash = "sha256:e45f020f5d3949745f2a80baf03cdd627f1e37cbbf78283f8710fcb721ebc93d"},
-    {file = "treeo-0.1.2.tar.gz", hash = "sha256:fc11b010f0f692946dc5326e99e6b5abad7d0c8e63efbe9042a488d7ee44a7b4"},
-]
+treeo = []
 typed-ast = [
     {file = "typed_ast-1.5.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:183b183b7771a508395d2cbffd6db67d6ad52958a5fdc99f450d954003900266"},
     {file = "typed_ast-1.5.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:676d051b1da67a852c0447621fdd11c4e104827417bf216092ec3e286f7da596"},

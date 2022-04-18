@@ -15,7 +15,7 @@ class TestSequence:
             tx.Linear(2),
             jax.nn.relu,
             tx.Linear(1),
-        ).init(42, x)
+        ).init(key=42)(x)
 
         assert isinstance(mlp.layers[1], tx.Lambda)
         assert isinstance(mlp.layers[3], tx.Lambda)
@@ -33,7 +33,7 @@ class TestSequence:
             tx.Linear(2),
             jax.nn.relu,
             tx.Linear(1),
-        ).init(42, x)
+        ).init(key=42)(x)
 
         leaves = jax.tree_leaves(mlp)
 

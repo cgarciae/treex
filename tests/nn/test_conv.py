@@ -85,7 +85,7 @@ class ConvTest(unittest.TestCase):
 
         flax_key, _ = tx.iter_split(key)  # emulate init split
         variables = flax_module.init(flax_key, x)
-        treex_module = treex_module.init(key, x)
+        treex_module = treex_module.init(key=key)(x)
 
         assert np.allclose(variables["params"]["kernel"], treex_module.kernel)
         if use_bias:
@@ -104,7 +104,7 @@ class ConvTest(unittest.TestCase):
 
     def test_call(self):
         x = np.random.uniform(size=(10, 8, 8, 2))
-        module = tx.Conv(3, [3, 3]).init(42, x)
+        module = tx.Conv(3, [3, 3]).init(key=42)(x)
 
         y = module(x)
 
@@ -112,15 +112,15 @@ class ConvTest(unittest.TestCase):
 
     def test_apply(self):
         x = np.random.uniform(size=(10, 8, 8, 2))
-        module = tx.Conv(3, [3, 3]).init(42, x)
+        module = tx.Conv(3, [3, 3]).init(key=42)(x)
 
-        y, module = module.apply(None, x)
+        y, module = module.apply(key=None)(x)
 
         assert y.shape == (10, 8, 8, 3)
 
     def test_tree(self):
         x = np.random.uniform(size=(10, 8, 8, 2))
-        module = tx.Conv(3, [3, 3]).init(42, x)
+        module = tx.Conv(3, [3, 3]).init(key=42)(x)
 
         flat = jax.tree_leaves(module)
 
@@ -128,7 +128,7 @@ class ConvTest(unittest.TestCase):
 
     def test_slice(self):
         x = np.random.uniform(size=(10, 8, 8, 2))
-        module = tx.Conv(3, [3, 3]).init(42, x)
+        module = tx.Conv(3, [3, 3]).init(key=42)(x)
 
         flat = jax.tree_leaves(module.filter(tx.Parameter))
 
@@ -140,7 +140,7 @@ class ConvTest(unittest.TestCase):
 
     def test_jit(self):
         x = np.random.uniform(size=(10, 8, 8, 2))
-        module = tx.Conv(3, [3, 3]).init(42, x)
+        module = tx.Conv(3, [3, 3]).init(key=42)(x)
 
         @jax.jit
         def f(module, x):
@@ -216,7 +216,7 @@ class ConvTransposeTest(unittest.TestCase):
 
         flax_key, _ = tx.iter_split(key)  # emulate init split
         variables = flax_module.init(flax_key, x)
-        treex_module = treex_module.init(key, x)
+        treex_module = treex_module.init(key=key)(x)
 
         assert np.allclose(variables["params"]["kernel"], treex_module.kernel)
         if use_bias:
@@ -235,7 +235,7 @@ class ConvTransposeTest(unittest.TestCase):
 
     def test_call(self):
         x = np.random.uniform(size=(10, 8, 8, 2))
-        module = tx.Conv(3, [3, 3]).init(42, x)
+        module = tx.Conv(3, [3, 3]).init(key=42)(x)
 
         y = module(x)
 
@@ -243,7 +243,7 @@ class ConvTransposeTest(unittest.TestCase):
 
     def test_tree(self):
         x = np.random.uniform(size=(10, 8, 8, 2))
-        module = tx.Conv(3, [3, 3]).init(42, x)
+        module = tx.Conv(3, [3, 3]).init(key=42)(x)
 
         flat = jax.tree_leaves(module)
 
@@ -251,7 +251,7 @@ class ConvTransposeTest(unittest.TestCase):
 
     def test_slice(self):
         x = np.random.uniform(size=(10, 8, 8, 2))
-        module = tx.Conv(3, [3, 3]).init(42, x)
+        module = tx.Conv(3, [3, 3]).init(key=42)(x)
 
         flat = jax.tree_leaves(module.filter(tx.Parameter))
 
@@ -263,7 +263,7 @@ class ConvTransposeTest(unittest.TestCase):
 
     def test_jit(self):
         x = np.random.uniform(size=(10, 8, 8, 2))
-        module = tx.Conv(3, [3, 3]).init(42, x)
+        module = tx.Conv(3, [3, 3]).init(key=42)(x)
 
         @jax.jit
         def f(module, x):

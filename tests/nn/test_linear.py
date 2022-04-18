@@ -75,7 +75,7 @@ class LinearTest(unittest.TestCase):
 
         flax_key, _ = tx.iter_split(key)  # emulate init split
         variables = flax_module.init({"params": flax_key}, x)
-        treex_module = treex_module.init(key, x)
+        treex_module = treex_module.init(key=key)(x)
 
         assert np.allclose(variables["params"]["kernel"], treex_module.kernel)
         if use_bias:
@@ -94,7 +94,7 @@ class LinearTest(unittest.TestCase):
 
     def test_call(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.Linear(3).init(42, x)
+        module = tx.Linear(3).init(key=42)(x)
 
         y = module(x)
 
@@ -102,15 +102,15 @@ class LinearTest(unittest.TestCase):
 
     def test_apply(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.Linear(3).init(42, x)
+        module = tx.Linear(3).init(key=42)(x)
 
-        y, module = module.apply(None, x)
+        y, module = module.apply(key=None)(x)
 
         assert y.shape == (10, 3)
 
     def test_tree(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.Linear(3).init(42, x)
+        module = tx.Linear(3).init(key=42)(x)
 
         flat = jax.tree_leaves(module)
 
@@ -118,7 +118,7 @@ class LinearTest(unittest.TestCase):
 
     def test_slice(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.Linear(3).init(42, x)
+        module = tx.Linear(3).init(key=42)(x)
 
         flat = jax.tree_leaves(module.filter(tx.Parameter))
 
@@ -130,7 +130,7 @@ class LinearTest(unittest.TestCase):
 
     def test_jit(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.Linear(3).init(42, x)
+        module = tx.Linear(3).init(key=42)(x)
 
         @jax.jit
         def f(module, x):

@@ -24,62 +24,56 @@ class Treex(
     A Tree class with all Mixin Extensions. Base class for all Treex classes.
     """
 
-    def train(self: T, mode: bool = True, inplace: bool = False) -> T:
+    def train(self: T, mode: bool = True) -> T:
         """
         Creates a new module with the same structure, but with `Module.training` set to the given value.
 
         Arguments:
             mode: The new training mode.
-            inplace: Whether to update the module inplace.
         Returns:
-            The new module in with the training mode is set to the given value,
-            if `inplace` is `True` then `self` is returned.
+            The new module in with the training mode is set to the given value.
         """
 
         def set_training(tree):
             if isinstance(tree, Treex) and hasattr(tree, "_training"):
                 tree._training = mode
 
-        return to.apply(set_training, self, inplace=inplace)
+        return to.apply(set_training, self)
 
-    def eval(self: T, inplace: bool = False) -> T:
+    def eval(self: T) -> T:
         """
         Creates a new module with the training mode set to False, equivalent to calling `train(False)`.
 
         Returns:
             The new module with the training mode set to False.
         """
-        return self.train(False, inplace=inplace)
+        return self.train(False)
 
-    def freeze(self: T, mode: bool = True, inplace: bool = False) -> T:
+    def freeze(self: T, mode: bool = True) -> T:
         """
         Creates a new module with the same structure, but with `Module.frozen` set
         to the given value.
 
         Arguments:
             mode: The new `frozen` mode.
-            inplace: Whether to update the module inplace.
         Returns:
-            The new module in with the `frozen` mode is set to the given value,
-            if `inplace` is `True` then `self` is returned.
+            The new module in with the `frozen` mode is set to the given value.
         """
 
         def set_frozen(tree):
             if isinstance(tree, Treex) and hasattr(tree, "_frozen"):
                 tree._frozen = mode
 
-        return to.apply(set_frozen, self, inplace=inplace)
+        return to.apply(set_frozen, self)
 
-    def unfreeze(self: T, inplace: bool = False) -> T:
+    def unfreeze(self: T) -> T:
         """
         Creates a new module with `.frozen` set to False, equivalent to calling `freeze(False)`.
 
-        Arguments:
-            inplace: Whether to update the module inplace.
         Returns:
-            The new module with `.frozen` set to False, if `inplace` is `True` then `self` is returned.
+            The new module with `.frozen` set to False.
         """
-        return self.freeze(False, inplace=inplace)
+        return self.freeze(False)
 
 
 class Filters:

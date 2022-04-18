@@ -36,7 +36,7 @@ def init_step(
 ) -> tp.Tuple[jnp.ndarray, Model, tx.Optimizer, jm.LossesAndMetrics]:
 
     model_key, key = jax.random.split(key)
-    model = model.init(model_key, x)
+    model = model.init(key=model_key)(x)
     optimizer = optimizer.init(model.trainable_parameters())
     losses_and_metrics = losses_and_metrics.reset()
 
@@ -64,7 +64,7 @@ def loss_fn(
     if params is not None:
         model = model.merge(params)
 
-    preds, model = model.apply(key, x)
+    preds, model = model.apply(key=key)(x)
 
     batch_updates = losses_and_metrics.batch_updates(target=y, preds=preds)
     loss = batch_updates.total_loss()

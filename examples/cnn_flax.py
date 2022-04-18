@@ -46,7 +46,7 @@ def init_step(
     seed: int,
     inputs: tp.Any,
 ) -> tp.Tuple[Model, tx.Optimizer]:
-    model = model.init(seed, inputs)
+    model = model.init(key=seed)(inputs)
     optiizer = optiizer.init(model.parameters())
 
     return model, optiizer
@@ -68,7 +68,7 @@ def loss_fn(
     if params is not None:
         model = model.merge(params)
 
-    preds, model = model.apply(key, x)
+    preds, model = model.apply(key=key)(x)
     loss, losses_and_metrics = losses_and_metrics.loss_and_update(target=y, preds=preds)
 
     return loss, (model, losses_and_metrics)
@@ -114,7 +114,7 @@ def test_step(
 @jax.jit
 def predict(model: Model, x: jnp.ndarray):
     key = tx.Key(42)
-    return model.apply(key, x)[0].argmax(axis=1)
+    return model.apply(key=key)(x)[0].argmax(axis=1)
 
 
 # define parameters
@@ -133,7 +133,7 @@ def main(
     y_test = dataset["test"]["label"]
 
     # define model
-    model: Model = tx.FlaxModule(CNN()).init(42, X_train[:32])
+    model: Model = tx.FlaxModule(CNN()).init(key=42)(X_train[:32])
 
     optimizer = tx.Optimizer(optax.adamw(1e-3))
     losses_and_metrics: jm.LossesAndMetrics = jm.LossesAndMetrics(
