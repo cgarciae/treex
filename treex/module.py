@@ -191,9 +191,11 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
 
                 module = to.apply(call_rng_init, module)
 
-                _output, module = module.apply(key=_MODULE_CONTEXT.key, method=method)(
-                    *args, **kwargs
-                )
+                _output, module = module.apply(
+                    key=_MODULE_CONTEXT.key,
+                    method=method,
+                    mutable=True,
+                )(*args, **kwargs)
 
                 def set_initialized(module: Module):
                     if isinstance(module, Module) and not module._initialized:
@@ -220,10 +222,11 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
             with _MODULE_CONTEXT.update(key=key):
 
                 if mutable:
-                    return self.mutable(method=unbounded_method)(*args, **kwargs)
+                    return to.mutable(unbounded_method)(self, *args, **kwargs)
                 else:
-                    output = unbounded_method(self, *args, **kwargs)
-                    return output, self.copy()
+                    module = self.copy()
+                    output = unbounded_method(module, *args, **kwargs)
+                    return output, module
 
         return apply_fn
 

@@ -21,8 +21,8 @@ class TestFlaxModule:
         flax_module = SomeModule()
         treex_module = tx.FlaxModule(flax_module).init(key=42)(x)
 
-        y, treex_module = treex_module.apply(key=69)(x)
-        y2, treex_module = treex_module.apply(key=69)(x, training=False)
+        y, treex_module = treex_module.apply(key=69, mutable=True)(x)
+        y2, treex_module = treex_module.apply(key=69, mutable=True)(x, training=False)
 
         assert not np.allclose(y, y2)
 
@@ -72,7 +72,7 @@ class TestFlaxModule:
 
         treex_key = tx.Key(42)
         flax_key, _ = jax.random.split(treex_key, 2)
-        y_treex, treex_module = treex_module.apply(key=treex_key)(x)
+        y_treex, treex_module = treex_module.apply(key=treex_key, mutable=True)(x)
 
         y_flax, updates = flax_module.apply(
             variables,
@@ -138,7 +138,7 @@ class TestFlaxModule:
             mutable=["batch_stats"],
         )
         variables = variables.copy(updates)
-        y_treex, treex_module = treex_module.apply(key=treex_key)(x)
+        y_treex, treex_module = treex_module.apply(key=treex_key, mutable=True)(x)
 
         # step 2
         treex_key = tx.Key(69)
@@ -151,7 +151,7 @@ class TestFlaxModule:
             mutable=["batch_stats"],
         )
         variables = variables.copy(updates)
-        y_treex, treex_module = treex_module.apply(key=treex_key)(x)
+        y_treex, treex_module = treex_module.apply(key=treex_key, mutable=True)(x)
 
         assert np.allclose(y_treex, y_flax)
 
@@ -173,6 +173,6 @@ class TestFlaxModule:
         )
         # variables = variables.copy(updates)
         treex_module = treex_module.eval()
-        y_treex, _ = treex_module.apply(key=42)(x)
+        y_treex, _ = treex_module.apply(key=42, mutable=True)(x)
 
         assert np.allclose(y_treex, y_flax)

@@ -104,7 +104,7 @@ class LinearTest(unittest.TestCase):
         x = np.random.uniform(size=(10, 2))
         module = tx.Linear(3).init(key=42)(x)
 
-        y, module = module.apply(key=None)(x)
+        y, module = module.apply()(x)
 
         assert y.shape == (10, 3)
 

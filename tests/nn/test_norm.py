@@ -93,7 +93,7 @@ class BatchNormTest(unittest.TestCase):
         y_flax, updates = flax_module.apply(variables, x, mutable=["batch_stats"])
         variables = variables.copy(updates)
 
-        y_treex, treex_module = treex_module.mutable()(x)
+        y_treex, treex_module = treex_module.apply(mutable=True)(x)
 
         assert np.allclose(y_flax, y_treex)
 
@@ -110,7 +110,7 @@ class BatchNormTest(unittest.TestCase):
         x = np.random.uniform(size=(10, 2))
         module = tx.BatchNorm().init(key=42)(x)
 
-        y, module = module.mutable()(x)
+        y, module = module.apply(mutable=True)(x)
 
         assert y.shape == (10, 2)
 
@@ -118,7 +118,7 @@ class BatchNormTest(unittest.TestCase):
         x = np.random.uniform(size=(10, 2))
         module = tx.BatchNorm().init(key=42)(x)
 
-        y, module = module.apply(key=None)(x)
+        y, module = module.apply(mutable=True)(x)
 
         assert y.shape == (10, 2)
 
@@ -151,7 +151,7 @@ class BatchNormTest(unittest.TestCase):
 
         @jax.jit
         def f(module: tx.Module, x):
-            return module.mutable()(x)
+            return module.apply(mutable=True)(x)
 
         y, module2 = f(module, x)
 

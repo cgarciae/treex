@@ -59,7 +59,7 @@ class TestGRU:
 
         @jax.jit
         def f(module: tx.Module, x):
-            return module.mutable()(x)
+            return module.apply(mutable=True)(x)
 
         y, module2 = f(module, x)
 
@@ -165,15 +165,15 @@ class TestGRU:
         inputs = np.random.rand(time, batch_size, features)
 
         # Initial state with zeros
-        last_state, gru = gru.mutable()(inputs)
+        last_state, gru = gru.apply(mutable=True)(inputs)
         assert np.allclose(last_state, base(inputs, np.zeros((batch_size, hidden_dim))))
 
         # Subsequent calls starting from `last_state`
         state = last_state
-        last_state, gru = gru.mutable()(inputs)
+        last_state, gru = gru.apply(mutable=True)(inputs)
         assert np.allclose(last_state, base(inputs, state))
 
         # Subsequent calls starting from `last_state`
         state = last_state
-        last_state, gru = gru.mutable()(inputs)
+        last_state, gru = gru.apply(mutable=True)(inputs)
         assert np.allclose(last_state, base(inputs, state))
