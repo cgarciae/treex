@@ -157,12 +157,42 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
 
         return super().__init_subclass__()
 
+    @tp.overload
     def init(
         self: M,
         *,
         key: tp.Optional[tp.Union[int, jnp.ndarray]],
         method: tp.Union[str, tp.Callable] = "__call__",
     ) -> tp.Callable[..., M]:
+        ...
+
+    @tp.overload
+    def init(
+        self: M,
+        *,
+        return_output: tp.Literal[True],
+        key: tp.Optional[tp.Union[int, jnp.ndarray]],
+        method: tp.Union[str, tp.Callable] = "__call__",
+    ) -> tp.Callable[..., tp.Union[M, tp.Tuple[tp.Any, M]]]:
+        ...
+
+    @tp.overload
+    def init(
+        self: M,
+        *,
+        return_output: tp.Literal[False],
+        key: tp.Optional[tp.Union[int, jnp.ndarray]],
+        method: tp.Union[str, tp.Callable] = "__call__",
+    ) -> tp.Callable[..., M]:
+        ...
+
+    def init(
+        self: M,
+        *,
+        key: tp.Optional[tp.Union[int, jnp.ndarray]],
+        method: tp.Union[str, tp.Callable] = "__call__",
+        return_output: bool = False,
+    ) -> tp.Callable[..., tp.Union[M, tp.Tuple[tp.Any, M]]]:
         """
         Method version of `tx.init`, it applies `self` as first argument.
 
@@ -180,7 +210,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
         """
         key = utils.Key(key) if key is not None else None
 
-        def init_fn(*args, **kwargs) -> M:
+        def init_fn(*args, **kwargs) -> tp.Union[M, tp.Tuple[tp.Any, M]]:
             module: M = self
 
             with _MODULE_CONTEXT.update(key=key, initializing=True):
@@ -191,7 +221,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
 
                 module = to.apply(call_rng_init, module)
 
-                _output, module = module.apply(
+                output, module = module.apply(
                     key=_MODULE_CONTEXT.key,
                     method=method,
                     mutable=True,
@@ -203,7 +233,10 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
 
                 module = to.apply(set_initialized, module)
 
-            return module
+            if return_output:
+                return output, module
+            else:
+                return module
 
         return init_fn
 
