@@ -16,12 +16,8 @@ class MLP(Module):
     with a given activation (relu by default), the last layer is linear.
     """
 
-    # pytree
-    layers: tp.List[Linear]
-
     # props
     features: tp.Sequence[int]
-    module: flax_module.Dense
 
     def __init__(
         self,

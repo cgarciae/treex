@@ -10,12 +10,7 @@ import treex as tx
 
 
 class MLP(tx.Module):
-    linear: tx.Linear
-    dropout: tx.Dropout
-    linear2: tx.Linear
-
     def __init__(self, dmid, dout, dropout: float = 0.5):
-
         self.dmid = dmid
         self.dout = dout
         self.dropout_rate = dropout

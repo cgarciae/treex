@@ -9,6 +9,7 @@ import jax.numpy as jnp
 import jax.tree_util
 import numpy as np
 import treeo as to
+import typing_extensions as tpe
 from rich import inspect
 from rich.table import Table
 from rich.text import Text
@@ -170,7 +171,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
     def init(
         self: M,
         *,
-        return_output: tp.Literal[True],
+        return_output: tpe.Literal[True],
         key: tp.Optional[tp.Union[int, jnp.ndarray]],
         method: tp.Union[str, tp.Callable] = "__call__",
     ) -> tp.Callable[..., tp.Union[M, tp.Tuple[tp.Any, M]]]:
@@ -180,7 +181,7 @@ class Module(Treex, Filters, metaclass=ModuleMeta):
     def init(
         self: M,
         *,
-        return_output: tp.Literal[False],
+        return_output: tpe.Literal[False],
         key: tp.Optional[tp.Union[int, jnp.ndarray]],
         method: tp.Union[str, tp.Callable] = "__call__",
     ) -> tp.Callable[..., M]:

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "treex"
-version = "0.7.0.a0"
+version = "0.7.0.a2"
 description = ""
 authors = ["Cristian Garcia <cgarcia.e88@gmail.com>"]
 license = "MIT"
@@ -20,7 +20,7 @@ PyYAML = "^6.0"
 rich = "^11.2.0"
 optax = "^0.1.1"
 einops = "^0.4.0"
-# treeo = "^0.1.2"
+# treeo = "^0.2.0.dev0"
 treeo = { path = "../treeo", develop = true }
 certifi = "^2021.10.8"
 
@@ -47,8 +47,8 @@ datasets = "^1.18.3"
 typer = "^0.4.0"
 mkdocs-jupyter = {version="^0.20.0", python=">=3.7.1"}
 black = "^22.3.0"
-jax_metrics = { path = "../jax-metrics", develop = true }
 # jax_metrics = "^0.1.0.a0"
+jax_metrics = { path = "../jax-metrics", develop = true }
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -41,6 +41,7 @@ class Encoder(tx.Module):
         self.linear1 = tx.Linear(hidden_size)
         self.linear_mean = tx.Linear(latent_size)
         self.linear_std = tx.Linear(latent_size)
+        self.kl_loss = None
 
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
         if self.initializing():
