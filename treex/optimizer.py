@@ -16,7 +16,7 @@ O = tp.TypeVar("O", bound="Optimizer")
 A = tp.TypeVar("A", bound="tp.Any")
 
 
-class Optimizer(Treex):
+class Optimizer(to.Tree, to.Immutable):
     """Wraps an optax optimizer and turn it into a Pytree while maintaining a similar API.
 
     The main difference with optax is that tx.Optimizer contains its own state, thus, there is
@@ -43,7 +43,7 @@ class Optimizer(Treex):
     ### Differences with Optax
     * `init` return a new optimizer instance, there is no `opt_state`.
     * `update` doesn't get `opt_state` as an argument, instead it performs updates
-        to its internal state inplace.
+        to its internal state.
     * `update` applies the updates to the params and returns them by default, use `update=False` to
         to get the param updates instead.
 
@@ -55,15 +55,12 @@ class Optimizer(Treex):
     opt_state: tp.Optional[tp.Any] = types.OptState.node(None, init=False)
     _n_params: tp.Optional[int] = to.static(None, init=False)
 
-    # use to.field to copy class vars to instance
-    _initialized: bool = to.static(False)
-
     def __init__(self, optimizer: optax.GradientTransformation) -> None:
         self.optimizer = optimizer
 
     @property
     def initialized(self) -> bool:
-        return self._initialized
+        return self._n_params is not None
 
     def init(self: O, params: tp.Any) -> O:
         """
@@ -77,20 +74,21 @@ class Optimizer(Treex):
         """
         module = to.copy(self)
         params = jax.tree_leaves(params)
-        module.opt_state = module.optimizer.init(params)
-        module._n_params = len(params)
-        module._initialized = True
-        return module
+
+        return module.replace(
+            opt_state=module.optimizer.init(params),
+            _n_params=len(params),
+        )
 
     # NOTE: params are flattened because:
     # - The flat list is not a Module, thus all of its internal parameters in the list are marked as
     # OptState by a single annotation (no need to rewrite the module's annotations)
     # - It ignores the static part of Modules which if changed Optax yields an error.
     def update(
-        self, grads: A, params: tp.Optional[A] = None, apply_updates: bool = True
-    ) -> A:
+        self: O, grads: A, params: tp.Optional[A] = None, apply_updates: bool = True
+    ) -> tp.Tuple[A, O]:
         """
-        Applies the parameters updates and updates the optimizers internal state inplace.
+        Applies the parameters updates and updates the optimizers internal state.
 
         Arguments:
             grads: the gradients to perform the update.
@@ -98,7 +96,8 @@ class Optimizer(Treex):
             apply_updates: if `False` then the updates are returned instead of being applied.
 
         Returns:
-            The updated parameters. If `apply_updates` is `False` then the updates are returned instead.
+            A (params, optimizer) tuple. If `apply_updates` is `False` then the updates
+            to the params are returned instead of being applied.
         """
         if not self.initialized:
             raise RuntimeError("Optimizer is not initialized")
@@ -120,7 +119,7 @@ class Optimizer(Treex):
             )
 
         param_updates: A
-        param_updates, self.opt_state = self.optimizer.update(
+        param_updates, opt_state = self.optimizer.update(
             opt_grads,
             self.opt_state,
             opt_params,
@@ -132,7 +131,9 @@ class Optimizer(Treex):
         else:
             output = param_updates
 
-        return jax.tree_unflatten(treedef, output)
+        output = jax.tree_unflatten(treedef, output)
+
+        return output, self.replace(opt_state=opt_state)
 
     # THE FOLOWING METHODS ARE AUTOMATICALLY GENERATED
     # >>> DO NOT MODIFY <<<

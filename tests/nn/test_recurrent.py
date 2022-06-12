@@ -16,7 +16,7 @@ class TestGRU:
     )
     @hp.settings(deadline=None, max_examples=20)
     def test_init_carry(self, batch_size, hidden_dim):
-        next_key = tx.KeySeq().init(42)
+        next_key = tx.Key(42)
         carry = recurrent.GRU(hidden_dim).module.initialize_carry(
             next_key, (batch_size,), hidden_dim
         )
@@ -36,7 +36,7 @@ class TestGRU:
         gru = recurrent.GRU(
             hidden_dim, return_state=True, return_sequences=True, time_axis=time_axis
         )
-        gru = gru.init(key, (jnp.ones((1, 1, features)), jnp.ones((1, hidden_dim))))
+        gru = gru.init(key=key)(jnp.ones((1, 1, features)), jnp.ones((1, hidden_dim)))
 
         carry = gru.module.initialize_carry(key, (batch_size,), hidden_dim)
 
@@ -44,7 +44,7 @@ class TestGRU:
         if time_axis == 0:
             dims = (timesteps, batch_size, features)
 
-        sequences, final_state = gru(jnp.ones(dims), carry)
+        (sequences, final_state), gru = gru.apply(key=42)(jnp.ones(dims), carry)
 
         assert final_state.shape == (batch_size, hidden_dim)
 
@@ -55,13 +55,14 @@ class TestGRU:
 
     def test_jit(self):
         x = np.random.uniform(size=(20, 10, 2))
-        module = recurrent.GRU(3, time_axis=0).init(42, (x, jnp.zeros((10, 3))))
+        module = recurrent.GRU(3, time_axis=0).init(key=42)(x, jnp.zeros((10, 3)))
 
         @jax.jit
-        def f(module, x):
-            return module, module(x)
+        def f(module: tx.Module, x):
+            return module.apply(mutable=True)(x)
 
-        module2, y = f(module, x)
+        y, module2 = f(module, x)
+
         assert y.shape == (10, 3)
         print(jax.tree_leaves(module))
         print(jax.tree_leaves(module2))
@@ -88,7 +89,7 @@ class TestGRU:
             return_state=return_state,
             return_sequences=return_sequences,
         )
-        gru = gru.init(key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))))
+        gru = gru.init(key=key)(jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim)))
 
         output = gru(
             jnp.ones((time, batch_size, features)), jnp.zeros((batch_size, hidden_dim))
@@ -111,12 +112,12 @@ class TestGRU:
         time = 10
 
         gru_fwd = recurrent.GRU(hidden_dim, time_axis=0, go_backwards=False)
-        gru_fwd = gru_fwd.init(
-            key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim)))
+        gru_fwd = gru_fwd.init(key=key)(
+            jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))
         )
 
         gru_bwd = recurrent.GRU(hidden_dim, time_axis=0, go_backwards=True)
-        gru_bwd.params = gru_fwd.params
+        gru_bwd = gru_bwd.replace(params=gru_fwd.params)
         inputs, init_carry = (
             jnp.ones((time, batch_size, features)),
             jnp.zeros((batch_size, hidden_dim)),
@@ -134,11 +135,17 @@ class TestGRU:
         time = 10
 
         gru = recurrent.GRU(hidden_dim, time_axis=0, go_backwards=False)
-        gru = gru.init(key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))))
+        gru = gru.init(key=key)(jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim)))
 
         inputs = np.random.rand(time, batch_size, features)
-        assert np.allclose(gru(inputs), gru(inputs, np.zeros((batch_size, hidden_dim))))
-        assert np.allclose(gru(inputs), gru(inputs, gru.initialize_state(batch_size)))
+        assert np.allclose(
+            gru(inputs),
+            gru(inputs, np.zeros((batch_size, hidden_dim))),
+        )
+        assert np.allclose(
+            gru(inputs),
+            gru(inputs, gru.initialize_state(batch_size)),
+        )
 
     def test_stateful(self):
         key = tx.Key(8)
@@ -148,23 +155,25 @@ class TestGRU:
         time = 10
 
         gru = recurrent.GRU(hidden_dim, time_axis=0, stateful=True)
-        gru = gru.init(key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))))
+        gru = gru.init(key=key)(jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim)))
         base = recurrent.GRU(hidden_dim, time_axis=0, stateful=False)
-        base = base.init(key, (jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))))
-        base.params = gru.params
+        base = base.init(key=key)(
+            jnp.ones((1, 1, features)), jnp.zeros((1, hidden_dim))
+        )
+        base = base.replace(params=gru.params)
 
         inputs = np.random.rand(time, batch_size, features)
 
         # Initial state with zeros
-        last_state = gru(inputs)
+        last_state, gru = gru.apply(mutable=True)(inputs)
         assert np.allclose(last_state, base(inputs, np.zeros((batch_size, hidden_dim))))
 
         # Subsequent calls starting from `last_state`
         state = last_state
-        last_state = gru(inputs)
+        last_state, gru = gru.apply(mutable=True)(inputs)
         assert np.allclose(last_state, base(inputs, state))
 
         # Subsequent calls starting from `last_state`
         state = last_state
-        last_state = gru(inputs)
+        last_state, gru = gru.apply(mutable=True)(inputs)
         assert np.allclose(last_state, base(inputs, state))

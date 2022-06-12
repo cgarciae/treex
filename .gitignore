@@ -156,3 +156,6 @@ tmp/
 
 .python-version
 /rsync.sh
+
+# custom
+/docs/api

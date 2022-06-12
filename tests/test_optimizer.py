@@ -14,14 +14,14 @@ class TestOptreex:
         optimizer = tx.Optimizer(optax_optim)
 
         x = jnp.ones((2, 4))
-        linear = tx.Linear(3).init(42, x)
+        linear = tx.Linear(3).init(key=42)(x)
         optimizer = optimizer.init(linear)
         opt_state = optax_optim.init(linear)
 
         @jax.grad
         def loss_fn(linear: tx.Linear):
             return sum(
-                jax.tree_leaves(jax.tree_map(lambda x: jnp.mean(x ** 2), linear)), 0.0
+                jax.tree_leaves(jax.tree_map(lambda x: jnp.mean(x**2), linear)), 0.0
             )
 
         grads = loss_fn(linear)
@@ -29,7 +29,7 @@ class TestOptreex:
         optax_params: tx.Linear
         optax_updates, opt_state = optax_optim.update(grads, opt_state, linear)
         optax_params = optax.apply_updates(optax_updates, linear)
-        treex_params = optimizer.update(grads, linear)
+        treex_params, optimizer = optimizer.update(grads, linear)
 
         assert all(
             np.allclose(a, b)
@@ -48,21 +48,21 @@ class TestOptreex:
         optimizer = tx.Optimizer(optax_optim)
 
         x = jnp.ones((2, 4))
-        linear = tx.Linear(3).init(42, x)
+        linear = tx.Linear(3).init(key=42)(x)
         optimizer = optimizer.init(linear)
         opt_state = optax_optim.init(linear)
 
         @jax.grad
         def loss_fn(linear: tx.Linear):
             return sum(
-                jax.tree_leaves(jax.tree_map(lambda x: jnp.mean(x ** 2), linear)), 0.0
+                jax.tree_leaves(jax.tree_map(lambda x: jnp.mean(x**2), linear)), 0.0
             )
 
         grads = loss_fn(linear)
 
         optax_updates: tx.Linear
         optax_updates, opt_state = optax_optim.update(grads, opt_state, linear)
-        treex_updates = optimizer.update(grads, linear, apply_updates=False)
+        treex_updates, optimizer = optimizer.update(grads, linear, apply_updates=False)
 
         assert all(
             np.allclose(a, b)

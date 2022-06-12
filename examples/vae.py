@@ -3,21 +3,24 @@ from functools import partial
 
 import jax
 import jax.numpy as jnp
+import jax_metrics as jm
 import matplotlib.pyplot as plt
 import numpy as np
 import optax
 import typer
 from datasets.load import load_dataset
+from tqdm import tqdm
 
 import treex as tx
 
-Batch = tp.Mapping[str, np.ndarray]
+Batch = tp.Mapping[str, jnp.ndarray]
+Logs = tp.Dict[str, jnp.ndarray]
 np.random.seed(420)
 
 
 def kl_divergence(mean: jnp.ndarray, std: jnp.ndarray) -> jnp.ndarray:
     return jnp.mean(
-        0.5 * jnp.mean(-jnp.log(std ** 2) - 1.0 + std ** 2 + mean ** 2, axis=-1)
+        0.5 * jnp.mean(-jnp.log(std**2) - 1.0 + std**2 + mean**2, axis=-1)
     )
 
 
@@ -27,8 +30,7 @@ class Encoder(tx.Module):
     linear1: tx.Linear
     linear_mean: tx.Linear
     linear_std: tx.Linear
-    next_key: tx.KeySeq
-    kl_loss: jnp.ndarray = tx.LossLog.node()
+    kl_loss: tp.Optional[jnp.ndarray] = tx.LossLog.node()
 
     def __init__(
         self,
@@ -39,10 +41,14 @@ class Encoder(tx.Module):
         self.linear1 = tx.Linear(hidden_size)
         self.linear_mean = tx.Linear(latent_size)
         self.linear_std = tx.Linear(latent_size)
-        self.next_key = tx.KeySeq()
-        self.kl_loss = jnp.array(0.0)
+        self.kl_loss = None
 
     def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
+        if self.initializing():
+            self.kl_loss = jnp.array(0.0, dtype=jnp.float32)
+
+        assert self.kl_loss is not None
+
         x = x.reshape((x.shape[0], -1))  # flatten
         x = self.linear1(x)
         x = jax.nn.relu(x)
@@ -54,7 +60,8 @@ class Encoder(tx.Module):
         key = self.next_key()
         z = mean + stddev * jax.random.normal(key, mean.shape)
 
-        self.kl_loss = 2e-1 * kl_divergence(mean, stddev)
+        if self.is_mutable:
+            self.kl_loss = 2e-1 * kl_divergence(mean, stddev)
 
         return z
 
@@ -75,7 +82,7 @@ class Decoder(tx.Module):
         self.linear2 = tx.Linear(np.prod(image_shape))
         self.output_shape = image_shape
 
-    def __call__(self, z: np.ndarray) -> np.ndarray:
+    def __call__(self, z: jnp.ndarray) -> jnp.ndarray:
         z = self.linear1(z)
         z = jax.nn.relu(z)
 
@@ -111,30 +118,64 @@ class VAE(tx.Module):
         return jax.nn.sigmoid(self(x))
 
 
-@partial(jax.value_and_grad, has_aux=True)
-def loss_fn(params: VAE, model: VAE, x: np.ndarray) -> tp.Tuple[jnp.ndarray, VAE]:
-    model = model.merge(params)
-    x_pred = model(x)
+@jax.jit
+def init_step(
+    key: jnp.ndarray,
+    model: VAE,
+    optimizer: tx.Optimizer,
+    metrics: jm.LossesAndMetrics,
+    x: jnp.ndarray,
+) -> tp.Tuple[VAE, tx.Optimizer, jm.LossesAndMetrics]:
+    model = model.init(key=key)(x)
+    optimizer = optimizer.init(model.trainable_parameters())
+    metrics = metrics.reset(aux_losses=model.loss_logs().as_logs())
+    return model, optimizer, metrics
 
-    crossentropy_loss = jnp.mean(optax.sigmoid_binary_cross_entropy(x_pred, x))
-    aux_losses = jax.tree_leaves(model.filter(tx.LossLog))
 
-    loss = crossentropy_loss + sum(aux_losses, 0.0)
+def loss_fn(
+    params: tp.Optional[VAE],
+    key: tp.Optional[jnp.ndarray],
+    model: VAE,
+    metrics: jm.LossesAndMetrics,
+    x: jnp.ndarray,
+) -> tp.Tuple[jnp.ndarray, tp.Tuple[VAE, jm.LossesAndMetrics]]:
 
-    return loss, model
+    if params is not None:
+        model = model.merge(params)
+
+    x_pred, model = model.apply(key=key)(x)
+
+    aux_losses = model.filter(tx.LossLog).as_logs()
+    loss, metrics = metrics.loss_and_update(
+        target=x,
+        preds=x_pred,
+        aux_losses=aux_losses,
+    )
+
+    return loss, (model, metrics)
 
 
 @jax.jit
 def train_step(
-    model: VAE, optimizer: tx.Optimizer, x: np.ndarray
-) -> tp.Tuple[jnp.ndarray, VAE, tx.Optimizer]:
-    params = model.filter(tx.Parameter)
-    (loss, model), grads = loss_fn(params, model, x)
+    key: jnp.ndarray,
+    model: VAE,
+    optimizer: tx.Optimizer,
+    metrics: jm.LossesAndMetrics,
+    x: jnp.ndarray,
+) -> tp.Tuple[jnp.ndarray, VAE, tx.Optimizer, jm.LossesAndMetrics]:
+    params = model.trainable_parameters()
+    loss_key, key = jax.random.split(key)
 
-    params = optimizer.update(grads, params)
+    grads, (model, metrics) = jax.grad(loss_fn, has_aux=True)(
+        params, loss_key, model, metrics, x
+    )
+
+    params, optimizer = optimizer.update(grads, params)
     model = model.merge(params)
 
-    return loss, model, optimizer
+    key = tp.cast(jnp.ndarray, key)
+
+    return key, model, optimizer, metrics
 
 
 # define parameters
@@ -156,46 +197,61 @@ def main(
     X_train = (X_train > 0).astype(jnp.float32)
     X_test = (X_test > 0).astype(jnp.float32)
 
-    model = VAE(
+    model: VAE = VAE(
         image_shape=image_shape,
         hidden_size=hidden_size,
         latent_size=latent_size,
-    ).init(42, X_train[:4])
+    )
+    optimizer: tx.Optimizer = tx.Optimizer(optax.adamw(1e-3))
+    metrics: jm.LossesAndMetrics = jm.LossesAndMetrics(
+        losses=jm.losses.Crossentropy(binary=True),
+        aux_losses=jm.AuxLosses(),
+    )
+    key = tx.Key(42)
 
-    optimizer = tx.Optimizer(optax.adam(1e-3))
-    optimizer = optimizer.init(model.filter(tx.Parameter))
+    model, optimizer, metrics = init_step(key, model, optimizer, metrics, X_train[:32])
 
     print(model.tabulate(X_train[:batch_size]))
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)
 
-    epoch_losses = []
+    history: tp.List[Logs] = []
+
     for epoch in range(epochs):
-        losses = []
         model = model.train()
-        for step in range(
-            len(X_train) // batch_size if steps_per_epoch < 1 else steps_per_epoch
+        metrics = metrics.reset()
+        for step in tqdm(
+            range(
+                len(X_train) // batch_size if steps_per_epoch < 1 else steps_per_epoch
+            ),
+            desc="training",
+            unit="batch",
+            leave=False,
         ):
+
             idx = np.random.choice(len(X_train), batch_size)
             x = X_train[idx]
-            loss, model, optimizer = train_step(model, optimizer, x)
-            losses.append(loss)
+            key, model, optimizer, metrics = train_step(
+                key, model, optimizer, metrics, x
+            )
 
-        epoch_loss = jnp.mean(jnp.stack(losses))
-        epoch_losses.append(epoch_loss)
-        print(f"[{epoch}] loss={epoch_loss}")
+        logs = metrics.compute()
+        history.append(logs)
+        print(f"[{epoch}] {logs}")
 
     model = model.eval()
 
     # plot loss curve
-    plt.figure()
-    plt.plot(epoch_losses)
+    for name in history[0]:
+        plt.figure()
+        plt.title(name)
+        plt.plot([logs[name] for logs in history])
 
     # visualize reconstructions
     idxs = np.random.choice(len(X_test), 10)
     x_sample = X_test[idxs]
-    x_pred = model.reconstruct(x_sample)
+    x_pred, model = model.apply(key=key, method="reconstruct")(x_sample)
 
     plt.figure()
     for i in range(5):

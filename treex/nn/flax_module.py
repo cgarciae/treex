@@ -9,15 +9,16 @@ from flax.core.frozen_dict import FrozenDict
 from flax.core.scope import FrozenVariableDict
 
 from treex import types, utils
-from treex.key_seq import KeySeq
 from treex.module import Module
 
+M = tp.TypeVar("M", bound="flax.linen.module.Module")
 
-class FlaxModule(Module):
+
+class FlaxModule(tp.Generic[M], Module):
 
     # static
-    module: to.Hashable[flax.linen.Module]
-    mutable: tp.Tuple[str, ...]
+    module: to.Hashable[M]
+    mutable_collections: tp.Tuple[str, ...]
     rngs: tp.Tuple[str, ...]
     init_rngs: tp.Tuple[str, ...]
 
@@ -26,11 +27,10 @@ class FlaxModule(Module):
     batch_stats_: tp.Optional[tp.Dict[str, tp.Any]] = types.BatchStat.node()
     cache_: tp.Optional[tp.Dict[str, tp.Any]] = types.Cache.node()
     variables_: tp.Union[tp.Dict[str, tp.Dict[str, tp.Any]], None] = types.Log.node()
-    next_key: KeySeq
 
     def __init__(
         self,
-        module: flax.linen.Module,
+        module: M,
         mutable: tp.Sequence[str] = ("batch_stats", "cache"),
         rngs: tp.Sequence[str] = ("dropout",),
         init_rngs: tp.Sequence[str] = ("params",),
@@ -39,10 +39,9 @@ class FlaxModule(Module):
     ) -> None:
 
         self.module = to.Hashable(module)
-        self.mutable = tuple(mutable)
+        self.mutable_collections = tuple(mutable)
         self.rngs = tuple(rngs)
         self.init_rngs = tuple(init_rngs)
-        self.next_key = KeySeq()
         self.params_ = None
         self.batch_stats_ = None
         self.cache_ = None
@@ -90,7 +89,7 @@ class FlaxModule(Module):
         output, updates = self.module.value.apply(
             variables,
             *args,
-            mutable=self.mutable
+            mutable=self.mutable_collections
             if self.initialized and self.training and not self.frozen
             else [],
             rngs=rngs,

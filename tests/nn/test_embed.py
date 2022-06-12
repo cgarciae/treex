@@ -69,7 +69,7 @@ class TestEmbed:
 
         flax_key, _ = tx.iter_split(key)  # emulate init split
         variables = flax_module.init(flax_key, x)
-        treex_module = treex_module.init(key, x)
+        treex_module = treex_module.init(key=key)(x)
 
         assert np.allclose(variables["params"]["embedding"], treex_module.embedding)
 
@@ -84,7 +84,7 @@ class TestEmbed:
 
     def test_call(self):
         x = np.random.randint(2, size=(10,))
-        module = tx.Embed(2, 3).init(42, x)
+        module = tx.Embed(2, 3).init(key=42)(x)
 
         y = module(x)
 
@@ -92,7 +92,7 @@ class TestEmbed:
 
     def test_tree(self):
         x = np.random.randint(2, size=(10,))
-        module = tx.Embed(2, 3).init(42, x)
+        module = tx.Embed(2, 3).init(key=42)(x)
 
         flat = jax.tree_leaves(module)
 
@@ -100,7 +100,7 @@ class TestEmbed:
 
     def test_slice(self):
         x = np.random.randint(2, size=(10,))
-        module = tx.Embed(2, 3).init(42, x)
+        module = tx.Embed(2, 3).init(key=42)(x)
 
         flat = jax.tree_leaves(module.filter(tx.Parameter))
 
@@ -112,7 +112,7 @@ class TestEmbed:
 
     def test_jit(self):
         x = np.random.randint(2, size=(10,))
-        module = tx.Embed(2, 3).init(42, x)
+        module = tx.Embed(2, 3).init(key=42)(x)
 
         @jax.jit
         def f(module, x):

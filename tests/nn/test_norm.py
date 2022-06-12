@@ -52,8 +52,6 @@ class BatchNormTest(unittest.TestCase):
 
         x = np.random.uniform(size=shape)
 
-        key = tx.Key(42)
-
         flax_module = linen.BatchNorm(
             use_running_average=use_running_average,
             axis=axis,
@@ -78,9 +76,10 @@ class BatchNormTest(unittest.TestCase):
             .freeze(frozen)
         )
 
-        flax_key, _ = tx.iter_split(key)  # emulate init split
+        treex_key = tx.Key(42)
+        flax_key, _ = tx.iter_split(treex_key)  # emulate init split
         variables = flax_module.init(flax_key, x)
-        treex_module = treex_module.init(key, x)
+        treex_module = treex_module.init(key=treex_key)(x)
 
         if use_bias:
             assert np.allclose(variables["params"]["bias"], treex_module.bias)
@@ -94,7 +93,7 @@ class BatchNormTest(unittest.TestCase):
         y_flax, updates = flax_module.apply(variables, x, mutable=["batch_stats"])
         variables = variables.copy(updates)
 
-        y_treex = treex_module(x)
+        y_treex, treex_module = treex_module.apply(mutable=True)(x)
 
         assert np.allclose(y_flax, y_treex)
 
@@ -109,15 +108,23 @@ class BatchNormTest(unittest.TestCase):
 
     def test_call(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.BatchNorm().init(42, x)
+        module = tx.BatchNorm().init(key=42)(x)
 
-        y = module(x)
+        y, module = module.apply(mutable=True)(x)
+
+        assert y.shape == (10, 2)
+
+    def test_apply(self):
+        x = np.random.uniform(size=(10, 2))
+        module = tx.BatchNorm().init(key=42)(x)
+
+        y, module = module.apply(mutable=True)(x)
 
         assert y.shape == (10, 2)
 
     def test_tree(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.BatchNorm().init(42, x)
+        module = tx.BatchNorm().init(key=42)(x)
 
         flat = jax.tree_leaves(module)
 
@@ -125,7 +132,7 @@ class BatchNormTest(unittest.TestCase):
 
     def test_slice(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.BatchNorm().init(42, x)
+        module = tx.BatchNorm().init(key=42)(x)
 
         flat = jax.tree_leaves(module.filter(tx.Parameter))
         assert len(flat) == 2
@@ -140,13 +147,13 @@ class BatchNormTest(unittest.TestCase):
 
     def test_jit(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.BatchNorm().init(42, x)
+        module = tx.BatchNorm().init(key=42)(x)
 
         @jax.jit
-        def f(module, x):
-            return module, module(x)
+        def f(module: tx.Module, x):
+            return module.apply(mutable=True)(x)
 
-        module2, y = f(module, x)
+        y, module2 = f(module, x)
 
         assert y.shape == (10, 2)
         assert all(
@@ -166,7 +173,7 @@ class BatchNormTest(unittest.TestCase):
 
     def test_eval(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.BatchNorm().init(42, x)
+        module = tx.BatchNorm().init(key=42)(x)
 
         @jax.jit
         def f(module, x):
@@ -239,7 +246,7 @@ class LayerNormTest(unittest.TestCase):
 
         flax_key, _ = tx.iter_split(key)  # emulate init split
         variables = flax_module.init(flax_key, x)
-        treex_module = treex_module.init(key, x)
+        treex_module = treex_module.init(key=key)(x)
 
         if use_bias:
             assert np.allclose(variables["params"]["bias"], treex_module.bias)
@@ -261,7 +268,7 @@ class LayerNormTest(unittest.TestCase):
 
     def test_call(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.LayerNorm().init(42, x)
+        module = tx.LayerNorm().init(key=42)(x)
 
         y = module(x)
 
@@ -269,7 +276,7 @@ class LayerNormTest(unittest.TestCase):
 
     def test_tree(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.LayerNorm().init(42, x)
+        module = tx.LayerNorm().init(key=42)(x)
 
         flat = jax.tree_leaves(module)
 
@@ -277,7 +284,7 @@ class LayerNormTest(unittest.TestCase):
 
     def test_slice(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.LayerNorm().init(42, x)
+        module = tx.LayerNorm().init(key=42)(x)
 
         flat = jax.tree_leaves(module.filter(tx.Parameter))
         assert len(flat) == 2
@@ -292,7 +299,7 @@ class LayerNormTest(unittest.TestCase):
 
     def test_jit(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.LayerNorm().init(42, x)
+        module = tx.LayerNorm().init(key=42)(x)
 
         @jax.jit
         def f(module, x):
@@ -311,7 +318,7 @@ class LayerNormTest(unittest.TestCase):
 
     def test_eval(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.LayerNorm().init(42, x)
+        module = tx.LayerNorm().init(key=42)(x)
 
         @jax.jit
         def f(module, x):
@@ -372,7 +379,7 @@ class GroupNormTest(unittest.TestCase):
 
         flax_key, _ = tx.iter_split(key)  # emulate init split
         variables = flax_module.init(flax_key, x)
-        treex_module = treex_module.init(key, x)
+        treex_module = treex_module.init(key=key)(x)
 
         if use_bias:
             assert np.allclose(variables["params"]["bias"], treex_module.bias)
@@ -412,7 +419,7 @@ class GroupNormTest(unittest.TestCase):
         batch_size=st.integers(min_value=1, max_value=32),
         length=st.integers(min_value=1, max_value=32),
         channels=st.just(32),
-        num_groups=st.sampled_from([2 ** i for i in range(5)]),
+        num_groups=st.sampled_from([2**i for i in range(5)]),
         group_size=st.none(),
         epsilon=st.floats(min_value=0.000001, max_value=0.01),
         use_bias=st.booleans(),
@@ -429,7 +436,7 @@ class GroupNormTest(unittest.TestCase):
         length=st.integers(min_value=1, max_value=32),
         channels=st.just(32),
         num_groups=st.none(),
-        group_size=st.sampled_from([2 ** i for i in range(5)]),
+        group_size=st.sampled_from([2**i for i in range(5)]),
         epsilon=st.floats(min_value=0.000001, max_value=0.01),
         use_bias=st.booleans(),
         use_scale=st.booleans(),
@@ -442,7 +449,7 @@ class GroupNormTest(unittest.TestCase):
 
     def test_call(self):
         x = np.random.uniform(size=(10, 32))
-        module = tx.GroupNorm().init(42, x)
+        module = tx.GroupNorm().init(key=42)(x)
 
         y = module(x)
 
@@ -450,7 +457,7 @@ class GroupNormTest(unittest.TestCase):
 
     def test_tree(self):
         x = np.random.uniform(size=(10, 32))
-        module = tx.GroupNorm().init(42, x)
+        module = tx.GroupNorm().init(key=42)(x)
 
         flat = jax.tree_leaves(module)
 
@@ -458,7 +465,7 @@ class GroupNormTest(unittest.TestCase):
 
     def test_slice(self):
         x = np.random.uniform(size=(10, 32))
-        module = tx.GroupNorm().init(42, x)
+        module = tx.GroupNorm().init(key=42)(x)
 
         flat = jax.tree_leaves(module.filter(tx.Parameter))
         assert len(flat) == 2
@@ -473,7 +480,7 @@ class GroupNormTest(unittest.TestCase):
 
     def test_jit(self):
         x = np.random.uniform(size=(10, 32))
-        module = tx.GroupNorm().init(42, x)
+        module = tx.GroupNorm().init(key=42)(x)
 
         @jax.jit
         def f(module, x):
@@ -492,7 +499,7 @@ class GroupNormTest(unittest.TestCase):
 
     def test_eval(self):
         x = np.random.uniform(size=(10, 32))
-        module = tx.GroupNorm().init(42, x)
+        module = tx.GroupNorm().init(key=42)(x)
 
         @jax.jit
         def f(module, x):

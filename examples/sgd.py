@@ -22,9 +22,9 @@ class MLP(tx.Module):
 
 
 x = np.random.uniform(-1, 1, size=(100, 1))
-y = 1.4 * x ** 2 - 0.3 + np.random.normal(scale=0.1, size=(100, 1))
+y = 1.4 * x**2 - 0.3 + np.random.normal(scale=0.1, size=(100, 1))
 
-model = MLP([12, 8, 1]).init(42, x)
+model = MLP([12, 8, 1]).init(key=42)(x)
 
 
 @jax.jit
@@ -35,18 +35,21 @@ def loss_fn(model, x, y):
 
 
 # in reality use optax
-def sdg(param, grad):
+def sgd(param, grad):
     return param - 0.01 * grad
 
 
 # training loop
 for step in range(10_000):
     grads = loss_fn(model, x, y)
-    model = jax.tree_map(sdg, model, grads)
+    model = jax.tree_map(sgd, model, grads)
 
 model = model.eval()
-preds = model(x)
 
-plt.plot(x, y, "o")
-plt.plot(x, preds, "x")
+X_test = np.linspace(x.min(), x.max(), 100)[:, None]
+preds = model(X_test)
+
+plt.scatter(x, y, c="k", label="data")
+plt.plot(X_test, preds, c="b", linewidth=2, label="prediction")
+plt.legend()
 plt.show()

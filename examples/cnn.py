@@ -3,6 +3,7 @@ from functools import partial
 
 import jax
 import jax.numpy as jnp
+import jax_metrics as jm
 import matplotlib.pyplot as plt
 import numpy as np
 import optax
@@ -25,68 +26,78 @@ def init_step(
     seed: int,
     inputs: tp.Any,
 ) -> tp.Tuple[Model, tx.Optimizer]:
-    model = model.init(seed, inputs=inputs)
+    model = model.init(key=seed)(inputs)
     optiizer = optiizer.init(model.parameters())
 
     return model, optiizer
 
 
 @jax.jit
-def reset_step(loss_logs: tx.LossAndLogs) -> tx.LossAndLogs:
-    loss_logs.reset()
-    return loss_logs
+def reset_step(losses_and_metrics: jm.LossesAndMetrics) -> jm.LossesAndMetrics:
+    return losses_and_metrics.reset()
 
 
 def loss_fn(
-    params: Model,
+    params: tp.Optional[Model],
+    key: tp.Optional[jnp.ndarray],
     model: Model,
-    loss_logs: tx.LossAndLogs,
+    losses_and_metrics: jm.LossesAndMetrics,
     x: jnp.ndarray,
     y: jnp.ndarray,
-) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, tx.LossAndLogs, Logs]]:
-    model = model.merge(params)
-    preds = model(x)
-    loss, losses_logs, metrics_logs = loss_logs.batch_loss_epoch_logs(
-        target=y, preds=preds
-    )
-    logs = {**losses_logs, **metrics_logs}
+) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, jm.LossesAndMetrics]]:
+    if params is not None:
+        model = model.merge(params)
 
-    return loss, (model, loss_logs, logs)
+    preds, model = model.apply(key=key)(x)
+    loss, losses_and_metrics = losses_and_metrics.loss_and_update(
+        target=y,
+        preds=preds,
+        parameters=model.trainable_parameters(),
+    )
+
+    return loss, (model, losses_and_metrics)
 
 
 @jax.jit
 def train_step(
+    key: jnp.ndarray,
     model: Model,
     optimizer: tx.Optimizer,
-    loss_logs: tx.LossAndLogs,
+    losses_and_metrics: jm.LossesAndMetrics,
     x: jnp.ndarray,
     y: jnp.ndarray,
-) -> tp.Tuple[Logs, Model, tx.Optimizer, tx.LossAndLogs]:
+) -> tp.Tuple[Model, tx.Optimizer, jm.LossesAndMetrics]:
     print("JITTTTING")
     params = model.parameters()
 
-    grads, (model, loss_logs, logs) = jax.grad(loss_fn, has_aux=True)(
-        params, model, loss_logs, x, y
+    grads, (model, losses_and_metrics) = jax.grad(loss_fn, has_aux=True)(
+        params, key, model, losses_and_metrics, x, y
     )
 
-    params = optimizer.update(grads, params)
+    params, optimizer = optimizer.update(grads, params)
     model = model.merge(params)
 
-    return logs, model, optimizer, loss_logs
+    return model, optimizer, losses_and_metrics
 
 
 @jax.jit
 def test_step(
-    model: Model, loss_logs: tx.LossAndLogs, x: jnp.ndarray, y: jnp.ndarray
-) -> tp.Tuple[Logs, tx.LossAndLogs]:
+    model: Model,
+    losses_and_metrics: jm.LossesAndMetrics,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+) -> jm.LossesAndMetrics:
 
-    loss, (model, loss_logs, logs) = loss_fn(model, model, loss_logs, x, y)
+    loss, (model, losses_and_metrics) = loss_fn(
+        None, None, model, losses_and_metrics, x, y
+    )
 
-    return logs, loss_logs
+    return losses_and_metrics
 
 
 @jax.jit
 def predict(model: Model, x: jnp.ndarray):
+    model = model.eval()
     return model(x).argmax(axis=1)
 
 
@@ -121,14 +132,17 @@ def main(
     )
 
     optimizer = tx.Optimizer(optax.adamw(1e-3))
-    loss_logs = tx.LossAndLogs(
-        losses=tx.losses.Crossentropy(),
-        metrics=tx.metrics.Accuracy(),
+    losses_and_metrics: jm.LossesAndMetrics = jm.LossesAndMetrics(
+        losses=[
+            jm.losses.Crossentropy(),
+            jm.regularizers.L2(1e-4),
+        ],
+        metrics=jm.metrics.Accuracy(),
     )
 
     model, optimizer = init_step(model, optimizer, seed=42, inputs=X_train[:batch_size])
 
-    print(model.tabulate(X_train[:batch_size], signature=True))
+    print(model.tabulate(X_train[:batch_size], show_signatures=True))
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)
@@ -137,13 +151,14 @@ def main(
 
     history_train: tp.List[Logs] = []
     history_test: tp.List[Logs] = []
+    key = tx.Key(42)
 
     for epoch in range(epochs):
         # ---------------------------------------
         # train
         # ---------------------------------------
         model = model.train()
-        loss_logs = reset_step(loss_logs)
+        losses_and_metrics = reset_step(losses_and_metrics)
         for step in tqdm(
             range(
                 len(X_train) // batch_size if steps_per_epoch < 1 else steps_per_epoch
@@ -155,17 +170,19 @@ def main(
             idx = np.random.choice(len(X_train), batch_size)
             x = X_train[idx]
             y = y_train[idx]
-            train_logs, model, optimizer, loss_logs = train_step(
-                model, optimizer, loss_logs, x, y
+            key, step_key = jax.random.split(key)
+            model, optimizer, losses_and_metrics = train_step(
+                step_key, model, optimizer, losses_and_metrics, x, y
             )
 
+        train_logs = losses_and_metrics.compute()
         history_train.append(train_logs)
 
         # ---------------------------------------
         # test
         # ---------------------------------------
         model = model.eval()
-        loss_logs = reset_step(loss_logs)
+        losses_and_metrics = reset_step(losses_and_metrics)
         for step in tqdm(
             range(
                 len(X_test) // batch_size if steps_per_epoch < 1 else steps_per_epoch
@@ -177,11 +194,12 @@ def main(
             idx = np.random.choice(len(X_test), batch_size)
             x = X_test[idx]
             y = y_test[idx]
-            test_logs, loss_logs = test_step(model, loss_logs, x, y)
+            losses_and_metrics = test_step(model, losses_and_metrics, x, y)
 
+        test_logs = losses_and_metrics.compute()
         history_test.append(test_logs)
-        test_logs = {f"{name}_valid": value for name, value in test_logs.items()}
 
+        test_logs = {f"{name}_valid": value for name, value in test_logs.items()}
         logs = {**train_logs, **test_logs}
         logs = {name: float(value) for name, value in logs.items()}
 

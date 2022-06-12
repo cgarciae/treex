@@ -74,8 +74,8 @@ class LinearTest(unittest.TestCase):
         ).train(training)
 
         flax_key, _ = tx.iter_split(key)  # emulate init split
-        variables = flax_module.init(flax_key, x)
-        treex_module = treex_module.init(key, x)
+        variables = flax_module.init({"params": flax_key}, x)
+        treex_module = treex_module.init(key=key)(x)
 
         assert np.allclose(variables["params"]["kernel"], treex_module.kernel)
         if use_bias:
@@ -94,15 +94,23 @@ class LinearTest(unittest.TestCase):
 
     def test_call(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.Linear(3).init(42, x)
+        module = tx.Linear(3).init(key=42)(x)
 
         y = module(x)
 
         assert y.shape == (10, 3)
 
+    def test_apply(self):
+        x = np.random.uniform(size=(10, 2))
+        module = tx.Linear(3).init(key=42)(x)
+
+        y, module = module.apply()(x)
+
+        assert y.shape == (10, 3)
+
     def test_tree(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.Linear(3).init(42, x)
+        module = tx.Linear(3).init(key=42)(x)
 
         flat = jax.tree_leaves(module)
 
@@ -110,7 +118,7 @@ class LinearTest(unittest.TestCase):
 
     def test_slice(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.Linear(3).init(42, x)
+        module = tx.Linear(3).init(key=42)(x)
 
         flat = jax.tree_leaves(module.filter(tx.Parameter))
 
@@ -122,7 +130,7 @@ class LinearTest(unittest.TestCase):
 
     def test_jit(self):
         x = np.random.uniform(size=(10, 2))
-        module = tx.Linear(3).init(42, x)
+        module = tx.Linear(3).init(key=42)(x)
 
         @jax.jit
         def f(module, x):
@@ -135,69 +143,3 @@ class LinearTest(unittest.TestCase):
             np.allclose(a, b)
             for a, b in zip(jax.tree_leaves(module), jax.tree_leaves(module2))
         )
-
-    def test_axis_name(self):
-        class Linear3D(tx.Linear):
-            def __init__(
-                self,
-                num_heads: int,
-                *args,
-                axis_name: tp.Any = "batch",
-                **kwargs,
-            ):
-                super().__init__(*args, axis_name=axis_name, **kwargs)
-                self.num_heads = num_heads
-
-            def __call__(self, x):
-                def call(module: "Linear3D", x):
-                    x = super(module.__class__, module).__call__(x)
-                    return x, module
-
-                x = einops.repeat(x, "... -> head ...", head=self.num_heads)
-                x, module = jax.vmap(call, axis_name=self.axis_name)(self, x)
-
-                self.merge(module, inplace=True)
-
-                return x
-
-        num_heads = 4
-        units = 3
-
-        x = np.random.uniform(size=(5, 2))
-
-        module = Linear3D(num_heads, units).init(42, x)
-
-        y = module(x)
-
-        assert y.shape == (num_heads, 5, units)
-
-    def test_vmap_compact(self):
-        @dataclass
-        class Linear3D(tx.Module):
-            num_heads: int
-            units: int
-
-            @tx.preserve_state(jax.vmap, axis_name="head")
-            @tx.compact
-            def _forward(self, x: jnp.ndarray) -> jnp.ndarray:
-                x = tx.Linear(self.units, axis_name="head")(x)
-                return x
-
-            def __call__(self, x):
-                x = einops.repeat(x, "... -> head ...", head=self.num_heads)
-                x = self._forward(x)
-                return x
-
-        num_heads = 4
-        units = 3
-
-        x = np.random.uniform(size=(5, 2))
-
-        module = Linear3D(num_heads, units).init(42, x)
-
-        assert module.linear.kernel.shape == (num_heads, 2, units)
-        assert module.linear.bias.shape == (num_heads, units)
-
-        y = module(x)
-
-        assert y.shape == (num_heads, 5, 3)

@@ -9,6 +9,8 @@ import optax
 
 import treex as tx
 
+Model = tx.Linear
+
 x = np.random.uniform(size=(500, 1))
 y = 1.4 * x - 0.3 + np.random.normal(scale=0.1, size=(500, 1))
 
@@ -26,29 +28,29 @@ def loss_fn(params, model, x, y):
     return loss, model
 
 
-grad_fn = jax.value_and_grad(loss_fn, has_aux=True)
-
 # both model and optimizer are jit-able
 @jax.jit
-def train_step(model, x, y, optimizer):
+def train_step(model: Model, optimizer: tx.Optimizer, x: jnp.ndarray, y: jnp.ndarray):
     # select only the parameters
     params = model.parameters()
 
-    (loss, model), grads = grad_fn(params, model, x, y)
+    (loss, model), grads = jax.value_and_grad(loss_fn, has_aux=True)(
+        params, model, x, y
+    )
 
     # update params and model
-    params = optimizer.update(grads, params)
+    params, optimizer = optimizer.update(grads, params)
     model = model.merge(params)
 
     # return new model and optimizer
     return loss, model, optimizer
 
 
-model = tx.Linear(1).init(42, x)
+model = tx.Linear(1).init(key=42)(x)
 optimizer = tx.Optimizer(optax.adam(0.01)).init(model)
 
 for step in range(300):
-    loss, model, optimizer = train_step(model, x, y, optimizer)
+    loss, model, optimizer = train_step(model, optimizer, x, y)
     if step % 50 == 0:
         print(f"loss: {loss:.4f}")
 

@@ -241,7 +241,7 @@ plt.show()
 ```
 
 #### A Stateful Module
-Here is an example of creating a stateful module of a `RollingMean` metric and using them with `jax.jit`. For a real use cases use the metrics inside `treex.metrics`.
+Here is an example of creating a stateful module of a `RollingMean` metric and using them with `jax.jit`.
 
 ```python
 class RollingMean(tx.Module):

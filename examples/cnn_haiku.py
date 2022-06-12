@@ -4,6 +4,7 @@ from functools import partial
 import haiku as hk
 import jax
 import jax.numpy as jnp
+import jax_metrics as jm
 import matplotlib.pyplot as plt
 import numpy as np
 import optax
@@ -12,59 +13,6 @@ from datasets.load import load_dataset
 from tqdm import tqdm
 
 import treex as tx
-
-Model = tx.HaikuModule
-Batch = tp.Mapping[str, np.ndarray]
-np.random.seed(420)
-
-
-def loss_fn(
-    params: tx.FlaxModule, model: tx.FlaxModule, x: jnp.ndarray, y: jnp.ndarray
-) -> tp.Tuple[jnp.ndarray, tp.Tuple[tx.FlaxModule, jnp.ndarray]]:
-    model = model.merge(params)
-    preds = model(x)
-
-    loss = jnp.mean(
-        optax.softmax_cross_entropy(
-            preds,
-            jax.nn.one_hot(y, 10),
-        )
-    )
-
-    acc_batch = preds.argmax(axis=1) == y
-
-    return loss, (model, acc_batch)
-
-
-@jax.jit
-def train_step(
-    model: Model, optimizer: tx.Optimizer, x: jnp.ndarray, y: jnp.ndarray
-) -> tp.Tuple[jnp.ndarray, Model, tx.Optimizer, jnp.ndarray]:
-    params = model.parameters()
-
-    (loss, (model, acc_batch)), grads = jax.value_and_grad(loss_fn, has_aux=True)(
-        params, model, x, y
-    )
-
-    params = optimizer.update(grads, params)
-    model = model.merge(params)
-
-    return loss, model, optimizer, acc_batch
-
-
-@jax.jit
-def test_step(
-    model: Model, x: jnp.ndarray, y: jnp.ndarray
-) -> tp.Tuple[jnp.ndarray, jnp.ndarray]:
-
-    loss, (model, acc_batch) = loss_fn(model, model, x, y)
-
-    return loss, acc_batch
-
-
-@jax.jit
-def predict(model: Model, x: jnp.ndarray):
-    return model(x).argmax(axis=1)
 
 
 def forward(x: jnp.ndarray, training: bool):
@@ -99,45 +47,133 @@ def forward(x: jnp.ndarray, training: bool):
     return x
 
 
+Batch = tp.Mapping[str, np.ndarray]
+Model = tx.HaikuModule
+Logs = tp.Dict[str, jnp.ndarray]
+np.random.seed(420)
+
+
+@partial(jax.jit, static_argnums=(2,))
+def init_step(
+    model: Model,
+    optiizer: tx.Optimizer,
+    seed: int,
+    inputs: tp.Any,
+) -> tp.Tuple[Model, tx.Optimizer]:
+    model = model.init(key=seed)(inputs)
+    optiizer = optiizer.init(model.parameters())
+
+    return model, optiizer
+
+
+@jax.jit
+def reset_step(losses_and_metrics: jm.LossesAndMetrics) -> jm.LossesAndMetrics:
+    return losses_and_metrics.reset()
+
+
+def loss_fn(
+    params: tp.Optional[Model],
+    key: tp.Optional[jnp.ndarray],
+    model: Model,
+    losses_and_metrics: jm.LossesAndMetrics,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+) -> tp.Tuple[jnp.ndarray, tp.Tuple[Model, jm.LossesAndMetrics]]:
+    if params is not None:
+        model = model.merge(params)
+
+    preds, model = model.apply(key=key)(x)
+    loss, losses_and_metrics = losses_and_metrics.loss_and_update(target=y, preds=preds)
+
+    return loss, (model, losses_and_metrics)
+
+
+@jax.jit
+def train_step(
+    key: jnp.ndarray,
+    model: Model,
+    optimizer: tx.Optimizer,
+    losses_and_metrics: jm.LossesAndMetrics,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+) -> tp.Tuple[Model, tx.Optimizer, jm.LossesAndMetrics]:
+    print("JITTTTING")
+    params = model.parameters()
+
+    grads, (model, losses_and_metrics) = jax.grad(loss_fn, has_aux=True)(
+        params, key, model, losses_and_metrics, x, y
+    )
+
+    params, optimizer = optimizer.update(grads, params)
+    model = model.merge(params)
+
+    return model, optimizer, losses_and_metrics
+
+
+@jax.jit
+def test_step(
+    model: Model,
+    losses_and_metrics: jm.LossesAndMetrics,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+) -> jm.LossesAndMetrics:
+    key = tx.Key(42)
+    loss, (model, losses_and_metrics) = loss_fn(
+        None, key, model, losses_and_metrics, x, y
+    )
+
+    return losses_and_metrics
+
+
+@jax.jit
+def predict(model: Model, x: jnp.ndarray):
+    key = tx.Key(42)
+    return model.apply(key=key)(x)[0].argmax(axis=1)
+
+
 # define parameters
 def main(
     epochs: int = 5,
     batch_size: int = 32,
     steps_per_epoch: int = -1,
 ):
+
     # load data
     dataset = load_dataset("mnist")
     dataset.set_format("np")
-    X_train = np.stack(dataset["train"]["image"])
+    X_train = np.stack(dataset["train"]["image"])[..., None]
     y_train = dataset["train"]["label"]
-    X_test = np.stack(dataset["test"]["image"])
+    X_test = np.stack(dataset["test"]["image"])[..., None]
     y_test = dataset["test"]["label"]
 
-    X_train = X_train[..., None]
-    X_test = X_test[..., None]
-
-    model = tx.HaikuModule(forward).init(42, inputs=X_train[:32])
-
-    print(model.tabulate())
+    # define model
+    model: Model = tx.HaikuModule(forward).init(key=42)(X_train[:32])
 
     optimizer = tx.Optimizer(optax.adamw(1e-3))
-    optimizer = optimizer.init(model.parameters())
+    losses_and_metrics: jm.LossesAndMetrics = jm.LossesAndMetrics(
+        losses=jm.losses.Crossentropy(),
+        metrics=jm.metrics.Accuracy(),
+    )
+
+    model, optimizer = init_step(model, optimizer, seed=42, inputs=X_train[:batch_size])
+
+    print(model.tabulate(X_train[:batch_size], show_signatures=True))
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)
+    train_logs = {}
+    test_logs = {}
 
-    epoch_train_losses = []
-    epoch_train_accs = []
-    epoch_test_losses = []
-    epoch_test_accs = []
+    history_train: tp.List[Logs] = []
+    history_test: tp.List[Logs] = []
+    key = tx.Key(42)
 
     for epoch in range(epochs):
         # ---------------------------------------
         # train
         # ---------------------------------------
-        train_losses = []
-        train_accs = []
         model = model.train()
+        losses_and_metrics = reset_step(losses_and_metrics)
         for step in tqdm(
             range(
                 len(X_train) // batch_size if steps_per_epoch < 1 else steps_per_epoch
@@ -149,21 +185,19 @@ def main(
             idx = np.random.choice(len(X_train), batch_size)
             x = X_train[idx]
             y = y_train[idx]
-            loss, model, optimizer, acc = train_step(model, optimizer, x, y)
-            train_losses.append(loss)
-            train_accs.append(acc)
+            key, step_key = jax.random.split(key)
+            model, optimizer, losses_and_metrics = train_step(
+                step_key, model, optimizer, losses_and_metrics, x, y
+            )
 
-        epoch_train_loss = jnp.mean(jnp.stack(train_losses))
-        epoch_train_acc = jnp.mean(jnp.stack(train_accs))
-        epoch_train_losses.append(epoch_train_loss)
-        epoch_train_accs.append(epoch_train_acc)
+        train_logs = losses_and_metrics.compute()
+        history_train.append(train_logs)
 
         # ---------------------------------------
         # test
         # ---------------------------------------
-        test_losses = []
-        test_accs = []
         model = model.eval()
+        losses_and_metrics = reset_step(losses_and_metrics)
         for step in tqdm(
             range(
                 len(X_test) // batch_size if steps_per_epoch < 1 else steps_per_epoch
@@ -175,30 +209,24 @@ def main(
             idx = np.random.choice(len(X_test), batch_size)
             x = X_test[idx]
             y = y_test[idx]
-            loss, acc = test_step(model, x, y)
-            test_losses.append(loss)
-            test_accs.append(acc)
+            losses_and_metrics = test_step(model, losses_and_metrics, x, y)
 
-        epoch_test_loss = jnp.mean(jnp.stack(test_losses))
-        epoch_test_acc = jnp.mean(jnp.stack(test_accs))
-        epoch_test_losses.append(epoch_test_loss)
-        epoch_test_accs.append(epoch_test_acc)
+        test_logs = losses_and_metrics.compute()
+        history_test.append(test_logs)
 
-        print(
-            f"[{epoch}] loss_train={epoch_train_loss}, acc_train={epoch_train_acc}, loss_test={epoch_test_loss}, acc_test={epoch_test_acc}"
-        )
+        test_logs = {f"{name}_valid": value for name, value in test_logs.items()}
+        logs = {**train_logs, **test_logs}
+        logs = {name: float(value) for name, value in logs.items()}
+
+        print(f"[{epoch}] {logs}")
 
     model = model.eval()
 
-    # plot loss curve
-    plt.figure()
-    plt.plot(epoch_train_losses)
-    plt.plot(epoch_test_losses)
-
-    # plot acc curve
-    plt.figure()
-    plt.plot(epoch_train_accs)
-    plt.plot(epoch_test_accs)
+    for name in history_train[0]:
+        plt.figure()
+        plt.title(name)
+        plt.plot([logs[name] for logs in history_train])
+        plt.plot([logs[name] for logs in history_test])
 
     # visualize reconstructions
     idxs = np.random.choice(len(X_test), 10)

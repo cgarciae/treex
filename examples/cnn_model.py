@@ -1,8 +1,10 @@
+import functools
 import typing as tp
 from functools import partial
 
 import jax
 import jax.numpy as jnp
+import jax_metrics as jm
 import matplotlib.pyplot as plt
 import numpy as np
 import optax
@@ -11,29 +13,32 @@ from datasets.load import load_dataset
 from tqdm import tqdm
 
 import treex as tx
-from treex import metrics
-from treex.utils import _check_rejit
 
 Batch = tp.Mapping[str, np.ndarray]
 Module = tx.Sequential
-Metric = tx.metrics.Accuracy
+Metric = jm.metrics.Accuracy
 Logs = tp.Mapping[str, jnp.ndarray]
 np.random.seed(420)
 
 M = tp.TypeVar("M", bound="Model")
+C = tp.TypeVar("C", bound="tp.Callable")
 
 
 class Model(tx.Module):
+    key: jnp.ndarray = tx.node()
+
     def __init__(
         self,
+        key: tp.Union[jnp.ndarray, int],
         module: Module,
         optimizer: optax.GradientTransformation,
         losses: tp.Any,
         metrics: tp.Any,
     ) -> None:
+        self.key = tx.Key(key)
         self.module = module
         self.optimizer = tx.Optimizer(optimizer)
-        self.loss_and_logs = tx.LossAndLogs(
+        self.losses_and_metrics = jm.LossesAndMetrics(
             losses=losses,
             metrics=metrics,
         )
@@ -41,65 +46,74 @@ class Model(tx.Module):
     def __call__(self, *args, **kwargs) -> tp.Any:
         return self.module(*args, **kwargs)
 
-    @partial(jax.jit, static_argnums=(1,))
-    def init_step(self: M, seed: int, inputs: tp.Any) -> M:
-        self.module = self.module.init(seed, inputs=inputs)
+    @jax.jit
+    @tx.toplevel_mutable
+    def init_step(self: M, x: tp.Any) -> M:
+
+        init_key, self.key = jax.random.split(self.key)
+        self.module = self.module.init(key=init_key)(x)
         self.optimizer = self.optimizer.init(self.module.parameters())
+        self.losses_and_metrics = self.losses_and_metrics.reset()
 
         return self
 
     @jax.jit
+    @tx.toplevel_mutable
     def reset_step(self: M) -> M:
-        self.loss_and_logs.reset()
+        self.losses_and_metrics = self.losses_and_metrics.reset()
         return self
 
-    @staticmethod
+    @tx.toplevel_mutable
     def loss_fn(
-        params: Module,
-        model: "Model",
+        self: "Model",
+        params: tp.Optional[Module],
+        key: tp.Optional[jnp.ndarray],
         x: jnp.ndarray,
         y: jnp.ndarray,
-    ) -> tp.Tuple[jnp.ndarray, tp.Tuple["Model", Logs]]:
-        model.module = model.module.merge(params)
-        preds = model.module(x)
+    ) -> tp.Tuple[jnp.ndarray, "Model"]:
 
-        loss, losses_logs, metrics_logs = model.loss_and_logs.batch_loss_epoch_logs(
+        if params is not None:
+            self.module = self.module.merge(params)
+
+        preds, self.module = self.module.apply(key=key)(x)
+
+        loss, self.losses_and_metrics = self.losses_and_metrics.loss_and_update(
             target=y,
             preds=preds,
         )
-        logs = {**losses_logs, **metrics_logs}
 
-        return loss, (model, logs)
+        return loss, self
 
     @jax.jit
+    @tx.toplevel_mutable
     def train_step(
         self: M,
         x: jnp.ndarray,
         y: jnp.ndarray,
-    ) -> tp.Tuple[M, Logs]:
+    ) -> M:
         print("JITTTTING")
-        model = self
-        params = model.module.parameters()
 
-        grads, (model, logs) = jax.grad(model.loss_fn, has_aux=True)(
-            params, model, x, y
-        )
+        params = self.module.parameters()
+        loss_key, self.key = jax.random.split(self.key)
 
-        params = model.optimizer.update(grads, params)
-        model.module = model.module.merge(params)
+        grads, self = jax.grad(self.loss_fn, has_aux=True)(params, loss_key, x, y)
 
-        return model, logs
+        params, self.optimizer = self.optimizer.update(grads, params)
+        self.module = self.module.merge(params)
+
+        return self
 
     @jax.jit
+    @tx.toplevel_mutable
     def test_step(
         self: M,
         x: jnp.ndarray,
         y: jnp.ndarray,
-    ) -> tp.Tuple[M, Logs]:
+    ) -> M:
 
-        loss, (model, logs) = self.loss_fn(self.module, self, x, y)
+        loss, self = self.loss_fn(None, None, x, y)
 
-        return model, logs
+        return self
 
     @jax.jit
     def predict(self, x: jnp.ndarray) -> jnp.ndarray:
@@ -111,6 +125,7 @@ def main(
     epochs: int = 5,
     batch_size: int = 32,
     steps_per_epoch: int = -1,
+    seed: int = 420,
 ):
 
     # load data
@@ -123,6 +138,7 @@ def main(
 
     # define model
     model = Model(
+        key=seed,
         module=tx.Sequential(
             tx.Conv(32, [3, 3], strides=[2, 2]),
             tx.BatchNorm(),
@@ -137,13 +153,13 @@ def main(
             tx.Linear(10),
         ),
         optimizer=optax.adamw(1e-3),
-        losses=tx.losses.Crossentropy(),
-        metrics=tx.metrics.Accuracy(),
+        losses=jm.losses.Crossentropy(),
+        metrics=jm.metrics.Accuracy(),
     )
 
-    model: Model = model.init_step(seed=42, inputs=X_train[:batch_size])
+    model: Model = model.init_step(X_train[:batch_size])
 
-    print(model.module.tabulate(X_train[:batch_size], signature=True))
+    print(model.module.tabulate(X_train[:batch_size], show_signatures=True))
 
     print("X_train:", X_train.shape, X_train.dtype)
     print("X_test:", X_test.shape, X_test.dtype)
@@ -170,7 +186,11 @@ def main(
             idx = np.random.choice(len(X_train), batch_size)
             x = X_train[idx]
             y = y_train[idx]
-            model, train_logs = model.train_step(x, y)
+            model = model.train_step(x, y)
+
+            # jax.tree_map(lambda a, b: a, model, model2)
+
+            train_logs = model.losses_and_metrics.compute()
 
         history_train.append(train_logs)
 
@@ -190,11 +210,12 @@ def main(
             idx = np.random.choice(len(X_test), batch_size)
             x = X_test[idx]
             y = y_test[idx]
-            model, test_logs = model.test_step(x, y)
+            model = model.test_step(x, y)
 
+        test_logs = model.losses_and_metrics.compute()
         history_test.append(test_logs)
-        test_logs = {f"{name}_valid": value for name, value in test_logs.items()}
 
+        test_logs = {f"{name}_valid": value for name, value in test_logs.items()}
         logs = {**train_logs, **test_logs}
         logs = {name: float(value) for name, value in logs.items()}
 

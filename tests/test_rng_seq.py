@@ -7,27 +7,23 @@ import treex as tx
 
 class TestRNGSeq:
     def test_next(self):
-        next_key = tx.KeySeq().init(42)
+        seq = tx.KeySeq(42)
 
-        internal_key = next_key.key
-        key_next = next_key()
-        next_internal_key = next_key.key
+        internal_key = seq.key
+        key_next = seq.next()
+        next_internal_key = seq.key
 
         assert isinstance(internal_key, jnp.ndarray)
         assert isinstance(next_internal_key, jnp.ndarray)
         assert np.allclose(key_next, jax.random.split(internal_key)[0])
         assert np.allclose(next_internal_key, jax.random.split(internal_key)[1])
 
-    def test_jit(self):
-        next_key = tx.KeySeq().init(42)
-        internal_key = next_key.key
+    def test_next_function(self):
+        seq = tx.KeySeq(42)
 
-        @jax.jit
-        def f(next_key):
-            return next_key, next_key()
-
-        next_key, key_next = f(next_key)
-        next_internal_key = next_key.key
+        internal_key = seq.key
+        key_next = next(seq)
+        next_internal_key = seq.key
 
         assert isinstance(internal_key, jnp.ndarray)
         assert isinstance(next_internal_key, jnp.ndarray)

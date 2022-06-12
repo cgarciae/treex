@@ -8,7 +8,7 @@ from treex import types, utils
 from treex.module import Module
 
 
-class KeySeq(Module):
+class KeySeq:
     """KeySeq is simple module that can produce a sequence of PRNGKeys.
 
     Example:
@@ -27,45 +27,29 @@ class KeySeq(Module):
     ```
     """
 
-    key: tp.Union[types.Initializer, jnp.ndarray] = types.Rng.node()
+    key: jnp.ndarray
 
     def __init__(
         self,
-        key: tp.Optional[tp.Union[jnp.ndarray, int]] = None,
-        *,
-        axis_name: tp.Optional[tp.Any] = None
+        key: tp.Union[jnp.ndarray, int],
     ):
         """
         Arguments:
             key: An optional PRNGKey to initialize the KeySeq with.
         """
 
-        self.key = (
-            utils.Key(key)
-            if isinstance(key, int)
-            else key
-            if isinstance(key, (jnp.ndarray, np.ndarray))
-            else types.Initializer(lambda key: key)
-        )
-        self.axis_name = axis_name
+        self.key = utils.Key(key)
 
-    def __call__(self, *, axis_name: tp.Optional[tp.Any] = None) -> jnp.ndarray:
+    def next(self) -> jnp.ndarray:
         """
         Return a new PRNGKey and updates the internal rng state.
 
         Returns:
             A PRNGKey.
         """
-        key: jnp.ndarray
 
-        assert isinstance(self.key, jnp.ndarray)
         key, self.key = utils.iter_split(self.key)
 
-        if axis_name is None:
-            axis_name = self.axis_name
-
-        if axis_name is not None:
-            axis_index = jax.lax.axis_index(axis_name)
-            key = jax.random.fold_in(key, axis_index)
-
         return key
+
+    __next__ = next

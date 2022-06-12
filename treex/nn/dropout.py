@@ -6,7 +6,6 @@ import numpy as np
 from flax.linen import stochastic as flax_module
 
 from treex import types
-from treex.key_seq import KeySeq
 from treex.module import Module
 
 
@@ -26,7 +25,6 @@ class Dropout(Module):
     """
 
     # pytree
-    next_key: KeySeq
 
     # static
     rate: float
@@ -47,7 +45,6 @@ class Dropout(Module):
 
         self.rate = rate
         self.broadcast_dims = broadcast_dims
-        self.next_key = KeySeq()
 
     @property
     def module(self) -> flax_module.Dropout:
@@ -81,15 +78,20 @@ class Dropout(Module):
             else self.training and not self.frozen
         )
 
-        if rng is None:
-            rng = self.next_key() if training else self.next_key.key
+        if training:
+            if rng is None:
+                rng = self.next_key()
+
+            rngs = {"dropout": rng}
+        else:
+            rngs = {}
 
         # call apply
         output = self.module.apply(
             variables,
             x,
             deterministic=not training,
-            rngs={"dropout": rng},
+            rngs=rngs,
         )
 
         return tp.cast(jnp.ndarray, output)

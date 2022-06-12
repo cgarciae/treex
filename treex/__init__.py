@@ -1,12 +1,12 @@
 __version__ = "0.6.10"
 
+import jax
+import jax_metrics
 import treeo
 from flax.linen import initializers
 from treeo import *
 
 from treex.key_seq import KeySeq
-from treex.losses import Loss
-from treex.metrics import LossAndLogs, Metric
 from treex.module import (
     Module,
     ModuleMeta,
@@ -21,7 +21,6 @@ from treex.treex import Filters, Treex
 from treex.types import (
     BatchStat,
     Cache,
-    Initializer,
     Inputs,
     Log,
     LossLog,
@@ -37,13 +36,10 @@ from treex.types import (
 )
 from treex.utils import Key, iter_split
 
-from . import losses, metrics, nn, regularizers
+from . import nn
 
 __all__ = [
     "KeySeq",
-    "Loss",
-    "LossAndLogs",
-    "Metric",
     "Module",
     "ModuleMeta",
     "compact_module",
@@ -65,13 +61,10 @@ __all__ = [
     "Rng",
     "State",
     "TreePart",
-    "Initializer",
     "Inputs",
     "Named",
-    "losses",
-    "metrics",
     "nn",
-    "regularizers",
+    "make_mutable",
 ]
 
 __all__.extend(treeo.__all__)

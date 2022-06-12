@@ -93,28 +93,6 @@ class Named(tp.Generic[A]):
         return cls(name, children[0])
 
 
-class Initializer(to.Tree):
-    """Initialize a field from a function that expects a single argument with a PRNGKey.
-
-    Initializers are called by `Module.init` and replace the value of the field they are assigned to.
-    """
-
-    f: tp.Callable[[jnp.ndarray], tp.Any]
-
-    def __init__(self, f: tp.Callable[[jnp.ndarray], tp.Any]):
-        """
-        Arguments:
-            f: A function that takes a PRNGKey and returns the initial value of the field.
-        """
-        self.f = f
-
-    def __call__(self, x: jnp.ndarray) -> np.ndarray:
-        return self.f(x)
-
-    def __repr__(self) -> str:
-        return "Initializer"
-
-
 class Inputs:
     args: tp.Tuple[tp.Any, ...]
     kwargs: tp.Dict[str, tp.Any]
