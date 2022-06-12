@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "treex"
-version = "0.7.0.a2"
+version = "0.7.0.a3"
 description = ""
 authors = ["Cristian Garcia <cgarcia.e88@gmail.com>"]
 license = "MIT"
@@ -17,11 +17,10 @@ secondary = true
 python = ">=3.7,<3.11"
 flax = "^0.4.0"
 PyYAML = "^6.0"
-rich = "^11.2.0"
+rich = ">=11.1.0"
 optax = "^0.1.1"
 einops = "^0.4.0"
-# treeo = "^0.2.0.dev0"
-treeo = { path = "../treeo", develop = true }
+treeo = "^0.2.1"
 certifi = "^2021.10.8"
 
 
