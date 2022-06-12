@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "treex"
-version = "0.7.0.a3"
+version = "0.7.0.a4"
 description = ""
 authors = ["Cristian Garcia <cgarcia.e88@gmail.com>"]
 license = "MIT"
