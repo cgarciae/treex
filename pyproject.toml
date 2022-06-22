@@ -21,7 +21,7 @@ rich = "^11.2.0"
 optax = "^0.1.1"
 einops = "^0.4.0"
 treeo = "^0.0.10"
-certifi = "^2021.10.8"
+certifi = ">=2021.10.8"
 
 
 [tool.poetry.dev-dependencies]
