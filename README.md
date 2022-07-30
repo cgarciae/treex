@@ -68,7 +68,7 @@ optimizer = tx.Optimizer(optax.adam(4e-3)).init(model)
 
 
 # define loss function, notice
-# Modules are jit-abel and differentiable 🤯
+# Modules are jit-able and differentiable 🤯
 @jax.jit
 @jax.grad
 def loss_fn(model: tx.MLP, x, y):
