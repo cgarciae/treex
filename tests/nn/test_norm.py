@@ -420,7 +420,7 @@ class GroupNormTest(unittest.TestCase):
         bias_init=st.sampled_from(INITS),
         scale_init=st.sampled_from(INITS),
     )
-    @hp.settings(deadline=None, max_examples=20)
+    @hp.settings(deadline=None, max_examples=10)
     def test_equivalence_num_groups(self, **kwargs):
         self._test_equivalence(**kwargs)
 
