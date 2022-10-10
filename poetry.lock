@@ -2387,7 +2387,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "torch"
-version = "1.10.2+cpu"
+version = "1.9.1+cpu"
 description = "Tensors and Dynamic neural networks in Python with strong GPU acceleration"
 category = "dev"
 optional = false
@@ -2645,7 +2645,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.11"
-content-hash = "9d7a11e35b4fc57f888c355968602ac7e4ec6c7a551823be6d6fbcbd462244b6"
+content-hash = "00e898ae04f6085b541f3b479cf8f6229cc8365e993e2602c588d6b7eec83753"
 
 [metadata.files]
 absl-py = [
@@ -4458,14 +4458,14 @@ toolz = [
     {file = "toolz-0.12.0.tar.gz", hash = "sha256:88c570861c440ee3f2f6037c4654613228ff40c93a6c25e0eba70d17282c6194"},
 ]
 torch = [
-    {file = "torch-1.10.2+cpu-cp36-cp36m-linux_x86_64.whl", hash = "sha256:71b191eb16569d70a3d524d85ae31dd3a4a375190d8ad10a9ead515cecf7186b"},
-    {file = "torch-1.10.2+cpu-cp36-cp36m-win_amd64.whl", hash = "sha256:1fbc41a911dda8242e7e8ca1fca0ebfbbb49179a541bb49a4a65ce0caed557af"},
-    {file = "torch-1.10.2+cpu-cp37-cp37m-linux_x86_64.whl", hash = "sha256:824a7e3b6df1dc0ec1a392990431e4a9474b5c39e81e09c85e2fb193a3719de4"},
-    {file = "torch-1.10.2+cpu-cp37-cp37m-win_amd64.whl", hash = "sha256:5cbb1da77de878d36aaf5370e682920cfe20dca36d530244d0549fe6c07ac6d0"},
-    {file = "torch-1.10.2+cpu-cp38-cp38-linux_x86_64.whl", hash = "sha256:2dc2ac989b74578850e95d7aaea8194702de7534ad20876c83ac01363ee97d60"},
-    {file = "torch-1.10.2+cpu-cp38-cp38-win_amd64.whl", hash = "sha256:51a27eb78f3219e7036b9cfc37a97ac69cd942e8c339e4d793c1d300e4d5459d"},
-    {file = "torch-1.10.2+cpu-cp39-cp39-linux_x86_64.whl", hash = "sha256:318d52242f07288bec58829d445452ee5767f34ba0cf32ec08c50febecc47e24"},
-    {file = "torch-1.10.2+cpu-cp39-cp39-win_amd64.whl", hash = "sha256:822e3c3f8eb042570fe69b665c955c36970ecb8f5bec9a43a5ed7bbe1831ea93"},
+    {file = "torch-1.9.1+cpu-cp36-cp36m-linux_x86_64.whl", hash = "sha256:0f2b28b0cf520e6dde10eedb4725a24a4b779c4d604363a7828b5c74b0b8d3da"},
+    {file = "torch-1.9.1+cpu-cp36-cp36m-win_amd64.whl", hash = "sha256:7d4dc0e55377e4ebd177644c5cc3eaf265b606851abe9b8a380f1bbc8f1deaa5"},
+    {file = "torch-1.9.1+cpu-cp37-cp37m-linux_x86_64.whl", hash = "sha256:d02f93a09c6f8ec197af1a18e1394f4b0eeb05affb4ffe836df882fa2572c065"},
+    {file = "torch-1.9.1+cpu-cp37-cp37m-win_amd64.whl", hash = "sha256:d09287974a7315f063b0599c54dbc0ed766987342fa8afb210577173cc77f448"},
+    {file = "torch-1.9.1+cpu-cp38-cp38-linux_x86_64.whl", hash = "sha256:3fe1a50d55500de46863357897ecd845b5624ced20c6ba17c83ccfcc244bad39"},
+    {file = "torch-1.9.1+cpu-cp38-cp38-win_amd64.whl", hash = "sha256:bfdf9f97df232df2a80f0ea95fdc804771fab7f9f87ef7084ebbac27f63428dc"},
+    {file = "torch-1.9.1+cpu-cp39-cp39-linux_x86_64.whl", hash = "sha256:b55ce935b195c6931adc81445f3d553563399afef4c3200deec384127b24aa78"},
+    {file = "torch-1.9.1+cpu-cp39-cp39-win_amd64.whl", hash = "sha256:991b6ac3d1772da80059e477c864f9fa2ffbeb7794c6473a1644e25c61d2ee56"},
 ]
 torchmetrics = [
     {file = "torchmetrics-0.10.0-py3-none-any.whl", hash = "sha256:1e99ee7379f8ff7e383383513ae0594bc5424de83b43e36c6ce12d464f1635b9"},
