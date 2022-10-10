@@ -31,7 +31,7 @@ class BatchNormTest(unittest.TestCase):
         training=st.booleans(),
         frozen=st.booleans(),
     )
-    @hp.settings(deadline=None, max_examples=20)
+    @hp.settings(deadline=None, max_examples=10)
     def test_equivalence(
         self,
         batch_size,
@@ -412,7 +412,7 @@ class GroupNormTest(unittest.TestCase):
         batch_size=st.integers(min_value=1, max_value=32),
         length=st.integers(min_value=1, max_value=32),
         channels=st.just(32),
-        num_groups=st.sampled_from([2 ** i for i in range(5)]),
+        num_groups=st.sampled_from([2**i for i in range(5)]),
         group_size=st.none(),
         epsilon=st.floats(min_value=0.000001, max_value=0.01),
         use_bias=st.booleans(),
@@ -420,7 +420,7 @@ class GroupNormTest(unittest.TestCase):
         bias_init=st.sampled_from(INITS),
         scale_init=st.sampled_from(INITS),
     )
-    @hp.settings(deadline=None, max_examples=20)
+    @hp.settings(deadline=None, max_examples=10)
     def test_equivalence_num_groups(self, **kwargs):
         self._test_equivalence(**kwargs)
 
@@ -429,7 +429,7 @@ class GroupNormTest(unittest.TestCase):
         length=st.integers(min_value=1, max_value=32),
         channels=st.just(32),
         num_groups=st.none(),
-        group_size=st.sampled_from([2 ** i for i in range(5)]),
+        group_size=st.sampled_from([2**i for i in range(5)]),
         epsilon=st.floats(min_value=0.000001, max_value=0.01),
         use_bias=st.booleans(),
         use_scale=st.booleans(),

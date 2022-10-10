@@ -39,6 +39,7 @@ jobs:
           poetry config virtualenvs.create false
           pip install -U certifi
           poetry install
+          pip install -U setuptools
 
       - name: Run Tests
         run: pytest --cov=treex --cov-report=term-missing --cov-report=xml

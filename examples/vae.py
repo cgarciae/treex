@@ -17,7 +17,7 @@ np.random.seed(420)
 
 def kl_divergence(mean: jnp.ndarray, std: jnp.ndarray) -> jnp.ndarray:
     return jnp.mean(
-        0.5 * jnp.mean(-jnp.log(std ** 2) - 1.0 + std ** 2 + mean ** 2, axis=-1)
+        0.5 * jnp.mean(-jnp.log(std**2) - 1.0 + std**2 + mean**2, axis=-1)
     )
 
 
