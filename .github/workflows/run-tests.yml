@@ -36,10 +36,10 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          sudo apt-get install --reinstall python3-pkg-resources
           poetry config virtualenvs.create false
           pip install -U certifi
           poetry install
+          pip install -U setuptools
 
       - name: Run Tests
         run: pytest --cov=treex --cov-report=term-missing --cov-report=xml
