@@ -1,3 +1,8 @@
+_Deprecation Notice_: This library was an experiment trying to get pytree Modules working with Flax-like colletions. I'd currently recommend the following alternatives:
+* Just custom pytrees: [simple_pytree](https://github.com/cgarciae/simple-pytree)
+* Pytree module system: [equinox](https://github.com/patrick-kidger/equinox)
+* Production ready module system: [flax](https://github.com/google/flax)
+
 # Treex
 
 _A Pytree Module system for Deep Learning in JAX_
