@@ -94,7 +94,7 @@ class LossAndLogs(Metric):
         if self.losses is not None:
             loss, losses_logs = self.losses.compute()
         else:
-            loss = jnp.zeros(0.0, dtype=jnp.float32)
+            loss = jnp.array(0.0, dtype=jnp.float32)
             losses_logs = {}
 
         if self.metrics is not None:
